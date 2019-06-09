@@ -1,5 +1,0 @@
-# V0.1
-- Store settings
-- Load on startup
-- Override mode support
-- Change mailbox and MSR into structs
