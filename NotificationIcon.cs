@@ -199,12 +199,9 @@ namespace AsusZenStates
 
                     // Fix path
                     Directory.SetCurrentDirectory(Application.StartupPath);
-                    
-                    // Asus check
-                    if (!isAsus()) {
-                        MessageBox.Show("This software only works on ASUS hardware",MessageBoxTitle);
-						return;
-					}
+
+                    // Set motherboard vendor and CPU info
+                    initVendorInfo();
 					
                     // Check service running/installed
                     ServiceController svc = new ServiceController("AsusZsSrv");
@@ -460,10 +457,7 @@ namespace AsusZenStates
             }
         }
 
-        static bool isAsus() {
-#if DEBUG
-            return true;
-#endif
+        static void initVendorInfo() {
             ManagementObjectSearcher searcher = new ManagementObjectSearcher("SELECT * FROM Win32_BaseBoard");
 			ManagementObjectCollection collection = searcher.Get();
 						
@@ -478,9 +472,6 @@ namespace AsusZenStates
 				NotificationIcon.cpuName = NotificationIcon.cpuName.Replace("(R)","");
 				NotificationIcon.cpuName = NotificationIcon.cpuName.Replace("(TM)","");
 		    }
-			
-			if(mbVendor == "ASUSTeK COMPUTER INC.") return true;
-			else return false;
 		}
 		
 		static void MinimizeFootprint() { EmptyWorkingSet(Process.GetCurrentProcess().Handle); }
