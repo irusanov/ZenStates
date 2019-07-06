@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Windows.Forms;
 using System.Runtime.InteropServices;
-using System.Collections.Generic;
 
 namespace AsusZenStates
 {
@@ -90,14 +89,13 @@ namespace AsusZenStates
 			InitializeComponent();
 			
 			// Window management
-			pictureBoxLogo.MouseDown += new MouseEventHandler(SettingsFormMouseDown);
 			labelMB.MouseDown += new MouseEventHandler(SettingsFormMouseDown);
 			labelCPU.MouseDown += new MouseEventHandler(SettingsFormMouseDown);
 			
 			// MB/CPU description
 			labelMB.Text = NotificationIcon.mbName;
 			labelCPU.Text = NotificationIcon.cpuName;
-			label1.Text = Application.ProductName+" "+Application.ProductVersion.Substring(0,Application.ProductVersion.LastIndexOf("."));
+			label1.Text = "version "+Application.ProductVersion.Substring(0,Application.ProductVersion.LastIndexOf("."));
 			
             // Pstate controls
             for(int i = 0; i<PstateEn.Length; i++) {
@@ -154,7 +152,7 @@ namespace AsusZenStates
             textBoxTDC.Enabled = false;
             textBoxEDC.Enabled = false;*/
 
-            // Sav button
+            // Save button
             buttonSave.Enabled = false;
 
             // ToolTip
@@ -319,11 +317,6 @@ namespace AsusZenStates
 				MessageBox.Show(ex.Message);
 			}
 			
-		}
-		
-		void ButtonCloseClick(object sender, EventArgs e)
-		{
-			this.Dispose();
 		}
 		
 		void SettingsFormMouseDown(object sender, MouseEventArgs e)

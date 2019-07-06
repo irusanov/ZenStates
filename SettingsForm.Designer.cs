@@ -36,10 +36,7 @@ namespace AsusZenStates
 		/// </summary>
 		private void InitializeComponent()
 		{
-            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(SettingsForm));
             this.buttonApply = new System.Windows.Forms.Button();
-            this.pictureBoxLogo = new System.Windows.Forms.PictureBox();
-            this.buttonClose = new System.Windows.Forms.Button();
             this.labelMB = new System.Windows.Forms.Label();
             this.labelCPU = new System.Windows.Forms.Label();
             this.checkBoxApplyOnStart = new System.Windows.Forms.CheckBox();
@@ -64,68 +61,44 @@ namespace AsusZenStates
             this.textBoxTDC = new System.Windows.Forms.TextBox();
             this.textBoxScalar = new System.Windows.Forms.TextBox();
             this.checkBoxSmuPL = new System.Windows.Forms.CheckBox();
-            ((System.ComponentModel.ISupportInitialize)(this.pictureBoxLogo)).BeginInit();
             this.SuspendLayout();
             // 
             // buttonApply
             // 
-            this.buttonApply.FlatAppearance.MouseDownBackColor = System.Drawing.Color.Black;
-            this.buttonApply.FlatAppearance.MouseOverBackColor = System.Drawing.Color.Black;
-            this.buttonApply.FlatStyle = System.Windows.Forms.FlatStyle.Popup;
-            this.buttonApply.Location = new System.Drawing.Point(260, 210);
+            this.buttonApply.BackColor = System.Drawing.SystemColors.ButtonFace;
+            this.buttonApply.FlatAppearance.MouseDownBackColor = System.Drawing.SystemColors.ButtonHighlight;
+            this.buttonApply.FlatAppearance.MouseOverBackColor = System.Drawing.SystemColors.ButtonHighlight;
+            this.buttonApply.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.buttonApply.Location = new System.Drawing.Point(260, 240);
             this.buttonApply.Name = "buttonApply";
             this.buttonApply.Size = new System.Drawing.Size(75, 23);
             this.buttonApply.TabIndex = 8;
             this.buttonApply.Text = "Apply";
-            this.buttonApply.UseVisualStyleBackColor = true;
+            this.buttonApply.UseVisualStyleBackColor = false;
             this.buttonApply.Click += new System.EventHandler(this.ButtonApplyClick);
-            // 
-            // pictureBoxLogo
-            // 
-            this.pictureBoxLogo.Image = ((System.Drawing.Image)(resources.GetObject("pictureBoxLogo.Image")));
-            this.pictureBoxLogo.InitialImage = null;
-            this.pictureBoxLogo.Location = new System.Drawing.Point(4, 4);
-            this.pictureBoxLogo.Margin = new System.Windows.Forms.Padding(0);
-            this.pictureBoxLogo.Name = "pictureBoxLogo";
-            this.pictureBoxLogo.Size = new System.Drawing.Size(100, 21);
-            this.pictureBoxLogo.TabIndex = 16;
-            this.pictureBoxLogo.TabStop = false;
-            // 
-            // buttonClose
-            // 
-            this.buttonClose.FlatAppearance.MouseDownBackColor = System.Drawing.Color.Black;
-            this.buttonClose.FlatAppearance.MouseOverBackColor = System.Drawing.Color.Black;
-            this.buttonClose.FlatStyle = System.Windows.Forms.FlatStyle.Popup;
-            this.buttonClose.Font = new System.Drawing.Font("Microsoft Sans Serif", 6F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.buttonClose.Location = new System.Drawing.Point(405, 4);
-            this.buttonClose.Margin = new System.Windows.Forms.Padding(0);
-            this.buttonClose.Name = "buttonClose";
-            this.buttonClose.Size = new System.Drawing.Size(18, 19);
-            this.buttonClose.TabIndex = 17;
-            this.buttonClose.Text = "X";
-            this.buttonClose.UseVisualStyleBackColor = true;
-            this.buttonClose.Click += new System.EventHandler(this.ButtonCloseClick);
             // 
             // labelMB
             // 
-            this.labelMB.Location = new System.Drawing.Point(110, 2);
+            this.labelMB.Location = new System.Drawing.Point(5, 27);
             this.labelMB.Margin = new System.Windows.Forms.Padding(0);
             this.labelMB.Name = "labelMB";
             this.labelMB.Size = new System.Drawing.Size(250, 13);
             this.labelMB.TabIndex = 18;
+            this.labelMB.Text = "Motherboard";
             // 
             // labelCPU
             // 
-            this.labelCPU.Location = new System.Drawing.Point(110, 15);
+            this.labelCPU.Location = new System.Drawing.Point(5, 5);
             this.labelCPU.Margin = new System.Windows.Forms.Padding(0);
             this.labelCPU.Name = "labelCPU";
             this.labelCPU.Size = new System.Drawing.Size(250, 13);
             this.labelCPU.TabIndex = 19;
+            this.labelCPU.Text = "CPU";
             // 
             // checkBoxApplyOnStart
             // 
             this.checkBoxApplyOnStart.CheckAlign = System.Drawing.ContentAlignment.MiddleRight;
-            this.checkBoxApplyOnStart.Location = new System.Drawing.Point(292, 182);
+            this.checkBoxApplyOnStart.Location = new System.Drawing.Point(292, 197);
             this.checkBoxApplyOnStart.Name = "checkBoxApplyOnStart";
             this.checkBoxApplyOnStart.Size = new System.Drawing.Size(124, 20);
             this.checkBoxApplyOnStart.TabIndex = 20;
@@ -136,7 +109,7 @@ namespace AsusZenStates
             // checkBoxGuiOnStart
             // 
             this.checkBoxGuiOnStart.CheckAlign = System.Drawing.ContentAlignment.MiddleRight;
-            this.checkBoxGuiOnStart.Location = new System.Drawing.Point(292, 158);
+            this.checkBoxGuiOnStart.Location = new System.Drawing.Point(292, 173);
             this.checkBoxGuiOnStart.Name = "checkBoxGuiOnStart";
             this.checkBoxGuiOnStart.Size = new System.Drawing.Size(124, 18);
             this.checkBoxGuiOnStart.TabIndex = 21;
@@ -146,15 +119,17 @@ namespace AsusZenStates
             // 
             // label1
             // 
-            this.label1.Location = new System.Drawing.Point(5, 29);
+            this.label1.ForeColor = System.Drawing.SystemColors.GrayText;
+            this.label1.Location = new System.Drawing.Point(5, 245);
             this.label1.Name = "label1";
-            this.label1.Size = new System.Drawing.Size(212, 16);
+            this.label1.Size = new System.Drawing.Size(124, 16);
             this.label1.TabIndex = 31;
+            this.label1.Text = "version";
             // 
             // checkBoxC6Package
             // 
             this.checkBoxC6Package.CheckAlign = System.Drawing.ContentAlignment.MiddleRight;
-            this.checkBoxC6Package.Location = new System.Drawing.Point(292, 62);
+            this.checkBoxC6Package.Location = new System.Drawing.Point(292, 77);
             this.checkBoxC6Package.Name = "checkBoxC6Package";
             this.checkBoxC6Package.Size = new System.Drawing.Size(124, 18);
             this.checkBoxC6Package.TabIndex = 32;
@@ -164,7 +139,7 @@ namespace AsusZenStates
             // checkBoxC6Core
             // 
             this.checkBoxC6Core.CheckAlign = System.Drawing.ContentAlignment.MiddleRight;
-            this.checkBoxC6Core.Location = new System.Drawing.Point(292, 38);
+            this.checkBoxC6Core.Location = new System.Drawing.Point(292, 53);
             this.checkBoxC6Core.Name = "checkBoxC6Core";
             this.checkBoxC6Core.Size = new System.Drawing.Size(124, 18);
             this.checkBoxC6Core.TabIndex = 33;
@@ -174,9 +149,9 @@ namespace AsusZenStates
             // comboBoxPerfbias
             // 
             this.comboBoxPerfbias.FormattingEnabled = true;
-            this.comboBoxPerfbias.Location = new System.Drawing.Point(140, 128);
+            this.comboBoxPerfbias.Location = new System.Drawing.Point(135, 127);
             this.comboBoxPerfbias.Name = "comboBoxPerfbias";
-            this.comboBoxPerfbias.Size = new System.Drawing.Size(130, 21);
+            this.comboBoxPerfbias.Size = new System.Drawing.Size(135, 21);
             this.comboBoxPerfbias.TabIndex = 35;
             // 
             // labelPerfbias
@@ -189,7 +164,7 @@ namespace AsusZenStates
             // 
             // labelPPT
             // 
-            this.labelPPT.Location = new System.Drawing.Point(12, 190);
+            this.labelPPT.Location = new System.Drawing.Point(5, 190);
             this.labelPPT.Name = "labelPPT";
             this.labelPPT.Size = new System.Drawing.Size(30, 20);
             this.labelPPT.TabIndex = 37;
@@ -197,21 +172,22 @@ namespace AsusZenStates
             // 
             // buttonDefaults
             // 
-            this.buttonDefaults.FlatAppearance.MouseDownBackColor = System.Drawing.Color.Black;
-            this.buttonDefaults.FlatAppearance.MouseOverBackColor = System.Drawing.Color.Black;
-            this.buttonDefaults.FlatStyle = System.Windows.Forms.FlatStyle.Popup;
-            this.buttonDefaults.Location = new System.Drawing.Point(186, 210);
+            this.buttonDefaults.BackColor = System.Drawing.SystemColors.Control;
+            this.buttonDefaults.FlatAppearance.MouseDownBackColor = System.Drawing.SystemColors.ButtonHighlight;
+            this.buttonDefaults.FlatAppearance.MouseOverBackColor = System.Drawing.SystemColors.ButtonHighlight;
+            this.buttonDefaults.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.buttonDefaults.Location = new System.Drawing.Point(179, 240);
             this.buttonDefaults.Name = "buttonDefaults";
             this.buttonDefaults.Size = new System.Drawing.Size(75, 23);
             this.buttonDefaults.TabIndex = 39;
             this.buttonDefaults.Text = "Restore";
-            this.buttonDefaults.UseVisualStyleBackColor = true;
+            this.buttonDefaults.UseVisualStyleBackColor = false;
             this.buttonDefaults.Click += new System.EventHandler(this.buttonDefaults_Click);
             // 
             // checkBoxP80temp
             // 
             this.checkBoxP80temp.CheckAlign = System.Drawing.ContentAlignment.MiddleRight;
-            this.checkBoxP80temp.Location = new System.Drawing.Point(292, 134);
+            this.checkBoxP80temp.Location = new System.Drawing.Point(292, 149);
             this.checkBoxP80temp.Name = "checkBoxP80temp";
             this.checkBoxP80temp.Size = new System.Drawing.Size(124, 18);
             this.checkBoxP80temp.TabIndex = 34;
@@ -221,7 +197,7 @@ namespace AsusZenStates
             // checkBoxCpb
             // 
             this.checkBoxCpb.CheckAlign = System.Drawing.ContentAlignment.MiddleRight;
-            this.checkBoxCpb.Location = new System.Drawing.Point(292, 86);
+            this.checkBoxCpb.Location = new System.Drawing.Point(292, 101);
             this.checkBoxCpb.Name = "checkBoxCpb";
             this.checkBoxCpb.Size = new System.Drawing.Size(124, 18);
             this.checkBoxCpb.TabIndex = 40;
@@ -230,20 +206,21 @@ namespace AsusZenStates
             // 
             // buttonSave
             // 
-            this.buttonSave.FlatAppearance.MouseDownBackColor = System.Drawing.Color.Black;
-            this.buttonSave.FlatAppearance.MouseOverBackColor = System.Drawing.Color.Black;
-            this.buttonSave.FlatStyle = System.Windows.Forms.FlatStyle.Popup;
-            this.buttonSave.Location = new System.Drawing.Point(341, 210);
+            this.buttonSave.BackColor = System.Drawing.SystemColors.ButtonFace;
+            this.buttonSave.FlatAppearance.MouseDownBackColor = System.Drawing.SystemColors.ButtonHighlight;
+            this.buttonSave.FlatAppearance.MouseOverBackColor = System.Drawing.SystemColors.ButtonHighlight;
+            this.buttonSave.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.buttonSave.Location = new System.Drawing.Point(341, 240);
             this.buttonSave.Name = "buttonSave";
             this.buttonSave.Size = new System.Drawing.Size(75, 23);
             this.buttonSave.TabIndex = 44;
             this.buttonSave.Text = "Save";
-            this.buttonSave.UseVisualStyleBackColor = true;
+            this.buttonSave.UseVisualStyleBackColor = false;
             this.buttonSave.Click += new System.EventHandler(this.buttonSave_Click);
             // 
             // textBoxPPT
             // 
-            this.textBoxPPT.Location = new System.Drawing.Point(48, 187);
+            this.textBoxPPT.Location = new System.Drawing.Point(41, 187);
             this.textBoxPPT.MaxLength = 4;
             this.textBoxPPT.Name = "textBoxPPT";
             this.textBoxPPT.RightToLeft = System.Windows.Forms.RightToLeft.No;
@@ -254,7 +231,7 @@ namespace AsusZenStates
             // 
             // labelTDC
             // 
-            this.labelTDC.Location = new System.Drawing.Point(86, 190);
+            this.labelTDC.Location = new System.Drawing.Point(93, 190);
             this.labelTDC.Name = "labelTDC";
             this.labelTDC.Size = new System.Drawing.Size(30, 20);
             this.labelTDC.TabIndex = 46;
@@ -262,7 +239,7 @@ namespace AsusZenStates
             // 
             // labelEDC
             // 
-            this.labelEDC.Location = new System.Drawing.Point(12, 215);
+            this.labelEDC.Location = new System.Drawing.Point(5, 215);
             this.labelEDC.Name = "labelEDC";
             this.labelEDC.Size = new System.Drawing.Size(30, 20);
             this.labelEDC.TabIndex = 48;
@@ -270,7 +247,7 @@ namespace AsusZenStates
             // 
             // textBoxEDC
             // 
-            this.textBoxEDC.Location = new System.Drawing.Point(48, 212);
+            this.textBoxEDC.Location = new System.Drawing.Point(41, 212);
             this.textBoxEDC.MaxLength = 4;
             this.textBoxEDC.Name = "textBoxEDC";
             this.textBoxEDC.RightToLeft = System.Windows.Forms.RightToLeft.No;
@@ -290,15 +267,15 @@ namespace AsusZenStates
             // comboBoxPerfenh
             // 
             this.comboBoxPerfenh.FormattingEnabled = true;
-            this.comboBoxPerfenh.Location = new System.Drawing.Point(140, 155);
+            this.comboBoxPerfenh.Location = new System.Drawing.Point(135, 155);
             this.comboBoxPerfenh.Name = "comboBoxPerfenh";
-            this.comboBoxPerfenh.Size = new System.Drawing.Size(130, 21);
+            this.comboBoxPerfenh.Size = new System.Drawing.Size(135, 21);
             this.comboBoxPerfenh.TabIndex = 51;
             this.comboBoxPerfenh.SelectedIndexChanged += new System.EventHandler(this.comboBoxPerfenh_SelectedIndexChanged);
             // 
             // label3
             // 
-            this.label3.Location = new System.Drawing.Point(86, 213);
+            this.label3.Location = new System.Drawing.Point(93, 215);
             this.label3.Name = "label3";
             this.label3.Size = new System.Drawing.Size(41, 20);
             this.label3.TabIndex = 52;
@@ -306,7 +283,7 @@ namespace AsusZenStates
             // 
             // textBoxTDC
             // 
-            this.textBoxTDC.Location = new System.Drawing.Point(121, 187);
+            this.textBoxTDC.Location = new System.Drawing.Point(135, 187);
             this.textBoxTDC.MaxLength = 4;
             this.textBoxTDC.Name = "textBoxTDC";
             this.textBoxTDC.Size = new System.Drawing.Size(32, 20);
@@ -316,10 +293,10 @@ namespace AsusZenStates
             // 
             // textBoxScalar
             // 
-            this.textBoxScalar.Location = new System.Drawing.Point(133, 212);
+            this.textBoxScalar.Location = new System.Drawing.Point(135, 212);
             this.textBoxScalar.MaxLength = 2;
             this.textBoxScalar.Name = "textBoxScalar";
-            this.textBoxScalar.Size = new System.Drawing.Size(20, 20);
+            this.textBoxScalar.Size = new System.Drawing.Size(32, 20);
             this.textBoxScalar.TabIndex = 53;
             this.textBoxScalar.Text = "0";
             this.textBoxScalar.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
@@ -327,7 +304,7 @@ namespace AsusZenStates
             // checkBoxSmuPL
             // 
             this.checkBoxSmuPL.CheckAlign = System.Drawing.ContentAlignment.MiddleRight;
-            this.checkBoxSmuPL.Location = new System.Drawing.Point(292, 110);
+            this.checkBoxSmuPL.Location = new System.Drawing.Point(292, 125);
             this.checkBoxSmuPL.Name = "checkBoxSmuPL";
             this.checkBoxSmuPL.Size = new System.Drawing.Size(124, 18);
             this.checkBoxSmuPL.TabIndex = 54;
@@ -338,9 +315,8 @@ namespace AsusZenStates
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.BackColor = System.Drawing.Color.Black;
-            this.ClientSize = new System.Drawing.Size(428, 245);
-            this.ControlBox = false;
+            this.BackColor = System.Drawing.SystemColors.Window;
+            this.ClientSize = new System.Drawing.Size(428, 270);
             this.Controls.Add(this.checkBoxSmuPL);
             this.Controls.Add(this.textBoxScalar);
             this.Controls.Add(this.label3);
@@ -365,21 +341,17 @@ namespace AsusZenStates
             this.Controls.Add(this.checkBoxApplyOnStart);
             this.Controls.Add(this.labelCPU);
             this.Controls.Add(this.labelMB);
-            this.Controls.Add(this.buttonClose);
-            this.Controls.Add(this.pictureBoxLogo);
             this.Controls.Add(this.buttonApply);
-            this.ForeColor = System.Drawing.Color.White;
-            this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.None;
+            this.ForeColor = System.Drawing.SystemColors.WindowText;
+            this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedToolWindow;
             this.MaximizeBox = false;
             this.MinimizeBox = false;
             this.Name = "SettingsForm";
-            this.ShowIcon = false;
-            this.ShowInTaskbar = false;
+            this.SizeGripStyle = System.Windows.Forms.SizeGripStyle.Hide;
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
-            this.Text = "ASUS ZenStates";
+            this.Text = "ZenStates";
             this.TopMost = true;
             this.MouseDown += new System.Windows.Forms.MouseEventHandler(this.SettingsFormMouseDown);
-            ((System.ComponentModel.ISupportInitialize)(this.pictureBoxLogo)).EndInit();
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -388,8 +360,6 @@ namespace AsusZenStates
 		private System.Windows.Forms.CheckBox checkBoxApplyOnStart;
 		private System.Windows.Forms.Label labelCPU;
 		private System.Windows.Forms.Label labelMB;
-		private System.Windows.Forms.Button buttonClose;
-		private System.Windows.Forms.PictureBox pictureBoxLogo;
 		private System.Windows.Forms.Button buttonApply;
 		private System.Windows.Forms.Label label1;
 		private System.Windows.Forms.CheckBox checkBoxGuiOnStart;
