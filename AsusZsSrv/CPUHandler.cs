@@ -47,7 +47,7 @@ namespace AsusZsSrv
 	/// </summary>
 	public class CPUHandler
 	{
-		public enum CPUType { Unsupported=0, DEBUG=1, Summit_Ridge, Threadripper, Raven_Ridge, Pinnacle_Ridge };
+		public enum CPUType { Unsupported=0, DEBUG=1, Summit_Ridge, Threadripper, Raven_Ridge, Pinnacle_Ridge, Matisse, Picasso };
 		public enum PerfBias { None=0, Cinebench_R15, Cinebench_R11p5, Geekbench_3 };
         //public enum PerfEnh { None = 0, Level1, Level2, Level3_OC, Level4_OC };
 
@@ -180,14 +180,28 @@ namespace AsusZsSrv
             
             // CPU Check. Compare family, model, ext family, ext model. Ignore stepping/revision
 			switch(GetCpuInfo()&0xFFFFFFF0) {
-                case 0x00800F10: // Summit Ridge (AM4, TR4)
+                case 0x00800F12: // CPU \ Zen \ Summit Ridge \ ZP - B2 \ 14nm
+                case 0x00800F11: // CPU \ Zen \ Summit Ridge \ ZP - B1 \ 14nm
+                case 0x00800F10: // CPU \ Zen \ Summit Ridge \ ZP - B0 \ 14nm
+                case 0x00800F00: // CPU \ Zen \ Summit Ridge \ ZP - A0 \ 14nm
                     this.cpuType = CPUType.Summit_Ridge;
                     break;
-                case 0x00810F10: // Raven Ridge (AM4)
+                case 0x00800F82: // CPU \ Zen + \ Pinnacle Ridge \ PiR - B2 \ 12nm
+                    this.cpuType = CPUType.Pinnacle_Ridge;
+                    break;
+                case 0x00810F80: // APU \ Zen + \ Picasso \ PCO - B0 \ 12nm
+                case 0x00810F81: // APU \ Zen + \ Picasso \ PCO - B1 \ 12nm
+                    this.cpuType = CPUType.Picasso;
+                    break;
+                case 0x00810F11: // APU \ Zen \ Raven Ridge \ RV - B1 \ 14nm
+                case 0x00810F10: // APU \ Zen \ Raven Ridge \ RV - B0 \ 14nm
+                case 0x00820F00: // APU \ Zen \ Raven Ridge 2 \ RV2 - A0 \ 14nm
+                case 0x00810F00: // APU \ Zen \ Raven Ridge \ RV - A0 \ 14nm
                     this.cpuType = CPUType.Raven_Ridge;
                     break;
-                case 0x00800F80: // Pinnacle Ridge (AM4)
-                    this.cpuType = CPUType.Pinnacle_Ridge;
+                case 0x00870F10: // CPU \ Zen2 \ Matisse \ MTS - B0 \ 7nm + 14nm I/ O Die
+                case 0x00870F00: // CPU \ Zen2 \ Matisse \ MTS - A0 \ 7nm + 14nm I/ O Die
+                    this.cpuType = CPUType.Matisse;
                     break;
                 default:
 					this.cpuType = CPUType.Unsupported;
