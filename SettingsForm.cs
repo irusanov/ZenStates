@@ -1,13 +1,14 @@
 ﻿using System;
-using System.Windows.Forms;
 using System.Runtime.InteropServices;
+using System.Windows.Forms;
 
 namespace AsusZenStates
 {
     /// <summary>
     /// Description of SettingsForm.
     /// </summary>
-    public partial class SettingsForm : Form {
+    public partial class SettingsForm : Form
+    {
         // Window management
         public const int WM_NCLBUTTONDOWN = 0xA1;
         public const int HT_CAPTION = 0x2;
@@ -31,18 +32,21 @@ namespace AsusZenStates
         ComboBox[] PstateDid = new ComboBox[PSTATES];
         ComboBox[] PstateVid = new ComboBox[PSTATES];
 
-        class CustomListItem {
+        class CustomListItem
+        {
             public int id;
             public byte value;
             public string text;
 
-            public CustomListItem(int id, string text) {
+            public CustomListItem(int id, string text)
+            {
                 this.id = id;
                 this.value = (byte)id;
                 this.text = text;
             }
 
-            public CustomListItem(int id, byte value, string text) {
+            public CustomListItem(int id, byte value, string text)
+            {
                 this.id = id;
                 this.value = value;
                 this.text = text;
@@ -81,67 +85,81 @@ namespace AsusZenStates
             new CustomListItem(11, 0x13, "/9.5"),
             new CustomListItem(12, 0x14, "/10")
         };
-        
-        public SettingsForm() {
-			//
-			// The InitializeComponent() call is required for Windows Forms designer support.
-			//
-			InitializeComponent();
-			
-			// Window management
-			labelMB.MouseDown += new MouseEventHandler(SettingsFormMouseDown);
-			labelCPU.MouseDown += new MouseEventHandler(SettingsFormMouseDown);
-			
-			// MB/CPU description
-			labelMB.Text = NotificationIcon.mbName;
-			labelCPU.Text = NotificationIcon.cpuName;
-			label1.Text = "version "+Application.ProductVersion.Substring(0,Application.ProductVersion.LastIndexOf("."));
-			
+
+        public SettingsForm()
+        {
+            //
+            // The InitializeComponent() call is required for Windows Forms designer support.
+            //
+            InitializeComponent();
+
+            // Window management
+            labelMB.MouseDown += new MouseEventHandler(SettingsFormMouseDown);
+            labelCPU.MouseDown += new MouseEventHandler(SettingsFormMouseDown);
+
+            // MB/CPU description
+            labelMB.Text = NotificationIcon.mbName;
+            labelCPU.Text = NotificationIcon.cpuName;
+            label1.Text = "version " + Application.ProductVersion.Substring(0, Application.ProductVersion.LastIndexOf("."));
+
             // Pstate controls
-            for(int i = 0; i<PstateEn.Length; i++) {
+            for (int i = 0; i < PstateEn.Length; i++)
+            {
 
                 // Enable checkbox
-                PstateEn[i] = new CheckBox();
-                PstateEn[i].Text = "P" + i.ToString();
-                PstateEn[i].Size = new System.Drawing.Size(40, 20);
-                PstateEn[i].Location = new System.Drawing.Point(10, 50 + i * 25);
+                PstateEn[i] = new CheckBox
+                {
+                    Text = "P" + i.ToString(),
+                    Size = new System.Drawing.Size(40, 20),
+                    Location = new System.Drawing.Point(10, 50 + i * 25)
+                };
                 this.Controls.Add(PstateEn[i]);
 
                 // FID combobox
-                PstateFid[i] = new ComboBox();
-                PstateFid[i].Size = new System.Drawing.Size(80, 20);
-                PstateFid[i].Location = new System.Drawing.Point(50, 50 + i * 25);
+                PstateFid[i] = new ComboBox
+                {
+                    Size = new System.Drawing.Size(80, 20),
+                    Location = new System.Drawing.Point(50, 50 + i * 25)
+                };
                 this.Controls.Add(PstateFid[i]);
 
                 // DID combobox
-                PstateDid[i] = new ComboBox();
-                PstateDid[i].Size = new System.Drawing.Size(50, 20);
-                PstateDid[i].Location = new System.Drawing.Point(135, 50 + i * 25);
-                foreach(CustomListItem item in DIVIDERS) {
+                PstateDid[i] = new ComboBox
+                {
+                    Size = new System.Drawing.Size(50, 20),
+                    Location = new System.Drawing.Point(135, 50 + i * 25)
+                };
+                foreach (CustomListItem item in DIVIDERS)
+                {
                     PstateDid[i].Items.Add(item);
                 }
                 PstateDid[i].SelectedIndexChanged += UpdateFids;
                 this.Controls.Add(PstateDid[i]);
-                
+
                 // VID combobox
-                PstateVid[i] = new ComboBox();
-                PstateVid[i].Size = new System.Drawing.Size(80, 20);
-                PstateVid[i].Location = new System.Drawing.Point(190, 50 + i * 25);
+                PstateVid[i] = new ComboBox
+                {
+                    Size = new System.Drawing.Size(80, 20),
+                    Location = new System.Drawing.Point(190, 50 + i * 25)
+                };
                 int k = 0;
-                for (byte j = VID_MIN; j <= VID_MAX; j++) {
+                for (byte j = VID_MIN; j <= VID_MAX; j++)
+                {
                     double voltage = 1.55 - j * 0.00625;
-                    CustomListItem item = new CustomListItem(k++, j, voltage.ToString("F3")+"V");
+                    CustomListItem item = new CustomListItem(k++, j, voltage.ToString("F3") + "V");
                     PstateVid[i].Items.Add(item);
                 }
                 this.Controls.Add(PstateVid[i]);
 
             }
 
-            foreach(CustomListItem item in PERFBIAS) {
+            foreach (CustomListItem item in PERFBIAS)
+            {
                 comboBoxPerfbias.Items.Add(item);
             }
 
-            foreach(CustomListItem item in PERFENH) {
+            foreach (CustomListItem item in PERFENH)
+            {
                 comboBoxPerfenh.Items.Add(item);
             }
 
@@ -163,48 +181,55 @@ namespace AsusZenStates
             toolTip.SetToolTip(labelTDC, "Thermal Design Current (A)");
 
         }
-        
-        public void ResetValues() {
-            try {
+
+        public void ResetValues()
+        {
+            try
+            {
 
                 // PerfBias
                 comboBoxPerfbias.SelectedIndex = (int)NotificationIcon.perfBias;
                 //comboBoxPerfenh.SelectedIndex = (int)NotificationIcon.PerfEnh.None;
 
-                for(int i = 0; i < PSTATES; i++) {
+                for (int i = 0; i < PSTATES; i++)
+                {
 
                     // PstateEn
                     PstateEn[i].Checked = Convert.ToBoolean((NotificationIcon.Pstate[i] >> 63) & 0x1);
 
                     // DID
                     byte did = Convert.ToByte((NotificationIcon.Pstate[i] >> 8) & 0x3F);
-                    foreach(CustomListItem item in PstateDid[i].Items) {
-                        if(item.value == did) PstateDid[i].SelectedIndex = item.id;
+                    foreach (CustomListItem item in PstateDid[i].Items)
+                    {
+                        if (item.value == did) PstateDid[i].SelectedIndex = item.id;
                     }
 
                     // VID
                     byte vid = Convert.ToByte((NotificationIcon.Pstate[i] >> 14) & 0xFF);
 
-                    foreach (CustomListItem item in PstateVid[i].Items) {
+                    foreach (CustomListItem item in PstateVid[i].Items)
+                    {
                         if (item.value == vid) PstateVid[i].SelectedIndex = item.id;
                     }
                 }
 
                 // FID/Ratios
                 UpdateFids(null, null);
-                
-            } catch(Exception ex) {
+
+            }
+            catch (Exception ex)
+            {
                 MessageBox.Show(ex.Message);
             }
 
             // Checkboxes
-            if(NotificationIcon.ApplyAtStart) checkBoxApplyOnStart.Checked = true;
-            if(NotificationIcon.TrayIconAtStart) checkBoxGuiOnStart.Checked = true;
-            if(NotificationIcon.P80Temp) checkBoxP80temp.Checked = true;
+            if (NotificationIcon.ApplyAtStart) checkBoxApplyOnStart.Checked = true;
+            if (NotificationIcon.TrayIconAtStart) checkBoxGuiOnStart.Checked = true;
+            if (NotificationIcon.P80Temp) checkBoxP80temp.Checked = true;
 
-            if(NotificationIcon.ZenC6Core) checkBoxC6Core.Checked = true;
-            if(NotificationIcon.ZenC6Package) checkBoxC6Package.Checked = true;
-            if(NotificationIcon.ZenCorePerfBoost) checkBoxCpb.Checked = true;
+            if (NotificationIcon.ZenC6Core) checkBoxC6Core.Checked = true;
+            if (NotificationIcon.ZenC6Package) checkBoxC6Package.Checked = true;
+            if (NotificationIcon.ZenCorePerfBoost) checkBoxCpb.Checked = true;
 
             textBoxPPT.Text = NotificationIcon.ZenPPT.ToString();
             textBoxTDC.Text = NotificationIcon.ZenTDC.ToString();
@@ -213,25 +238,32 @@ namespace AsusZenStates
 
         }
 
-        public void SetSavedButton(bool state) {
+        public void SetSavedButton(bool state)
+        {
             buttonSave.Enabled = state;
         }
 
-        private void UpdateFids(object sender, EventArgs e) {
+        private void UpdateFids(object sender, EventArgs e)
+        {
 
-            for (int i = 0; i < PstateFid.Length; i++) {
+            for (int i = 0; i < PstateFid.Length; i++)
+            {
                 // Get current FID
                 byte fid = Convert.ToByte(NotificationIcon.Pstate[i] & 0xFF);
-                try {
+                try
+                {
                     fid = ((CustomListItem)PstateFid[i].SelectedItem).value;
-                } catch (Exception) { };
+                }
+                catch (Exception) { };
 
                 // Get current did
                 byte did = Convert.ToByte((NotificationIcon.Pstate[i] >> 8) & 0x3F);
-                try {
+                try
+                {
                     CustomListItem item = (CustomListItem)PstateDid[i].SelectedItem;
                     did = item.value;
-                } catch(Exception ex) { }
+                }
+                catch (Exception ex) { }
 
                 // Calculate old frequency
 
@@ -239,10 +271,12 @@ namespace AsusZenStates
 
                 int select = 0;
                 int k = 0;
-                for (byte j = FID_MAX; j >= FID_MIN; j--) {
+                for (byte j = FID_MAX; j >= FID_MIN; j--)
+                {
                     double freq = (25 * j / (did * 12.5));
-                    
-                    if (FREQ_MAX >= freq && freq >= FREQ_MIN) {
+
+                    if (FREQ_MAX >= freq && freq >= FREQ_MIN)
+                    {
                         CustomListItem item = new CustomListItem(k++, j, freq.ToString("F2") + "x");
                         PstateFid[i].Items.Add(item);
                         if (item.value == fid) select = item.id;
@@ -251,16 +285,18 @@ namespace AsusZenStates
                         diff_last = diff;*/
                     }
                 }
-                
+
                 PstateFid[i].SelectedIndex = select;
             }
         }
-		
-		void ButtonApplyClick(object sender, EventArgs e)
-		{
-			// Apply new settings
-			try {
-                for(int i = 0; i < PstateFid.Length; i++) {
+
+        void ButtonApplyClick(object sender, EventArgs e)
+        {
+            // Apply new settings
+            try
+            {
+                for (int i = 0; i < PstateFid.Length; i++)
+                {
                     UInt64 en = Convert.ToUInt64(PstateEn[i].Checked);
                     UInt64 fid = Convert.ToUInt64(((CustomListItem)PstateFid[i].SelectedItem).value);
                     UInt64 did = Convert.ToUInt64(((CustomListItem)PstateDid[i].SelectedItem).value);
@@ -273,30 +309,33 @@ namespace AsusZenStates
 
                     NotificationIcon.di.MemWrite(DataInterface.REG_P0 + i, ps);
                 }
-				
-				UInt64 flags = 0;
-                if(checkBoxApplyOnStart.Checked) flags |= DataInterface.FLAG_APPLY_AT_START;
-                if(checkBoxGuiOnStart.Checked) flags |= DataInterface.FLAG_TRAY_ICON_AT_START;
-                if(checkBoxP80temp.Checked) flags |= DataInterface.FLAG_P80_TEMP_EN;
-                if(checkBoxC6Core.Checked) flags |= DataInterface.FLAG_C6CORE;
-                if(checkBoxC6Package.Checked) flags |= DataInterface.FLAG_C6PACKAGE;
-                if(checkBoxCpb.Checked) flags |= DataInterface.FLAG_CPB;
 
-                int ppt = 0, tdc = 0, edc = 0, scalar = 0;
+                UInt64 flags = 0;
+                if (checkBoxApplyOnStart.Checked) flags |= DataInterface.FLAG_APPLY_AT_START;
+                if (checkBoxGuiOnStart.Checked) flags |= DataInterface.FLAG_TRAY_ICON_AT_START;
+                if (checkBoxP80temp.Checked) flags |= DataInterface.FLAG_P80_TEMP_EN;
+                if (checkBoxC6Core.Checked) flags |= DataInterface.FLAG_C6CORE;
+                if (checkBoxC6Package.Checked) flags |= DataInterface.FLAG_C6PACKAGE;
+                if (checkBoxCpb.Checked) flags |= DataInterface.FLAG_CPB;
 
-                if(!int.TryParse(textBoxPPT.Text, out ppt)) {
+
+                if (!int.TryParse(textBoxPPT.Text, out int ppt))
+                {
                     MessageBox.Show("Bad PPT value.");
                     return;
                 }
-                if(!int.TryParse(textBoxTDC.Text, out tdc)) {
+                if (!int.TryParse(textBoxTDC.Text, out int tdc))
+                {
                     MessageBox.Show("Bad TDC value.");
                     return;
                 }
-                if(!int.TryParse(textBoxEDC.Text, out edc)) {
+                if (!int.TryParse(textBoxEDC.Text, out int edc))
+                {
                     MessageBox.Show("Bad EDC value.");
                     return;
                 }
-                if(!int.TryParse(textBoxScalar.Text, out scalar) || scalar < 1 || scalar > 10) {
+                if (!int.TryParse(textBoxScalar.Text, out int scalar) || scalar < 1 || scalar > 10)
+                {
                     MessageBox.Show("Bad Scalar value.");
                     return;
                 }
@@ -307,61 +346,74 @@ namespace AsusZenStates
                 NotificationIcon.di.MemWrite(DataInterface.REG_SCALAR, (UInt64)scalar);
 
                 NotificationIcon.di.MemWrite(DataInterface.REG_PERF_BIAS, (UInt64)comboBoxPerfbias.SelectedIndex);
-                
+
                 NotificationIcon.di.MemWrite(DataInterface.REG_CLIENT_FLAGS, flags);
 
                 // Send update flag command
                 NotificationIcon.Execute(DataInterface.NOTIFY_CLIENT_FLAGS, false);
-                
-            } catch (Exception ex) {
-				MessageBox.Show(ex.Message);
-			}
-			
-		}
-		
-		void SettingsFormMouseDown(object sender, MouseEventArgs e)
-		{
-			 if (e.Button == MouseButtons.Left) {
-		        ReleaseCapture();
-		        SendMessage(Handle, WM_NCLBUTTONDOWN, HT_CAPTION, 0);
-		    }
-		}
-		
-		void CheckBoxSystemStartupCheckedChanged(object sender, EventArgs e)
-		{
-            if(checkBoxApplyOnStart.Checked) checkBoxGuiOnStart.Checked = true;
-		}
-		void CheckBoxStartWithGUICheckedChanged(object sender, EventArgs e)
-		{
-            if(!checkBoxGuiOnStart.Checked) checkBoxApplyOnStart.Checked = false;
-		}
 
-        private void buttonDefaults_Click(object sender, EventArgs e) {
-            try {
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message);
+            }
+
+        }
+
+        void SettingsFormMouseDown(object sender, MouseEventArgs e)
+        {
+            if (e.Button == MouseButtons.Left)
+            {
+                ReleaseCapture();
+                SendMessage(Handle, WM_NCLBUTTONDOWN, HT_CAPTION, 0);
+            }
+        }
+
+        void CheckBoxSystemStartupCheckedChanged(object sender, EventArgs e)
+        {
+            if (checkBoxApplyOnStart.Checked) checkBoxGuiOnStart.Checked = true;
+        }
+        void CheckBoxStartWithGUICheckedChanged(object sender, EventArgs e)
+        {
+            if (!checkBoxGuiOnStart.Checked) checkBoxApplyOnStart.Checked = false;
+        }
+
+        private void buttonDefaults_Click(object sender, EventArgs e)
+        {
+            try
+            {
                 // Send restore command
                 NotificationIcon.Execute(DataInterface.NOTIFY_RESTORE, true);
 
                 buttonSave.Enabled = !NotificationIcon.SettingsSaved;
 
-            } catch(Exception ex) {
+            }
+            catch (Exception ex)
+            {
                 MessageBox.Show(ex.Message);
             }
         }
-        
-        private void buttonSave_Click(object sender, EventArgs e) {
-            try {
+
+        private void buttonSave_Click(object sender, EventArgs e)
+        {
+            try
+            {
                 // Send restore command
                 NotificationIcon.Execute(DataInterface.NOTIFY_SAVE, false);
 
                 buttonSave.Enabled = !NotificationIcon.SettingsSaved;
 
-            } catch(Exception ex) {
+            }
+            catch (Exception ex)
+            {
                 MessageBox.Show(ex.Message);
             }
         }
 
-        private void comboBoxPerfenh_SelectedIndexChanged(object sender, EventArgs e) {
-            switch(comboBoxPerfenh.SelectedIndex) {
+        private void comboBoxPerfenh_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            switch (comboBoxPerfenh.SelectedIndex)
+            {
                 case (int)NotificationIcon.PerfEnh.None:
                     textBoxPPT.Text = "0";
                     textBoxTDC.Text = "0";

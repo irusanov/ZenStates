@@ -1,10 +1,12 @@
-﻿using System;
-using System.Xml;
+﻿using AsusZenStates;
+using System;
 using System.IO;
-using AsusZenStates;
+using System.Xml;
 
-namespace AsusZsSrv {
-    public class Settings {
+namespace AsusZsSrv
+{
+    public class Settings
+    {
 
         private const string FileName = "AsusZsSettings.xml";
         private string FilePath;
@@ -15,7 +17,7 @@ namespace AsusZsSrv {
         // Application info
         public byte ServiceVersion = 0;
         public byte LastState = 0;
-        
+
         // Settings
         public UInt64[] Pstate = new UInt64[CPUHandler.NumPstates];
 
@@ -33,47 +35,58 @@ namespace AsusZsSrv {
 
         //public CPUHandler.PerfEnh PerformanceEnhancer = 0;
         public CPUHandler.PerfBias PerformanceBias = 0;
-        
-        public Settings() {
+
+        public Settings()
+        {
 
             // Path
             FilePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "ASUS ZenStates");
             FullFilePath = Path.Combine(FilePath, FileName);
 
             // Check if directory exists
-            if(!Directory.Exists(FilePath)) {
+            if (!Directory.Exists(FilePath))
+            {
                 // Create directory
                 Directory.CreateDirectory(FilePath);
             }
 
             bool res = false;
-            
+
             // Check if file exists
-            if(File.Exists(FullFilePath)) {
+            if (File.Exists(FullFilePath))
+            {
                 // Read file
                 res = ReadSettingsFromFile();
-                if(Pstate[0] == 0 && Pstate[1] == 0 && Pstate[2] == 0) SettingsReset = true;
-                if(ServiceVersion != DataInterface.ServiceVersion) res = false;
+                if (Pstate[0] == 0 && Pstate[1] == 0 && Pstate[2] == 0) SettingsReset = true;
+                if (ServiceVersion != DataInterface.ServiceVersion) res = false;
             }
 
-            if(!res) {
+            if (!res)
+            {
                 // Create/overwrite file
                 WriteSettingsToFile();
             }
 
         }
 
-        public void Save() {
+        public void Save()
+        {
             WriteSettingsToFile();
         }
-        
-        private void WriteSettingsToFile() {
-            XmlWriterSettings xmlWriterSettings = new XmlWriterSettings();
-            xmlWriterSettings.Indent = true;
 
-            try {
-                using(FileStream fs = new FileStream(FullFilePath, FileMode.Create)) {
-                    using(XmlWriter writer = XmlWriter.Create(fs, xmlWriterSettings)) {
+        private void WriteSettingsToFile()
+        {
+            XmlWriterSettings xmlWriterSettings = new XmlWriterSettings
+            {
+                Indent = true
+            };
+
+            try
+            {
+                using (FileStream fs = new FileStream(FullFilePath, FileMode.Create))
+                {
+                    using (XmlWriter writer = XmlWriter.Create(fs, xmlWriterSettings))
+                    {
                         writer.WriteStartDocument();
                         writer.WriteComment("ASUS ZenStates Settings file");
                         writer.WriteStartElement("ZenStates");
@@ -106,27 +119,36 @@ namespace AsusZsSrv {
                     fs.Close();
                     fs.Dispose();
                 }
-            } catch(Exception ex) {
+            }
+            catch (Exception ex)
+            {
                 throw new Exception("Settings: " + ex.Message);
             }
-            
+
         }
 
-        private bool ReadSettingsFromFile() {
-            try {
-                using(FileStream fs = new FileStream(FullFilePath, FileMode.Open)) {
-                    using(XmlReader reader = XmlReader.Create(fs)) {
+        private bool ReadSettingsFromFile()
+        {
+            try
+            {
+                using (FileStream fs = new FileStream(FullFilePath, FileMode.Open))
+                {
+                    using (XmlReader reader = XmlReader.Create(fs))
+                    {
 
                         // Find ZenStates Element
-                        while(reader.Read() && reader.NodeType == XmlNodeType.Element && reader.Name == "ZenStates") { }
-                        
+                        while (reader.Read() && reader.NodeType == XmlNodeType.Element && reader.Name == "ZenStates") { }
+
                         // Find Application Element
-                        while(reader.Read() && reader.NodeType == XmlNodeType.Element && reader.Name == "Application") { }
+                        while (reader.Read() && reader.NodeType == XmlNodeType.Element && reader.Name == "Application") { }
 
                         // Read Application Element variables
-                        while(reader.Read() && reader.NodeType != XmlNodeType.EndElement) {
-                            if(reader.NodeType == XmlNodeType.Element) {
-                                switch(reader.Name) {
+                        while (reader.Read() && reader.NodeType != XmlNodeType.EndElement)
+                        {
+                            if (reader.NodeType == XmlNodeType.Element)
+                            {
+                                switch (reader.Name)
+                                {
                                     case "ServiceVersion": ServiceVersion = (byte)reader.ReadElementContentAsInt(); break;
                                     case "SettingsReset": SettingsReset = reader.ReadElementContentAsString() == "True" ? true : false; break;
                                     case "LastState": LastState = (byte)reader.ReadElementContentAsInt(); break;
@@ -135,18 +157,21 @@ namespace AsusZsSrv {
                         }
 
                         // Find Settings Element
-                        while(reader.Read() && reader.NodeType == XmlNodeType.Element && reader.Name == "Settings") { }
+                        while (reader.Read() && reader.NodeType == XmlNodeType.Element && reader.Name == "Settings") { }
 
                         // Read Settings Element variables
-                        while(reader.Read() && reader.NodeType != XmlNodeType.EndElement) {
-                            if(reader.NodeType == XmlNodeType.Element) {
-                                switch(reader.Name) {
+                        while (reader.Read() && reader.NodeType != XmlNodeType.EndElement)
+                        {
+                            if (reader.NodeType == XmlNodeType.Element)
+                            {
+                                switch (reader.Name)
+                                {
                                     case "TrayIconAtStart": TrayIconAtStart = reader.ReadElementContentAsString() == "True" ? true : false; break;
                                     case "ApplyAtStart": ApplyAtStart = reader.ReadElementContentAsString() == "True" ? true : false; ; break;
                                     case "P80Temp": P80Temp = reader.ReadElementContentAsString() == "True" ? true : false; break;
-                                    case "P0": Pstate[0] = Convert.ToUInt64(reader.ReadElementContentAsString(),16); break;
-                                    case "P1": Pstate[1] = Convert.ToUInt64(reader.ReadElementContentAsString(),16); break;
-                                    case "P2": Pstate[2] = Convert.ToUInt64(reader.ReadElementContentAsString(),16); break;
+                                    case "P0": Pstate[0] = Convert.ToUInt64(reader.ReadElementContentAsString(), 16); break;
+                                    case "P1": Pstate[1] = Convert.ToUInt64(reader.ReadElementContentAsString(), 16); break;
+                                    case "P2": Pstate[2] = Convert.ToUInt64(reader.ReadElementContentAsString(), 16); break;
                                     case "ZenC6Core": ZenC6Core = reader.ReadElementContentAsString() == "True" ? true : false; break;
                                     case "ZenC6Package": ZenC6Package = reader.ReadElementContentAsString() == "True" ? true : false; break;
                                     case "ZenCorePerfBoost": ZenCorePerfBoost = reader.ReadElementContentAsString() == "True" ? true : false; break;
@@ -160,7 +185,9 @@ namespace AsusZsSrv {
                         }
                     }
                 }
-            } catch(Exception ex) {
+            }
+            catch (Exception ex)
+            {
                 //throw new Exception("Settings: " + ex.Message);
                 return false;
             }

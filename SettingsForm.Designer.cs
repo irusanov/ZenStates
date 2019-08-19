@@ -8,34 +8,33 @@
  */
 namespace AsusZenStates
 {
-	partial class SettingsForm
-	{
-		/// <summary>
-		/// Designer variable used to keep track of non-visual components.
-		/// </summary>
-		private System.ComponentModel.IContainer components = null;
-		
-		/// <summary>
-		/// Disposes resources used by the form.
-		/// </summary>
-		/// <param name="disposing">true if managed resources should be disposed; otherwise, false.</param>
-		protected override void Dispose(bool disposing)
-		{
-			if (disposing) {
-				if (components != null) {
-					components.Dispose();
-				}
-			}
-			base.Dispose(disposing);
-		}
-		
-		/// <summary>
-		/// This method is required for Windows Forms designer support.
-		/// Do not change the method contents inside the source code editor. The Forms designer might
-		/// not be able to load this method if it was changed manually.
-		/// </summary>
-		private void InitializeComponent()
-		{
+    partial class SettingsForm
+    {
+        /// <summary>
+        /// Designer variable used to keep track of non-visual components.
+        /// </summary>
+        private System.ComponentModel.IContainer components = null;
+
+        /// <summary>
+        /// Disposes resources used by the form.
+        /// </summary>
+        /// <param name="disposing">true if managed resources should be disposed; otherwise, false.</param>
+        protected override void Dispose(bool disposing)
+        {
+            if (disposing)
+            {
+                if (components != null) components.Dispose();
+            }
+            base.Dispose(disposing);
+        }
+
+        /// <summary>
+        /// This method is required for Windows Forms designer support.
+        /// Do not change the method contents inside the source code editor. The Forms designer might
+        /// not be able to load this method if it was changed manually.
+        /// </summary>
+        private void InitializeComponent()
+        {
             this.buttonApply = new System.Windows.Forms.Button();
             this.labelMB = new System.Windows.Forms.Label();
             this.labelCPU = new System.Windows.Forms.Label();
@@ -354,19 +353,18 @@ namespace AsusZenStates
             this.MouseDown += new System.Windows.Forms.MouseEventHandler(this.SettingsFormMouseDown);
             this.ResumeLayout(false);
             this.PerformLayout();
+        }
 
-		}
-		
-		private System.Windows.Forms.CheckBox checkBoxApplyOnStart;
-		private System.Windows.Forms.Label labelCPU;
-		private System.Windows.Forms.Label labelMB;
-		private System.Windows.Forms.Button buttonApply;
-		private System.Windows.Forms.Label label1;
-		private System.Windows.Forms.CheckBox checkBoxGuiOnStart;
-		private System.Windows.Forms.CheckBox checkBoxC6Package;
-		private System.Windows.Forms.CheckBox checkBoxC6Core;
-		private System.Windows.Forms.ComboBox comboBoxPerfbias;
-		private System.Windows.Forms.Label labelPerfbias;
+        private System.Windows.Forms.CheckBox checkBoxApplyOnStart;
+        private System.Windows.Forms.Label labelCPU;
+        private System.Windows.Forms.Label labelMB;
+        private System.Windows.Forms.Button buttonApply;
+        private System.Windows.Forms.Label label1;
+        private System.Windows.Forms.CheckBox checkBoxGuiOnStart;
+        private System.Windows.Forms.CheckBox checkBoxC6Package;
+        private System.Windows.Forms.CheckBox checkBoxC6Core;
+        private System.Windows.Forms.ComboBox comboBoxPerfbias;
+        private System.Windows.Forms.Label labelPerfbias;
         private System.Windows.Forms.Label labelPPT;
         private System.Windows.Forms.Button buttonDefaults;
         private System.Windows.Forms.CheckBox checkBoxP80temp;
