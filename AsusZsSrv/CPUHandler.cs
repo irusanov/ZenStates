@@ -47,7 +47,7 @@ namespace AsusZsSrv
 	/// </summary>
 	public class CPUHandler
 	{
-		public enum CPUType { Unsupported=0, DEBUG=1, Summit_Ridge, Threadripper, Raven_Ridge, Pinnacle_Ridge, Matisse, Picasso };
+		public enum CPUType { Unsupported=0, DEBUG=1, Summit_Ridge, Threadripper, Raven_Ridge, Pinnacle_Ridge, Matisse, Picasso, Rome };
 		public enum PerfBias { None=0, Cinebench_R15, Cinebench_R11p5, Geekbench_3 };
         //public enum PerfEnh { None = 0, Level1, Level2, Level3_OC, Level4_OC };
 
@@ -198,6 +198,10 @@ namespace AsusZsSrv
                 case 0x00870F10: // CPU \ Zen2 \ Matisse \ MTS - B0 \ 7nm + 14nm I/ O Die
                 case 0x00870F00: // CPU \ Zen2 \ Matisse \ MTS - A0 \ 7nm + 14nm I/ O Die
                     this.cpuType = CPUType.Matisse;
+                    break;
+                case 0x00830F00:
+                case 0x00830F10: // CPU \ Epyc 2 \ Rome \ 7nm
+                    this.cpuType = CPUType.Rome;
                     break;
                 default:
 					this.cpuType = CPUType.Unsupported;
