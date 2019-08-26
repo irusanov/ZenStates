@@ -1,4 +1,4 @@
-﻿/*
+/*
 // Feature Control Defines
 #define FEATURE_CCLK_CONTROLLER_BIT    0
 #define FEATURE_FAN_CONTROLLER_BIT     1
@@ -77,15 +77,29 @@ namespace AsusZsSrv
         const UInt32 SMU_OFFSET_ADDR = 0xB8;
         const UInt32 SMU_OFFSET_DATA = 0xBC;
 
-        const UInt32 SMU_ADDR_MSG = 0x03B10528;
-        const UInt32 SMU_ADDR_RSP = 0x03B10564;
-        const UInt32 SMU_ADDR_ARG0 = 0x03B10598;
-        const UInt32 SMU_ADDR_ARG1 = 0x03B1059C;
+        //const UInt32 SMU_ADDR_MSG = 0x03B10530;
+        const UInt32 SMU_ADDR_MSG = 0x03B10530; // Matisse;
+        // const UInt32 SMU_ADDR_RSP = 0x03B1057C;
+        const UInt32 SMU_ADDR_RSP = 0x03B1057C; // Matisse;
+        //const UInt32 SMU_ADDR_ARG0 = 0x03B10998;
+        const UInt32 SMU_ADDR_ARG0 = 0x03B109C4; // Matisse
+        const UInt32 SMU_ADDR_ARG1 = SMU_ADDR_ARG0 + 0x4;
+
         const UInt32 THM_TCON_CUR_TMP = 0x00059800;
         const UInt32 THM_TCON_THERM_TRIP = 0x00059808;
 
-        const UInt32 SMC_MSG_EnableSmuFeatures = 0x09;
-        const UInt32 SMC_MSG_DisableSmuFeatures = 0x0A;
+        const UInt32 SMC_MSG_TestMessage = 0x1;
+        const UInt32 SMC_MSG_GetSmuVersion = 0x2;
+        const UInt32 SMC_MSG_EnableSmuFeatures = 0x3; // Matisse 0x09;
+        const UInt32 SMC_MSG_DisableSmuFeatures = 0x4; // Matisse 0x0A;
+        const UInt32 SMC_MSG_EnableOverclocking = 0x24;
+        const UInt32 SMC_MSG_DisableOverclocking = 0x25;
+        const UInt32 SMC_MSG_SetOverclockFreqAllCore = 0x27;
+        const UInt32 SMC_MSG_SetOverclockVid = 0x28;
+        const UInt32 SMC_MSG_BoostLimitFreqAllCore = 0x29;
+        const UInt32 SMC_MSG_GetOverclockCap = 0x2C;
+        const UInt32 SMC_MSG_MessageCount = 0x2D;
+
         const UInt32 SMC_MSG_SetPPTLimit = 0x31;
         const UInt32 SMC_MSG_TCTL_OFFSET = 0x3A;
         const UInt32 SMC_MSG_SetTDCLimit = 0x43;
