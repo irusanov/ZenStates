@@ -77,9 +77,9 @@ namespace AsusZsSrv
         const UInt32 SMU_OFFSET_ADDR = 0xB8;
         const UInt32 SMU_OFFSET_DATA = 0xBC;
 
-        //const UInt32 SMU_ADDR_MSG = 0x03B10530;
+        //const UInt32 SMU_ADDR_MSG = 0x03B10528;
         const UInt32 SMU_ADDR_MSG = 0x03B10530; // Matisse;
-        // const UInt32 SMU_ADDR_RSP = 0x03B1057C;
+        // const UInt32 SMU_ADDR_RSP = 0x03B10564;
         const UInt32 SMU_ADDR_RSP = 0x03B1057C; // Matisse;
         //const UInt32 SMU_ADDR_ARG0 = 0x03B10998;
         const UInt32 SMU_ADDR_ARG0 = 0x03B109C4; // Matisse
@@ -546,144 +546,44 @@ namespace AsusZsSrv
 
         public bool SetPPT(int ppt)
         {
-
             bool res;
 
-            // Mutex
-            res = hMutexPci.WaitOne(5000);
-
-            // Clear response
-            if (res)
-            {
-                res = SmuWriteReg(SMU_ADDR_RSP, 0);
-                if (res)
-                {
-                    // Set arg0
-                    res = SmuWriteReg(SMU_ADDR_ARG0, (UInt32)ppt * 1000);
-                    if (res)
-                    {
-                        // Send message
-                        res = SmuWriteReg(SMU_ADDR_MSG, SMC_MSG_SetPPTLimit);
-                        if (res)
-                        {
-                            res = SmuWaitDone();
-                        }
-                    }
-                }
-
-                hMutexPci.ReleaseMutex();
-            }
+            res = SmuWrite(SMC_MSG_SetPPTLimit, (UInt32)ppt * 1000);
 
             if (res) ZenPPT = ppt;
 
             return res;
-
         }
 
         public bool SetTDC(int tdc)
         {
-
             bool res;
 
-            // Mutex
-            res = hMutexPci.WaitOne(5000);
-
-            // Clear response
-            if (res)
-            {
-                res = SmuWriteReg(SMU_ADDR_RSP, 0);
-                if (res)
-                {
-                    // Set arg0
-                    res = SmuWriteReg(SMU_ADDR_ARG0, (UInt32)tdc * 1000);
-                    if (res)
-                    {
-                        // Send message
-                        res = SmuWriteReg(SMU_ADDR_MSG, SMC_MSG_SetTDCLimit);
-                        if (res)
-                        {
-                            res = SmuWaitDone();
-                        }
-                    }
-                }
-
-                hMutexPci.ReleaseMutex();
-            }
+            res = SmuWrite(SMC_MSG_SetTDCLimit, (UInt32)tdc * 1000);
 
             if (res) ZenTDC = tdc;
 
             return res;
-
         }
 
         public bool SetEDC(int edc)
         {
-
             bool res;
-
-            // Mutex
-            res = hMutexPci.WaitOne(5000);
-
-            // Clear response
-            if (res)
-            {
-                res = SmuWriteReg(SMU_ADDR_RSP, 0);
-                if (res)
-                {
-                    // Set arg0
-                    res = SmuWriteReg(SMU_ADDR_ARG0, (UInt32)edc * 1000);
-                    if (res)
-                    {
-                        // Send message
-                        res = SmuWriteReg(SMU_ADDR_MSG, SMC_MSG_SetEDCLimit);
-                        if (res)
-                        {
-                            res = SmuWaitDone();
-                        }
-                    }
-                }
-
-                hMutexPci.ReleaseMutex();
-            }
+            res = SmuWrite(SMC_MSG_SetEDCLimit, (UInt32)edc * 1000);
 
             if (res) ZenEDC = edc;
 
             return res;
-
         }
 
         public bool SetScalar(int scalar)
         {
-
             bool res;
+            res = SmuWrite(SMC_MSG_SetFITLimitScalar, (UInt32)scalar);
 
-            // Mutex
-            res = hMutexPci.WaitOne(5000);
-
-            // Clear response
-            if (res)
-            {
-                res = SmuWriteReg(SMU_ADDR_RSP, 0);
-                if (res)
-                {
-                    // Set arg0
-                    res = SmuWriteReg(SMU_ADDR_ARG0, (UInt32)scalar);
-                    if (res)
-                    {
-                        // Send message
-                        res = SmuWriteReg(SMU_ADDR_MSG, SMC_MSG_SetFITLimitScalar);
-                        if (res)
-                        {
-                            res = SmuWaitDone();
-                        }
-                    }
-                }
-
-                hMutexPci.ReleaseMutex();
-            }
+            if (res) ZenScalar = scalar;
 
             return res;
-
         }
 
         /*public bool SetPerfEnhancer(PerfEnh pe) {
@@ -880,15 +780,7 @@ namespace AsusZsSrv
                 if (res)
                 {
                     // Check completion
-                    UInt32 status = 0;
-                    UInt32 timeout = 1000;
-
-                    while ((!res || status != 1) && --timeout > 0)
-                    {
-                        res = SmuReadReg(SMU_ADDR_RSP, ref status);
-                    }
-
-                    if (status != 1 || timeout == 0) res = false;
+                    res = SmuWaitDone();
 
                     if (res)
                     {
@@ -898,43 +790,36 @@ namespace AsusZsSrv
             }
 
             return res;
-
         }
 
         private bool SmuWrite(UInt32 msg, UInt32 data)
         {
             bool res;
 
+            // Mutex
+            res = hMutexPci.WaitOne(5000);
+
             // Clear response
-            res = SmuWriteReg(SMU_ADDR_RSP, 0);
+            if (res) res = SmuWriteReg(SMU_ADDR_RSP, 0);
             if (res)
             {
                 // Write data
                 res = SmuWriteReg(SMU_ADDR_ARG0, data);
                 if (res)
                 {
-                    res = SmuWriteReg(SMU_ADDR_ARG1, 0);
+                    SmuWriteReg(SMU_ADDR_ARG1, 0);
                 }
                 // Send message
                 res = SmuWriteReg(SMU_ADDR_MSG, msg);
                 if (res)
                 {
-                    // Check completion
-                    UInt32 status = 0;
-                    UInt32 timeout = 1000;
-
-                    while (!res && status != 1 && --timeout > 0)
-                    {
-                        res = SmuReadReg(SMU_ADDR_RSP, ref status);
-                    }
-
-                    if (status != 1 || timeout == 0) res = false;
-
+                    res = SmuWaitDone();
                 }
             }
 
-            return res;
+            hMutexPci.ReleaseMutex();
 
+            return res;
         }
 
         public bool GetTctlOffset(ref UInt32 offset)
@@ -979,7 +864,6 @@ namespace AsusZsSrv
 
         public bool WritePort80Temp(double temp)
         {
-
             if (temp > 99) temp = 99;
             else if (temp < 0) temp = 0;
 
@@ -1014,12 +898,10 @@ namespace AsusZsSrv
 
             // Perf Bias
             SetPerfBias(PerfBias.None);
-
         }
 
         public void SaveSettings()
         {
-
             SettingsStore.TrayIconAtStart = TrayIconAtStart;
             SettingsStore.ApplyAtStart = ApplyAtStart;
             SettingsStore.P80Temp = P80Temp;
@@ -1044,7 +926,6 @@ namespace AsusZsSrv
             SettingsStore.Save();
 
             SettingsSaved = true;
-
         }
 
         public void Unload()
