@@ -18,7 +18,7 @@ namespace AsusZenStates
         [DllImportAttribute("user32.dll")]
         public static extern bool ReleaseCapture();
 
-        private const int PSTATES = 3;
+        private const int PSTATES = 1;
         private const int FID_MAX = 0xFF;
         private const int FID_MIN = 0x10;
         private const int VID_MAX = 0xA9;
@@ -27,7 +27,7 @@ namespace AsusZenStates
         private const double FREQ_MAX = 70;
         private const double FREQ_MIN = 5.5;
 
-        CheckBox[] PstateEn = new CheckBox[PSTATES];
+        // CheckBox[] PstateEn = new CheckBox[PSTATES];
         ComboBox[] PstateFid = new ComboBox[PSTATES];
         ComboBox[] PstateDid = new ComboBox[PSTATES];
         ComboBox[] PstateVid = new ComboBox[PSTATES];
@@ -56,10 +56,11 @@ namespace AsusZenStates
         }
 
         CustomListItem[] PERFBIAS = {
-            new CustomListItem(0, "Disabled"),
-            new CustomListItem(1, "Cinebench R15 / AIDA64"),
-            new CustomListItem(2, "Cinebench R11.5"),
-            new CustomListItem(3, "Geekbench 3")
+            new CustomListItem(0, "Auto (BIOS)"),
+            new CustomListItem(1, "Disabled"),
+            new CustomListItem(2, "Cinebench R15 / AIDA64"),
+            new CustomListItem(3, "Cinebench R11.5"),
+            new CustomListItem(4, "Geekbench 3")
         };
 
         CustomListItem[] PERFENH = {
@@ -103,44 +104,45 @@ namespace AsusZenStates
             label1.Text = "version " + Application.ProductVersion.Substring(0, Application.ProductVersion.LastIndexOf("."));
 
             // Pstate controls
-            for (int i = 0; i < PstateEn.Length; i++)
+            for (int i = 0; i < PstateFid.Length; i++)
             {
-
                 // Enable checkbox
-                PstateEn[i] = new CheckBox
+                /*PstateEn[i] = new CheckBox
                 {
                     Text = "P" + i.ToString(),
                     Size = new System.Drawing.Size(40, 20),
-                    Location = new System.Drawing.Point(10, 50 + i * 25)
+                    Location = new System.Drawing.Point(10, 7 + i * 25),
+                    Enabled = false
                 };
-                this.Controls.Add(PstateEn[i]);
+                this.splitContainer1.Panel2.Controls.Add(PstateEn[i]);*/
 
                 // FID combobox
                 PstateFid[i] = new ComboBox
                 {
-                    Size = new System.Drawing.Size(80, 20),
-                    Location = new System.Drawing.Point(50, 50 + i * 25)
+                    Size = new System.Drawing.Size(120, 20),
+                    Location = new System.Drawing.Point(10, 7 + i * 25)
                 };
-                this.Controls.Add(PstateFid[i]);
+                this.splitContainer1.Panel2.Controls.Add(PstateFid[i]);
 
                 // DID combobox
                 PstateDid[i] = new ComboBox
                 {
                     Size = new System.Drawing.Size(50, 20),
-                    Location = new System.Drawing.Point(135, 50 + i * 25)
+                    Location = new System.Drawing.Point(135, 7 + i * 25),
+                    Enabled = false
                 };
                 foreach (CustomListItem item in DIVIDERS)
                 {
                     PstateDid[i].Items.Add(item);
                 }
                 PstateDid[i].SelectedIndexChanged += UpdateFids;
-                this.Controls.Add(PstateDid[i]);
+                this.splitContainer1.Panel2.Controls.Add(PstateDid[i]);
 
                 // VID combobox
                 PstateVid[i] = new ComboBox
                 {
                     Size = new System.Drawing.Size(80, 20),
-                    Location = new System.Drawing.Point(190, 50 + i * 25)
+                    Location = new System.Drawing.Point(190, 7 + i * 25)
                 };
                 int k = 0;
                 for (byte j = VID_MIN; j <= VID_MAX; j++)
@@ -149,8 +151,7 @@ namespace AsusZenStates
                     CustomListItem item = new CustomListItem(k++, j, voltage.ToString("F3") + "V");
                     PstateVid[i].Items.Add(item);
                 }
-                this.Controls.Add(PstateVid[i]);
-
+                this.splitContainer1.Panel2.Controls.Add(PstateVid[i]);
             }
 
             foreach (CustomListItem item in PERFBIAS)
@@ -171,7 +172,7 @@ namespace AsusZenStates
             textBoxEDC.Enabled = false;*/
 
             // Save button
-            buttonSave.Enabled = false;
+            SetSavedButton(false);
 
             // ToolTip
             ToolTip toolTip = new ToolTip();
@@ -179,14 +180,12 @@ namespace AsusZenStates
             toolTip.SetToolTip(labelPPT, "Socket Power (W)");
             toolTip.SetToolTip(labelEDC, "Electrical Design Current (A)");
             toolTip.SetToolTip(labelTDC, "Thermal Design Current (A)");
-
         }
 
         public void ResetValues()
         {
             try
             {
-
                 // PerfBias
                 comboBoxPerfbias.SelectedIndex = (int)NotificationIcon.perfBias;
                 //comboBoxPerfenh.SelectedIndex = (int)NotificationIcon.PerfEnh.None;
@@ -195,7 +194,9 @@ namespace AsusZenStates
                 {
 
                     // PstateEn
-                    PstateEn[i].Checked = Convert.ToBoolean((NotificationIcon.Pstate[i] >> 63) & 0x1);
+                    // PstateEn[i].Checked = Convert.ToBoolean((NotificationIcon.Pstate[i] >> 63) & 0x1);
+
+                    PstateFid[i].Enabled = Convert.ToBoolean(NotificationIcon.ZenOc);
 
                     // DID
                     byte did = Convert.ToByte((NotificationIcon.Pstate[i] >> 8) & 0x3F);
@@ -206,11 +207,11 @@ namespace AsusZenStates
 
                     // VID
                     byte vid = Convert.ToByte((NotificationIcon.Pstate[i] >> 14) & 0xFF);
-
                     foreach (CustomListItem item in PstateVid[i].Items)
                     {
                         if (item.value == vid) PstateVid[i].SelectedIndex = item.id;
                     }
+                    PstateVid[i].Enabled = Convert.ToBoolean(NotificationIcon.ZenOc);
                 }
 
                 // FID/Ratios
@@ -223,19 +224,20 @@ namespace AsusZenStates
             }
 
             // Checkboxes
-            if (NotificationIcon.ApplyAtStart) checkBoxApplyOnStart.Checked = true;
-            if (NotificationIcon.TrayIconAtStart) checkBoxGuiOnStart.Checked = true;
-            if (NotificationIcon.P80Temp) checkBoxP80temp.Checked = true;
+            checkBoxApplyOnStart.Checked = Convert.ToBoolean(NotificationIcon.ApplyAtStart);
+            checkBoxGuiOnStart.Checked = Convert.ToBoolean(NotificationIcon.TrayIconAtStart);
+            checkBoxP80temp.Checked = Convert.ToBoolean(NotificationIcon.P80Temp);
 
-            if (NotificationIcon.ZenC6Core) checkBoxC6Core.Checked = true;
-            if (NotificationIcon.ZenC6Package) checkBoxC6Package.Checked = true;
-            if (NotificationIcon.ZenCorePerfBoost) checkBoxCpb.Checked = true;
+            checkBoxC6Core.Checked = Convert.ToBoolean(NotificationIcon.ZenC6Core);
+            checkBoxC6Package.Checked = Convert.ToBoolean(NotificationIcon.ZenC6Package);
+            checkBoxCpb.Checked = Convert.ToBoolean(NotificationIcon.ZenCorePerfBoost);
+
+            checkBoxOc.Checked = Convert.ToBoolean(NotificationIcon.ZenOc);
 
             textBoxPPT.Text = NotificationIcon.ZenPPT.ToString();
             textBoxTDC.Text = NotificationIcon.ZenTDC.ToString();
             textBoxEDC.Text = NotificationIcon.ZenEDC.ToString();
             textBoxScalar.Text = NotificationIcon.ZenScalar.ToString();
-
         }
 
         public void SetSavedButton(bool state)
@@ -297,7 +299,8 @@ namespace AsusZenStates
             {
                 for (int i = 0; i < PstateFid.Length; i++)
                 {
-                    UInt64 en = Convert.ToUInt64(PstateEn[i].Checked);
+                    // UInt64 en = Convert.ToUInt64(PstateEn[i].Checked);
+                    UInt64 en = Convert.ToUInt64(checkBoxOc.Checked);
                     UInt64 fid = Convert.ToUInt64(((CustomListItem)PstateFid[i].SelectedItem).value);
                     UInt64 did = Convert.ToUInt64(((CustomListItem)PstateDid[i].SelectedItem).value);
                     UInt64 vid = Convert.ToUInt64(((CustomListItem)PstateVid[i].SelectedItem).value);
@@ -308,6 +311,9 @@ namespace AsusZenStates
                     ps |= (en & 1) << 63 | (vid & 0xFF) << 14 | (did & 0xFF) << 8 | fid & 0xFF;
 
                     NotificationIcon.di.MemWrite(DataInterface.REG_P0 + i, ps);
+
+                    PstateFid[i].Enabled = checkBoxOc.Checked;
+                    PstateVid[i].Enabled = checkBoxOc.Checked;
                 }
 
                 UInt64 flags = 0;
@@ -317,7 +323,7 @@ namespace AsusZenStates
                 if (checkBoxC6Core.Checked) flags |= DataInterface.FLAG_C6CORE;
                 if (checkBoxC6Package.Checked) flags |= DataInterface.FLAG_C6PACKAGE;
                 if (checkBoxCpb.Checked) flags |= DataInterface.FLAG_CPB;
-
+                if (checkBoxOc.Checked) flags |= DataInterface.FLAG_OC;
 
                 if (!int.TryParse(textBoxPPT.Text, out int ppt))
                 {
@@ -357,7 +363,6 @@ namespace AsusZenStates
             {
                 MessageBox.Show(ex.Message);
             }
-
         }
 
         void SettingsFormMouseDown(object sender, MouseEventArgs e)

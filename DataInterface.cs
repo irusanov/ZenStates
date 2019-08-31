@@ -54,6 +54,7 @@ namespace AsusZenStates
         public const UInt64 FLAG_SHUTDOWN_UNCLEAN = 1 << 8;
         public const UInt64 FLAG_P80_TEMP_EN = 1 << 9;
         public const UInt64 FLAG_CPB = 1 << 10;
+        public const UInt64 FLAG_OC = 1 << 11;
 
         public const UInt64 NOTIFY_CLEAR = 0x00;
         public const UInt64 NOTIFY_CLIENT_FLAGS = 0x01;

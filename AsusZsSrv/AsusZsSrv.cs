@@ -1,4 +1,4 @@
-﻿using AsusZenStates;
+using AsusZenStates;
 using Microsoft.Win32;
 using System;
 using System.Collections.Specialized;
@@ -187,6 +187,9 @@ namespace AsusZsSrv
                     if ((CLIENT_FLAGS & DataInterface.FLAG_CPB) == 0) cpuh.ZenCorePerfBoost = false;
                     else cpuh.ZenCorePerfBoost = true;
 
+                    if ((CLIENT_FLAGS & DataInterface.FLAG_OC) == 0) cpuh.ZenOc = false;
+                    else cpuh.ZenOc = true;
+
                     // XFR2
                     cpuh.ZenPPT = (int)di.MemRead(DataInterface.REG_PPT);
                     cpuh.ZenTDC = (int)di.MemRead(DataInterface.REG_TDC);
@@ -200,19 +203,21 @@ namespace AsusZsSrv
                     SetStartupService(true);
                     SetStartupGUI(cpuh.TrayIconAtStart);
 
+                    cpuh.SetOcMode(cpuh.ZenOc);
                     // Write new P-states
                     for (int i = 0; i < CPUHandler.NumPstates; i++)
                     {
                         cpuh.WritePstate(i, di.MemRead(DataInterface.REG_P0 + i));
                     }
+                    cpuh.setOverclockFrequencyAllCores(0, di.MemRead(DataInterface.REG_P0));
 
                     cpuh.SetC6Core(cpuh.ZenC6Core);
                     cpuh.SetC6Package(cpuh.ZenC6Package);
                     cpuh.SetCpb(cpuh.ZenCorePerfBoost);
 
-                    cpuh.SetPPT(cpuh.ZenPPT);
+                    /*cpuh.SetPPT(cpuh.ZenPPT);
                     cpuh.SetTDC(cpuh.ZenTDC);
-                    cpuh.SetEDC(cpuh.ZenEDC);
+                    cpuh.SetEDC(cpuh.ZenEDC);*/
                     cpuh.SetScalar(cpuh.ZenScalar);
 
                     cpuh.SetPerfBias(cpuh.PerformanceBias);
@@ -231,19 +236,21 @@ namespace AsusZsSrv
 
                     P80Temp = cpuh.P80Temp;
 
+                    cpuh.SetOcMode(cpuh.ZenOc);
                     // Write new P-states
                     for (int i = 0; i < CPUHandler.NumPstates; i++)
                     {
                         cpuh.WritePstate(i, cpuh.Pstate[i]);
                     }
+                    cpuh.setOverclockFrequencyAllCores(0, cpuh.Pstate[0]);
 
                     cpuh.SetC6Core(cpuh.ZenC6Core);
                     cpuh.SetC6Package(cpuh.ZenC6Package);
                     cpuh.SetCpb(cpuh.ZenCorePerfBoost);
 
-                    cpuh.SetPPT(cpuh.ZenPPT);
+                    /*cpuh.SetPPT(cpuh.ZenPPT);
                     cpuh.SetTDC(cpuh.ZenTDC);
-                    cpuh.SetEDC(cpuh.ZenEDC);
+                    cpuh.SetEDC(cpuh.ZenEDC);*/
                     cpuh.SetScalar(cpuh.ZenScalar);
 
                     cpuh.SetPerfBias(cpuh.PerformanceBias);
@@ -301,7 +308,6 @@ namespace AsusZsSrv
 
             // Update server flags
             SetServerFlags();
-
         }
 
         protected override bool OnPowerEvent(PowerBroadcastStatus powerStatus)
@@ -313,11 +319,15 @@ namespace AsusZsSrv
 
                     if (!cpuh.ShutdownUnclean)
                     {
+                        cpuh.SetOcMode(cpuh.ZenOc);
+
                         // Write P-states
                         for (int i = 0; i < CPUHandler.NumPstates; i++)
                         {
                             cpuh.WritePstate(i, cpuh.Pstate[i]);
                         }
+
+                        cpuh.setOverclockFrequencyAllCores(0, cpuh.Pstate[0]);
 
                         // Write C-states
                         cpuh.SetC6Core(cpuh.ZenC6Core);
@@ -327,9 +337,9 @@ namespace AsusZsSrv
                         // Perf bias
                         cpuh.SetPerfBias(cpuh.PerformanceBias);
 
-                        cpuh.SetPPT(cpuh.ZenPPT);
+                        /*cpuh.SetPPT(cpuh.ZenPPT);
                         cpuh.SetTDC(cpuh.ZenTDC);
-                        cpuh.SetEDC(cpuh.ZenEDC);
+                        cpuh.SetEDC(cpuh.ZenEDC);*/
                         cpuh.SetScalar(cpuh.ZenScalar);
                     }
 
@@ -391,6 +401,7 @@ namespace AsusZsSrv
             if (cpuh.ZenC6Core) server_flags |= DataInterface.FLAG_C6CORE;
             if (cpuh.ZenC6Package) server_flags |= DataInterface.FLAG_C6PACKAGE;
             if (cpuh.ZenCorePerfBoost) server_flags |= DataInterface.FLAG_CPB;
+            if (cpuh.ZenOc) server_flags |= DataInterface.FLAG_OC;
 
             di.MemWrite(DataInterface.REG_SERVER_FLAGS, server_flags);
         }

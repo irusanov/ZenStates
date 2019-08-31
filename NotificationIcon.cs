@@ -24,7 +24,7 @@ namespace AsusZenStates
         [DllImport("psapi.dll")]
         static extern int EmptyWorkingSet(IntPtr hwProc);
 
-        public enum PerfBias { None = 0, Cinebench_R15, Cinebench_R11p5, Geekbench_3 };
+        public enum PerfBias { Auto, None, Cinebench_R15, Cinebench_R11p5, Geekbench_3 };
         public enum PerfEnh { None = 0, Default, Level1, Level2, Level3_OC };
 
         private NotifyIcon notifyIcon;
@@ -55,11 +55,12 @@ namespace AsusZenStates
         public static bool SettingsSaved;
 
         public static UInt64[] Pstate;
-        public static int Pstates = 3;
+        public static int Pstates = 1;
 
         public static bool ZenC6Core;
         public static bool ZenC6Package;
         public static bool ZenCorePerfBoost;
+        public static bool ZenOc;
         public static int ZenPPT;
         public static int ZenTDC;
         public static int ZenEDC;
@@ -412,6 +413,9 @@ namespace AsusZenStates
 
                 if ((di.MemRead(DataInterface.REG_SERVER_FLAGS) & DataInterface.FLAG_CPB) == 0) ZenCorePerfBoost = false;
                 else ZenCorePerfBoost = true;
+
+                if ((di.MemRead(DataInterface.REG_SERVER_FLAGS) & DataInterface.FLAG_OC) == 0) ZenOc = false;
+                else ZenOc = true;
 
                 ZenPPT = (int)di.MemRead(DataInterface.REG_PPT);
                 ZenTDC = (int)di.MemRead(DataInterface.REG_TDC);

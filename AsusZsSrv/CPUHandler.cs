@@ -48,7 +48,7 @@ namespace AsusZsSrv
     public class CPUHandler
     {
         public enum CPUType { Unsupported = 0, DEBUG = 1, Summit_Ridge, Threadripper, Raven_Ridge, Pinnacle_Ridge, Matisse, Picasso, Rome };
-        public enum PerfBias { None = 0, Cinebench_R15, Cinebench_R11p5, Geekbench_3 };
+        public enum PerfBias { Auto, None, Cinebench_R15, Cinebench_R11p5, Geekbench_3 };
         //public enum PerfEnh { None = 0, Level1, Level2, Level3_OC, Level4_OC };
 
         // MSR
@@ -90,23 +90,27 @@ namespace AsusZsSrv
 
         const UInt32 SMC_MSG_TestMessage = 0x1;
         const UInt32 SMC_MSG_GetSmuVersion = 0x2;
-        const UInt32 SMC_MSG_EnableSmuFeatures = 0x3; // Matisse 0x09;
-        const UInt32 SMC_MSG_DisableSmuFeatures = 0x4; // Matisse 0x0A;
+        const UInt32 SMC_MSG_EnableSmuFeatures = 0x3;
+        const UInt32 SMC_MSG_DisableSmuFeatures = 0x4; // Doesn't work with Matisse;
+        const UInt32 SMC_MSG_SetTjMax = 0x23;
         const UInt32 SMC_MSG_EnableOverclocking = 0x24;
         const UInt32 SMC_MSG_DisableOverclocking = 0x25;
-        const UInt32 SMC_MSG_SetOverclockFreqAllCore = 0x27;
+        const UInt32 SMC_MSG_SetOverclockFreqAllCores = 0x26;
+        const UInt32 SMC_MSG_SetOverclockFreqPerCore = 0x27;
         const UInt32 SMC_MSG_SetOverclockVid = 0x28;
-        const UInt32 SMC_MSG_BoostLimitFreqAllCore = 0x29;
+        const UInt32 SMC_MSG_SetBoostLimitFrequency = 0x29;
+        const UInt32 SMC_MSG_SetBoostLimitFrequencyAllCores = 0x2B;
         const UInt32 SMC_MSG_GetOverclockCap = 0x2C;
         const UInt32 SMC_MSG_MessageCount = 0x2D;
 
+        // Unknown/disabled in AGESA 1.0.0.2+
         const UInt32 SMC_MSG_SetPPTLimit = 0x31;
         const UInt32 SMC_MSG_TCTL_OFFSET = 0x3A;
         const UInt32 SMC_MSG_SetTDCLimit = 0x43;
         const UInt32 SMC_MSG_SetEDCLimit = 0x44;
         const UInt32 SMC_MSG_SetFITLimit = 0x45;
-        const UInt32 SMC_MSG_SetTjMax = 0x46;
-        const UInt32 SMC_MSG_SetFITLimitScalar = 0x48;
+        // AGESA 1.0.0.2+
+        const UInt32 SMC_MSG_SetFITLimitScalar = 0x2F;
 
         const UInt32 SMU_FeatureFlag_PPT = 0x04;
         const UInt32 SMU_FeatureFlag_TDC = 0x08;
@@ -128,12 +132,13 @@ namespace AsusZsSrv
         public bool SettingsSaved = false;
         public bool ShutdownUnclean = false;
 
-        public static int NumPstates = 3;
+        public static int NumPstates = 1;
 
         public UInt64[] PstateAtStart;
         public bool ZenC6CoreAtStart = false;
         public bool ZenC6PackageAtStart = false;
         public bool ZenCorePerfBoostAtStart = false;
+        public bool ZenOcAtStart = false;
 
         //public bool ZenTscWorkaround = true;
 
@@ -147,6 +152,7 @@ namespace AsusZsSrv
         public bool ZenC6Core = false;
         public bool ZenC6Package = false;
         public bool ZenCorePerfBoost = false;
+        public bool ZenOc = false;
         public int ZenPPT = 0;
         public int ZenTDC = 0;
         public int ZenEDC = 0;
@@ -250,6 +256,7 @@ namespace AsusZsSrv
                 ZenC6Core = SettingsStore.ZenC6Core;
                 ZenC6Package = SettingsStore.ZenC6Package;
                 ZenCorePerfBoost = SettingsStore.ZenCorePerfBoost;
+                ZenOc = SettingsStore.ZenOc;
                 ZenPPT = SettingsStore.ZenPPT;
                 ZenTDC = SettingsStore.ZenTDC;
                 ZenEDC = SettingsStore.ZenEDC;
@@ -272,14 +279,16 @@ namespace AsusZsSrv
                 if (cpuType == CPUType.DEBUG)
                 {
                     Pstate[0] = Convert.ToUInt64("80000000000408A0", 16); //unchecked((UInt64)((1 & 1) << 63 | (0x10 & 0xFF) << 14 | (0x08 & 0xFF) << 8 | 0xA0 & 0xFF));
-                    Pstate[1] = Convert.ToUInt64("8000000000080A90", 16); //unchecked((UInt64)((1 & 1) << 63 | (0x20 & 0xFF) << 14 | (0x0A & 0xFF) << 8 | 0x90 & 0xFF));
-                    Pstate[2] = Convert.ToUInt64("8000000000100C80", 16); //unchecked((UInt64)((1 & 1) << 63 | (0x30 & 0xFF) << 14 | (0x0C & 0xFF) << 8 | 0x80 & 0xFF));
+                    // Pstate[1] = Convert.ToUInt64("8000000000080A90", 16); //unchecked((UInt64)((1 & 1) << 63 | (0x20 & 0xFF) << 14 | (0x0A & 0xFF) << 8 | 0x90 & 0xFF));
+                    // Pstate[2] = Convert.ToUInt64("8000000000100C80", 16); //unchecked((UInt64)((1 & 1) << 63 | (0x30 & 0xFF) << 14 | (0x0C & 0xFF) << 8 | 0x80 & 0xFF));
                     ZenC6Core = false;
                     ZenC6CoreAtStart = false;
                     ZenC6Package = false;
                     ZenC6PackageAtStart = false;
                     ZenCorePerfBoost = true;
                     ZenCorePerfBoostAtStart = true;
+                    ZenOc = false;
+                    ZenOcAtStart = false;
                     TctlOffset = 0;
                 }
                 else if (cpuType != CPUType.Unsupported)
@@ -325,10 +334,16 @@ namespace AsusZsSrv
                         if (SettingsStore.SettingsReset) ZenCorePerfBoost = ZenCorePerfBoostAtStart;
                     }
 
+                    // Get OC Mode
+                    if (ols.RdmsrTx(MSR_PStateStat, ref eax, ref edx, (UIntPtr)(1)) == 1)
+                    {
+                        ZenOcAtStart = Convert.ToBoolean((eax >> 1) & 1);
+                        if (SettingsStore.SettingsReset) ZenOc = ZenOcAtStart;
+                    }
+
                     // Get Tctl offset
                     GetTctlOffset(ref TctlOffset);
                 }
-
             }
         }
 
@@ -372,45 +387,60 @@ namespace AsusZsSrv
             int res = 1;
 
             for (int j = 0; j < Threads; j++)
-            {
+             {
 
-                // P0 fix C001_0015 HWCR[21]=1
-                res = ols.RdmsrTx(MSR_HWCR, ref eax, ref edx, (UIntPtr)(((UInt64)1) << j));
-                if (res == 1)
-                {
+                 // P0 fix C001_0015 HWCR[21]=1
+                 res = ols.RdmsrTx(MSR_HWCR, ref eax, ref edx, (UIntPtr)(((UInt64)1) << j));
+                 if (res == 1)
+                 {
                     /*if (P0TscWorkaround && (eax & 0x200000) != 0x200000)
-                    {
-                        eax |= 0x200000;
-                        res = ols.WrmsrTx(MSR_HWCR, eax, edx, (UIntPtr)(1 << j));
-                    }
-                    else if ((eax & 0x200000) != 0)
-                    {
-                        eax &= 0xFFDFFFFF;
-                        res = ols.WrmsrTx(MSR_HWCR, eax, edx, (UIntPtr)(1 << j));
+                     {
+                         eax |= 0x200000;
+                         res = ols.WrmsrTx(MSR_HWCR, eax, edx, (UIntPtr)(1 << j));
+                     }
+                     else if ((eax & 0x200000) != 0)
+                     {
+                         eax &= 0xFFDFFFFF;
+                         res = ols.WrmsrTx(MSR_HWCR, eax, edx, (UIntPtr)(1 << j));
                     }*/
-                    eax |= 0x200000;
-                    res = ols.WrmsrTx(MSR_HWCR, eax, edx, (UIntPtr)(((UInt64)1) << j));
-                }
-            }
+                     eax |= 0x200000;
+                     res = ols.WrmsrTx(MSR_HWCR, eax, edx, (UIntPtr)(((UInt64)1) << j));
+                 }
+             }
 
-            for (int j = 0; j < Threads; j++)
-            {
-                if (res == 1)
-                {
-                    eax = (UInt32)(data & 0xFFFFFFFF);
-                    edx = (UInt32)(data >> 32) & 0xFFFFFFFF;
+             // Don't set Pstate registers
+             /*for (int j = 0; j < Threads; j++)
+             {
+                 if (res == 1)
+                 {
+                     eax = (UInt32)(data & 0xFFFFFFFF);
+                     edx = (UInt32)(data >> 32) & 0xFFFFFFFF;
 
-                    // Write P-state
-                    res = ols.WrmsrTx((uint)(MSR_PStateDef0 + pstate), eax, edx, (UIntPtr)(((UInt64)1) << j));
-                }
-            }
+                     // Write P-state
+                     res = ols.WrmsrTx((uint)(MSR_PStateDef0 + pstate), eax, edx, (UIntPtr)(((UInt64)1) << j));
+                 }
+             }*/
 
-            if (res == 1)
-            {
-                Pstate[pstate] = data;
-            }
+            if (res == 1) Pstate[pstate] = data;
 
             return res == 1;
+        }
+
+        public bool setOverclockFrequencyAllCores(int pstate, UInt64 data)
+        {
+            bool res = false;
+
+            byte fid = Convert.ToByte(Pstate[pstate] & 0xFF);
+            byte did = Convert.ToByte((Pstate[pstate] >> 8) & 0x3F);
+            byte vid = Convert.ToByte((Pstate[pstate] >> 14) & 0xFF);
+            double freq = (25 * fid / (did * 12.5)) * 100;
+
+            if (SmuWrite(SMC_MSG_SetOverclockFreqAllCores, (uint)freq))
+            {
+                if (SmuWrite(SMC_MSG_SetOverclockVid, vid)) res = true;
+            }
+
+            return res;
         }
 
         public bool SetC6Core(bool en)
@@ -462,6 +492,7 @@ namespace AsusZsSrv
 
             return res == 1;
         }
+
         public bool SetCpb(bool en)
         {
             uint eax = 0, edx = 0;
@@ -487,7 +518,6 @@ namespace AsusZsSrv
 
         public bool SetPerfBias(PerfBias pb)
         {
-
             uint pb1_eax = 0, pb1_edx = 0, pb2_eax = 0, pb2_edx = 0, pb3_eax = 0, pb3_edx = 0, pb4_eax = 0, pb4_edx = 0, pb5_eax = 0, pb5_edx = 0;
 
             // Read current settings
@@ -500,6 +530,7 @@ namespace AsusZsSrv
             // Clear by default
             pb1_eax &= 0xFFFFFFEF;
             pb2_eax &= 0xFF83FFFF;
+            pb2_eax |= 1 << 25;
             pb3_eax &= 0xFFFFFFF8;
             pb4_eax &= 0xFFF9FFEF;
             pb5_eax &= 0xFFFFFFFE;
@@ -511,20 +542,25 @@ namespace AsusZsSrv
                     pb1_eax |= 0x10;
                     pb2_eax |= (8 & 0x1F) << 18;
                     pb3_eax |= (7 & 0x7);
+                    pb4_eax |= 0x10;
                     break;
                 case PerfBias.Cinebench_R15:
                     pb2_eax |= (3 & 0x1F) << 18;
                     pb3_eax |= (6 & 0x7);
+                    pb4_eax |= 0x10;
                     pb5_eax |= 1;
                     break;
                 case PerfBias.Cinebench_R11p5:
+                    pb2_eax &= 0 << 25;
                     pb3_eax |= (7 & 0x7);
                     pb4_eax |= 0x60010;
                     break;
                 case PerfBias.Geekbench_3:
                     pb2_eax |= (4 & 0x1F) << 18;
                     pb3_eax |= (7 & 0x7);
+                    pb4_eax |= 0x10;
                     break;
+                case PerfBias.Auto:
                 default:
                     return false;
             }
@@ -582,6 +618,18 @@ namespace AsusZsSrv
             res = SmuWrite(SMC_MSG_SetFITLimitScalar, (UInt32)scalar);
 
             if (res) ZenScalar = scalar;
+
+            return res;
+        }
+
+        public bool SetOcMode(bool manual)
+        {
+            bool res;
+
+            if (manual) res = SmuWrite(SMC_MSG_EnableOverclocking, 0);
+            else res = SmuWrite(SMC_MSG_DisableOverclocking, 0);
+
+            if (res) ZenOc = manual;
 
             return res;
         }
@@ -879,25 +927,27 @@ namespace AsusZsSrv
 
         public void Restore()
         {
-
+            SetOcMode(ZenOcAtStart);
             // P-states
             for (int i = 0; i < NumPstates; i++)
             {
                 WritePstate(i, PstateAtStart[i]);
             }
 
+            setOverclockFrequencyAllCores(0, PstateAtStart[0]);
+
             // C-states
             SetC6Core(ZenC6CoreAtStart);
             SetC6Package(ZenC6PackageAtStart);
             SetCpb(ZenCorePerfBoostAtStart);
 
-            SetPPT(0);
+            /*SetPPT(0);
             SetTDC(0);
-            SetEDC(0);
+            SetEDC(0);*/
             SetScalar(1);
 
             // Perf Bias
-            SetPerfBias(PerfBias.None);
+            SetPerfBias(PerfBias.Auto);
         }
 
         public void SaveSettings()
@@ -918,6 +968,7 @@ namespace AsusZsSrv
             SettingsStore.ZenTDC = ZenTDC;
             SettingsStore.ZenEDC = ZenEDC;
             SettingsStore.ZenScalar = ZenScalar;
+            SettingsStore.ZenOc = ZenOc;
 
             SettingsStore.PerformanceBias = PerformanceBias;
 

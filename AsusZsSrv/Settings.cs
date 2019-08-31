@@ -28,6 +28,7 @@ namespace AsusZsSrv
         public bool ZenC6Core = false;
         public bool ZenC6Package = false;
         public bool ZenCorePerfBoost = false;
+        public bool ZenOc = false;
         public int ZenPPT = 0;
         public int ZenTDC = 0;
         public int ZenEDC = 0;
@@ -40,7 +41,7 @@ namespace AsusZsSrv
         {
 
             // Path
-            FilePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "ASUS ZenStates");
+            FilePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "ZenStates");
             FullFilePath = Path.Combine(FilePath, FileName);
 
             // Check if directory exists
@@ -57,16 +58,15 @@ namespace AsusZsSrv
             {
                 // Read file
                 res = ReadSettingsFromFile();
-                if (Pstate[0] == 0 && Pstate[1] == 0 && Pstate[2] == 0) SettingsReset = true;
+                if (Pstate[0] == 0/* && Pstate[1] == 0 && Pstate[2] == 0*/) SettingsReset = true;
                 if (ServiceVersion != DataInterface.ServiceVersion) res = false;
             }
 
             if (!res)
             {
                 // Create/overwrite file
-                WriteSettingsToFile();
+                // WriteSettingsToFile();
             }
-
         }
 
         public void Save()
@@ -100,11 +100,12 @@ namespace AsusZsSrv
                         writer.WriteElementString("ApplyAtStart", ApplyAtStart.ToString());
                         writer.WriteElementString("P80Temp", P80Temp.ToString());
                         writer.WriteElementString("P0", Pstate[0].ToString("X16"));
-                        writer.WriteElementString("P1", Pstate[1].ToString("X16"));
-                        writer.WriteElementString("P2", Pstate[2].ToString("X16"));
+                        // writer.WriteElementString("P1", Pstate[1].ToString("X16"));
+                        // writer.WriteElementString("P2", Pstate[2].ToString("X16"));
                         writer.WriteElementString("ZenC6Core", ZenC6Core.ToString());
                         writer.WriteElementString("ZenC6Package", ZenC6Package.ToString());
                         writer.WriteElementString("ZenCorePerfBoost", ZenCorePerfBoost.ToString());
+                        writer.WriteElementString("ZenOc", ZenOc.ToString());
                         writer.WriteElementString("ZenPPT", ZenPPT.ToString());
                         writer.WriteElementString("ZenTDC", ZenTDC.ToString());
                         writer.WriteElementString("ZenEDC", ZenEDC.ToString());
@@ -170,11 +171,12 @@ namespace AsusZsSrv
                                     case "ApplyAtStart": ApplyAtStart = reader.ReadElementContentAsString() == "True" ? true : false; ; break;
                                     case "P80Temp": P80Temp = reader.ReadElementContentAsString() == "True" ? true : false; break;
                                     case "P0": Pstate[0] = Convert.ToUInt64(reader.ReadElementContentAsString(), 16); break;
-                                    case "P1": Pstate[1] = Convert.ToUInt64(reader.ReadElementContentAsString(), 16); break;
-                                    case "P2": Pstate[2] = Convert.ToUInt64(reader.ReadElementContentAsString(), 16); break;
+                                    // case "P1": Pstate[1] = Convert.ToUInt64(reader.ReadElementContentAsString(), 16); break;
+                                    // case "P2": Pstate[2] = Convert.ToUInt64(reader.ReadElementContentAsString(), 16); break;
                                     case "ZenC6Core": ZenC6Core = reader.ReadElementContentAsString() == "True" ? true : false; break;
                                     case "ZenC6Package": ZenC6Package = reader.ReadElementContentAsString() == "True" ? true : false; break;
                                     case "ZenCorePerfBoost": ZenCorePerfBoost = reader.ReadElementContentAsString() == "True" ? true : false; break;
+                                    case "ZenOc": ZenOc = reader.ReadElementContentAsString() == "True" ? true : false; break;
                                     case "ZenPPT": ZenPPT = reader.ReadElementContentAsInt(); break;
                                     case "ZenTDC": ZenTDC = reader.ReadElementContentAsInt(); break;
                                     case "ZenEDC": ZenEDC = reader.ReadElementContentAsInt(); break;
