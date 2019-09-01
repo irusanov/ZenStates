@@ -24,7 +24,7 @@ namespace AsusZenStates
         [DllImport("psapi.dll")]
         static extern int EmptyWorkingSet(IntPtr hwProc);
 
-        public enum PerfBias { Auto, None, Cinebench_R15, Cinebench_R11p5, Geekbench_3 };
+        public enum PerfBias { Auto, None, Cinebench_R11p5, Cinebench_R15, Geekbench_3 };
         public enum PerfEnh { None = 0, Default, Level1, Level2, Level3_OC };
 
         private NotifyIcon notifyIcon;

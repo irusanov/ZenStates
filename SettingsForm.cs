@@ -58,9 +58,9 @@ namespace AsusZenStates
         CustomListItem[] PERFBIAS = {
             new CustomListItem(0, "Auto (BIOS)"),
             new CustomListItem(1, "Disabled"),
-            new CustomListItem(2, "Cinebench R15 / AIDA64"),
-            new CustomListItem(3, "Cinebench R11.5"),
-            new CustomListItem(4, "Geekbench 3")
+            new CustomListItem(2, "Cinebench R11.5"),
+            new CustomListItem(3, "Cinebench R15 / R20"),
+            new CustomListItem(4, "Geekbench 3 / AIDA64")
         };
 
         CustomListItem[] PERFENH = {

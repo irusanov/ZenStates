@@ -48,7 +48,7 @@ namespace AsusZsSrv
     public class CPUHandler
     {
         public enum CPUType { Unsupported = 0, DEBUG = 1, Summit_Ridge, Threadripper, Raven_Ridge, Pinnacle_Ridge, Matisse, Picasso, Rome };
-        public enum PerfBias { Auto, None, Cinebench_R15, Cinebench_R11p5, Geekbench_3 };
+        public enum PerfBias { Auto, None, Cinebench_R11p5, Cinebench_R15, Geekbench_3 };
         //public enum PerfEnh { None = 0, Level1, Level2, Level3_OC, Level4_OC };
 
         // MSR
@@ -530,7 +530,7 @@ namespace AsusZsSrv
             // Clear by default
             pb1_eax &= 0xFFFFFFEF;
             pb2_eax &= 0xFF83FFFF;
-            pb2_eax |= 1 << 25;
+            pb2_eax |= 0x02000000;
             pb3_eax &= 0xFFFFFFF8;
             pb4_eax &= 0xFFF9FFEF;
             pb5_eax &= 0xFFFFFFFE;
@@ -544,18 +544,20 @@ namespace AsusZsSrv
                     pb3_eax |= (7 & 0x7);
                     pb4_eax |= 0x10;
                     break;
+                case PerfBias.Cinebench_R11p5:
+                    pb2_eax &= 0xF1FFFFEF;
+                    pb3_eax |= (7 & 0x7);
+                    pb4_eax |= 0x60010;
+                    break;
                 case PerfBias.Cinebench_R15:
                     pb2_eax |= (3 & 0x1F) << 18;
+                    pb2_eax &= 0xF1FFFFEF;
                     pb3_eax |= (6 & 0x7);
                     pb4_eax |= 0x10;
                     pb5_eax |= 1;
                     break;
-                case PerfBias.Cinebench_R11p5:
-                    pb2_eax &= 0 << 25;
-                    pb3_eax |= (7 & 0x7);
-                    pb4_eax |= 0x60010;
-                    break;
                 case PerfBias.Geekbench_3:
+                    //pb2_eax &= 0xF1FFFFEF;
                     pb2_eax |= (4 & 0x1F) << 18;
                     pb3_eax |= (7 & 0x7);
                     pb4_eax |= 0x10;
