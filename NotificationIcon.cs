@@ -39,6 +39,7 @@ namespace AsusZenStates
         public static string mbName;
         public static string mbVendor;
         public static string cpuName;
+        public static string smuVersionLabel;
 
         public static DataInterface di;
 
@@ -318,6 +319,8 @@ namespace AsusZenStates
             }
 
             sf.Show();
+            sf.BringToFront();
+            sf.WindowState = FormWindowState.Normal;
         }
 
         private static UInt64 waitCmd;
@@ -328,6 +331,16 @@ namespace AsusZenStates
             di.MemWrite(DataInterface.REG_NOTIFY_STATUS, cmd);
             waitCmd = cmd;
             waitCmdUpdateGui = updateGui;
+        }
+
+        private static string getVersionString(UInt64 version)
+        {
+            string[] versionString = new string[3];
+            versionString[0] = ((version & 0x00FF0000) >> 16).ToString("D2");
+            versionString[1] = ((version & 0x0000FF00) >> 8).ToString("D2");
+            versionString[2] = (0x002e18001 & 0x000000FF).ToString("D2");
+
+            return String.Join(".", versionString);
         }
 
         void tempTimerHandler(object sender, ElapsedEventArgs e)
@@ -378,6 +391,8 @@ namespace AsusZenStates
                 }
 
                 ServiceVersion = di.MemRead(DataInterface.REG_SERVER_VERSION);
+
+                NotificationIcon.smuVersionLabel = getVersionString(di.MemRead(DataInterface.REG_SMU_VERSION));
 
                 if ((di.MemRead(DataInterface.REG_SERVER_FLAGS) & DataInterface.FLAG_IS_AVAILABLE) == 0) isAvailable = false;
                 else isAvailable = true;

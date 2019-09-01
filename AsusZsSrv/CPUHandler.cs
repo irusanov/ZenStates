@@ -912,6 +912,14 @@ namespace AsusZsSrv
             return res;
         }
 
+        public UInt32 getSmuVersion()
+        {
+            UInt32 version = 0;
+
+            SmuRead(SMC_MSG_GetSmuVersion, ref version);
+            return version;
+        }
+
         public bool WritePort80Temp(double temp)
         {
             if (temp > 99) temp = 99;

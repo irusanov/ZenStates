@@ -129,6 +129,7 @@ namespace AsusZsSrv
             di.MemWrite(DataInterface.REG_NOTIFY_STATUS, 0x00);
             di.MemWrite(DataInterface.REG_SERVER_VERSION, DataInterface.ServiceVersion);
             di.MemWrite(DataInterface.REG_PING_PONG, 0x01);
+            di.MemWrite(DataInterface.REG_SMU_VERSION, cpuh.getSmuVersion());
 
             for (int i = 0; i < CPUHandler.NumPstates; i++) di.MemWrite(DataInterface.REG_P0 + i, cpuh.Pstate[i]);
 

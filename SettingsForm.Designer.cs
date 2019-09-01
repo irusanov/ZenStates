@@ -66,6 +66,8 @@ namespace AsusZenStates
             this.checkBoxGuiOnStart = new System.Windows.Forms.CheckBox();
             this.checkBoxApplyOnStart = new System.Windows.Forms.CheckBox();
             this.panel2 = new System.Windows.Forms.Panel();
+            this.label4 = new System.Windows.Forms.Label();
+            this.smuVersionLabel = new System.Windows.Forms.Label();
             this.panel1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.splitContainer1)).BeginInit();
             this.splitContainer1.Panel1.SuspendLayout();
@@ -161,6 +163,8 @@ namespace AsusZenStates
             // splitContainer1.Panel1
             // 
             this.splitContainer1.Panel1.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(243)))), ((int)(((byte)(243)))), ((int)(((byte)(243)))));
+            this.splitContainer1.Panel1.Controls.Add(this.smuVersionLabel);
+            this.splitContainer1.Panel1.Controls.Add(this.label4);
             this.splitContainer1.Panel1.Controls.Add(this.panel3);
             this.splitContainer1.Panel1.Controls.Add(this.labelMB);
             this.splitContainer1.Panel1.Controls.Add(this.labelCPU);
@@ -430,6 +434,24 @@ namespace AsusZenStates
             this.panel2.Size = new System.Drawing.Size(428, 1);
             this.panel2.TabIndex = 60;
             // 
+            // label4
+            // 
+            this.label4.AutoSize = true;
+            this.label4.Location = new System.Drawing.Point(342, 10);
+            this.label4.Name = "label4";
+            this.label4.Size = new System.Drawing.Size(31, 13);
+            this.label4.TabIndex = 77;
+            this.label4.Text = "SMU";
+            // 
+            // smuVersionLabel
+            // 
+            this.smuVersionLabel.AutoSize = true;
+            this.smuVersionLabel.Location = new System.Drawing.Point(370, 10);
+            this.smuVersionLabel.Name = "smuVersionLabel";
+            this.smuVersionLabel.Size = new System.Drawing.Size(49, 13);
+            this.smuVersionLabel.TabIndex = 78;
+            this.smuVersionLabel.Text = "00.00.00";
+            // 
             // SettingsForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -451,6 +473,7 @@ namespace AsusZenStates
             this.panel1.ResumeLayout(false);
             this.panel1.PerformLayout();
             this.splitContainer1.Panel1.ResumeLayout(false);
+            this.splitContainer1.Panel1.PerformLayout();
             this.splitContainer1.Panel2.ResumeLayout(false);
             this.splitContainer1.Panel2.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)(this.splitContainer1)).EndInit();
@@ -488,5 +511,7 @@ namespace AsusZenStates
         private System.Windows.Forms.CheckBox checkBoxApplyOnStart;
         private System.Windows.Forms.Panel panel2;
         private System.Windows.Forms.Panel panel3;
+        private System.Windows.Forms.Label smuVersionLabel;
+        private System.Windows.Forms.Label label4;
     }
 }

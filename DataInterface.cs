@@ -40,6 +40,7 @@ namespace AsusZenStates
         public const int REG_PING_PONG = 0x0A;
         public const int REG_NOTIFY_STATUS = 0x0B;
         public const int REG_SERVER_VERSION = 0x0C;
+        public const int REG_SMU_VERSION = 0x0E;
 
         public const int REG_SCALAR = 0x0D;
 

@@ -101,6 +101,7 @@ namespace AsusZenStates
             // MB/CPU description
             labelMB.Text = NotificationIcon.mbName;
             labelCPU.Text = NotificationIcon.cpuName;
+            smuVersionLabel.Text = NotificationIcon.smuVersionLabel;
             label1.Text = "version " + Application.ProductVersion.Substring(0, Application.ProductVersion.LastIndexOf("."));
 
             // Pstate controls
