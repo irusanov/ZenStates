@@ -1,4 +1,4 @@
-using AsusZenStates;
+using ZenStates;
 using Microsoft.Win32;
 using System;
 using System.Collections.Specialized;
@@ -10,14 +10,14 @@ using System.ServiceProcess;
 using System.Threading;
 using System.Timers;
 
-namespace AsusZsSrv
+namespace ZenStatesSrv
 {
-    public class AsusZsSrv : ServiceBase
+    public class ZenStatesSrv : ServiceBase
     {
-        public const string MyServiceName = "AsusZsSrv";
+        public const string MyServiceName = "ZenStatesSrv";
 
-        private const string fileNameGUI = "AsusZenStates.exe";
-        private const string softwareName = "ASUS ZenStates";
+        private const string fileNameGUI = "ZenStates.exe";
+        private const string softwareName = "ZenStates";
 
         [DllImport("psapi.dll")]
         static extern int EmptyWorkingSet(IntPtr hwProc);
@@ -31,7 +31,7 @@ namespace AsusZsSrv
 
         private static bool P80Temp = false;
 
-        public AsusZsSrv()
+        public ZenStatesSrv()
         {
             this.ServiceName = MyServiceName;
             ((ISupportInitialize)this.EventLog).BeginInit();

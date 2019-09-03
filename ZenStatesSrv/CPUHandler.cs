@@ -40,7 +40,7 @@ using System.Configuration;
 using System.IO;
 using System.Threading;
 
-namespace AsusZsSrv
+namespace ZenStatesSrv
 {
     /// <summary>
     /// Description of CPUHandler.
@@ -549,10 +549,18 @@ namespace AsusZsSrv
                     pb3_eax |= (7 & 0x7);
                     pb4_eax |= 0x60010;
                     break;
-                case PerfBias.Cinebench_R15:
+                /*case PerfBias.Cinebench_R15:
                     pb2_eax |= (3 & 0x1F) << 18;
                     pb2_eax &= 0xF1FFFFEF;
                     pb3_eax |= (6 & 0x7);
+                    pb4_eax |= 0x10;
+                    pb5_eax |= 1;
+                    break;*/
+                case PerfBias.Cinebench_R15:
+                    pb1_edx &= 0xFFF00F0F;
+                    pb2_eax |= (3 & 0x1F) << 18;
+                    pb2_eax &= 0xF1FFFFEF;
+                    pb3_eax |= (7 & 0x7);
                     pb4_eax |= 0x10;
                     pb5_eax |= 1;
                     break;

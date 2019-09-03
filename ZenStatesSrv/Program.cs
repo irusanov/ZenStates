@@ -1,6 +1,6 @@
 ﻿using System.ServiceProcess;
 
-namespace AsusZsSrv
+namespace ZenStatesSrv
 {
     static class Program
     {
@@ -12,7 +12,7 @@ namespace AsusZsSrv
         static void Main()
         {
             // To run more than one service you have to add them here
-            ServiceBase.Run(new ServiceBase[] { new AsusZsSrv() });
+            ServiceBase.Run(new ServiceBase[] { new ZenStatesSrv() });
         }
 
     }

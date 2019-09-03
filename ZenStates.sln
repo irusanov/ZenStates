@@ -3,9 +3,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
 VisualStudioVersion = 16.0.28803.352
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AsusZenStates", "AsusZenStates.csproj", "{F4267FC9-31E2-4D53-A4C3-C05000BA6BDF}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ZenStates", "ZenStates.csproj", "{F4267FC9-31E2-4D53-A4C3-C05000BA6BDF}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AsusZsSrv", "AsusZsSrv\AsusZsSrv.csproj", "{331B7603-D1CF-4C0C-8EDA-78951D3AF129}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ZenStatesSrv", "ZenStatesSrv\ZenStatesSrv.csproj", "{331B7603-D1CF-4C0C-8EDA-78951D3AF129}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

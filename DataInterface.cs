@@ -4,7 +4,7 @@ using System.IO.MemoryMappedFiles;
 using System.Security.AccessControl;
 using System.Security.Principal;
 
-namespace AsusZenStates
+namespace ZenStates
 {
     /// <summary>
     /// Description of DataInterface.
@@ -14,9 +14,9 @@ namespace AsusZenStates
 
         // Constants
 
-        public const UInt64 ServiceVersion = 9; // 0 = 0.1/b, 1 = 0.2, 2 = 0.2.x, 3 = 0.3, 4 = 0.3.xxxx, 5 = 0.4/0.5, 6 = 0.5, 7 = 0.6, 8 = 0.7, 9 = 0.7.1
+        public const UInt64 ServiceVersion = 10; // 0 = 0.1/b, 1 = 0.2, 2 = 0.2.x, 3 = 0.3, 4 = 0.3.xxxx, 5 = 0.4/0.5, 6 = 0.5, 7 = 0.6, 8 = 0.7, 9 = 0.7.1. 10 = 0.8.0
         private const int bufferSize = 16;
-        private const string mmf_path = @"Global\AsusZenStates";
+        private const string mmf_path = @"Global\ZenStates";
 
         // Memory register map
 

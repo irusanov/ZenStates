@@ -14,7 +14,7 @@ using System.Threading;
 using System.Timers;
 using System.Windows.Forms;
 
-namespace AsusZenStates
+namespace ZenStates
 {
     public sealed class NotificationIcon
     {
@@ -39,7 +39,8 @@ namespace AsusZenStates
         public static string mbName;
         public static string mbVendor;
         public static string cpuName;
-        public static string smuVersionLabel;
+        public static string smuVersion;
+        public static string biosVersion;
 
         public static DataInterface di;
 
@@ -223,7 +224,7 @@ namespace AsusZenStates
                     initVendorInfo();
 
                     // Check service running/installed
-                    ServiceController svc = new ServiceController("AsusZsSrv");
+                    ServiceController svc = new ServiceController("ZenStatesSrv");
 
                     try
                     {
@@ -231,8 +232,8 @@ namespace AsusZenStates
                     }
                     catch (InvalidOperationException ex)
                     {
-                        //MessageBox.Show("AsusZsSrv not installed, attempting to install ...", MessageBoxTitle);
-                        ProcessStartInfo info = new ProcessStartInfo("sc.exe", "create AsusZsSrv binPath= \"" + Path.Combine(Application.StartupPath, "AsusZsSrv.exe") + "\" DisplayName= \"ASUS ZenStates\" start= auto")
+                        //MessageBox.Show("ZenStatesSrv not installed, attempting to install ...", MessageBoxTitle);
+                        ProcessStartInfo info = new ProcessStartInfo("sc.exe", "create ZenStatesSrv binPath= \"" + Path.Combine(Application.StartupPath, "ZenStatesSrv.exe") + "\" DisplayName= \"ZenStates\" start= auto")
                         {
                             UseShellExecute = true,
                             Verb = "runas"
@@ -245,7 +246,7 @@ namespace AsusZenStates
                         }
                         catch (Exception ex2)
                         {
-                            MessageBox.Show("Could not install AsusZsSrv", MessageBoxTitle);
+                            MessageBox.Show("Could not install ZenStatesSrv", MessageBoxTitle);
                             return;
                         }
 
@@ -254,8 +255,8 @@ namespace AsusZenStates
                     if (svc.Status != ServiceControllerStatus.Running)
                     {
                         // Service not running, try to start it
-                        //MessageBox.Show("AsusZsSrv is not running", MessageBoxTitle);
-                        ProcessStartInfo info = new ProcessStartInfo("sc.exe", "start AsusZsSrv")
+                        //MessageBox.Show("ZenStatesSrv is not running", MessageBoxTitle);
+                        ProcessStartInfo info = new ProcessStartInfo("sc.exe", "start ZenStatesSrv")
                         {
                             UseShellExecute = true,
                             Verb = "runas"
@@ -265,11 +266,11 @@ namespace AsusZenStates
                             Process process = Process.Start(info);
                             process.WaitForExit(10000);
                             svc.WaitForStatus(ServiceControllerStatus.Running, System.TimeSpan.FromSeconds(5));
-                            if (svc.Status != ServiceControllerStatus.Running) throw new Exception("AsusZsSrv couldn't start.");
+                            if (svc.Status != ServiceControllerStatus.Running) throw new Exception("ZenStatesSrv couldn't start.");
                         }
                         catch (Exception ex2)
                         {
-                            MessageBox.Show("Could not start AsusZsSrv, check the Event Log for further details", MessageBoxTitle);
+                            MessageBox.Show("Could not start ZenStatesSrv, check the Event Log for further details", MessageBoxTitle);
                             return;
                         }
                     }
@@ -333,12 +334,12 @@ namespace AsusZenStates
             waitCmdUpdateGui = updateGui;
         }
 
-        private static string getVersionString(UInt64 version)
+        private static string getSmuVersionString(UInt64 version)
         {
             string[] versionString = new string[3];
             versionString[0] = ((version & 0x00FF0000) >> 16).ToString("D2");
             versionString[1] = ((version & 0x0000FF00) >> 8).ToString("D2");
-            versionString[2] = (0x002e18001 & 0x000000FF).ToString("D2");
+            versionString[2] = (version & 0x000000FF).ToString("D2");
 
             return String.Join(".", versionString);
         }
@@ -362,7 +363,7 @@ namespace AsusZenStates
                     {
                         // 6000ms timeout occured
                         tempTimer.Stop();
-                        MessageBox.Show("Lost contact with AsusZsSrv", Application.ProductName);
+                        MessageBox.Show("Lost contact with ZenStatesSrv", Application.ProductName);
                         Environment.Exit(0);
                     }
                 }
@@ -392,7 +393,7 @@ namespace AsusZenStates
 
                 ServiceVersion = di.MemRead(DataInterface.REG_SERVER_VERSION);
 
-                NotificationIcon.smuVersionLabel = getVersionString(di.MemRead(DataInterface.REG_SMU_VERSION));
+                NotificationIcon.smuVersion = getSmuVersionString(di.MemRead(DataInterface.REG_SMU_VERSION));
 
                 if ((di.MemRead(DataInterface.REG_SERVER_FLAGS) & DataInterface.FLAG_IS_AVAILABLE) == 0) isAvailable = false;
                 else isAvailable = true;
@@ -459,13 +460,13 @@ namespace AsusZenStates
                 // Handle startup
                 /*if (loadWithOs && loadWithOs_state != 1)
                 {
-                    setServiceStartup("AsusTCsrv", 2);
+                    setServiceStartup("ZenTCsrv", 2);
                     setSystemStartup(true);
                     loadWithOs_state = 1;
                 }
                 else if (!loadWithOs && loadWithOs_state != 2)
                 {
-                    setServiceStartup("AsusTCsrv", 3);
+                    setServiceStartup("ZenTCsrv", 3);
                     setSystemStartup(false);
                     loadWithOs_state = 2;
                 }*/
@@ -541,21 +542,29 @@ namespace AsusZenStates
         static void initVendorInfo()
         {
             ManagementObjectSearcher searcher = new ManagementObjectSearcher("SELECT * FROM Win32_BaseBoard");
-            ManagementObjectCollection collection = searcher.Get();
-
-            foreach (ManagementObject obj in collection)
+            foreach (ManagementObject obj in searcher.Get())
             {
                 NotificationIcon.mbVendor = (string)obj["Manufacturer"];
                 NotificationIcon.mbName = (string)obj["Product"];
             }
+            if (searcher != null) searcher.Dispose();
 
-            ManagementObjectSearcher mos = new ManagementObjectSearcher("SELECT * FROM Win32_Processor");
-            foreach (ManagementObject obj in mos.Get())
+            searcher = new ManagementObjectSearcher("SELECT * FROM Win32_Processor");
+            foreach (ManagementObject obj in searcher.Get())
             {
                 NotificationIcon.cpuName = (string)obj["Name"];
                 NotificationIcon.cpuName = NotificationIcon.cpuName.Replace("(R)", "");
                 NotificationIcon.cpuName = NotificationIcon.cpuName.Replace("(TM)", "");
             }
+            if (searcher != null) searcher.Dispose();
+
+            searcher = new ManagementObjectSearcher("SELECT * FROM Win32_BIOS");
+            foreach (ManagementObject obj in searcher.Get())
+            {
+                NotificationIcon.biosVersion = (string)obj["SMBIOSBIOSVersion"];
+                NotificationIcon.biosVersion = NotificationIcon.biosVersion.Trim();
+            }
+            if (searcher != null) searcher.Dispose();
         }
 
         static void MinimizeFootprint() { EmptyWorkingSet(Process.GetCurrentProcess().Handle); }

@@ -1,14 +1,14 @@
-﻿using AsusZenStates;
+﻿using ZenStates;
 using System;
 using System.IO;
 using System.Xml;
 
-namespace AsusZsSrv
+namespace ZenStatesSrv
 {
     public class Settings
     {
 
-        private const string FileName = "AsusZsSettings.xml";
+        private const string FileName = "ZenStatesSettings.xml";
         private string FilePath;
         private string FullFilePath;
 
@@ -88,7 +88,7 @@ namespace AsusZsSrv
                     using (XmlWriter writer = XmlWriter.Create(fs, xmlWriterSettings))
                     {
                         writer.WriteStartDocument();
-                        writer.WriteComment("ASUS ZenStates Settings file");
+                        writer.WriteComment("ZenStates Settings file");
                         writer.WriteStartElement("ZenStates");
                         writer.WriteStartElement("Application");
                         writer.WriteElementString("ServiceVersion", DataInterface.ServiceVersion.ToString());

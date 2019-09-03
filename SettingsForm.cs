@@ -2,7 +2,7 @@
 using System.Runtime.InteropServices;
 using System.Windows.Forms;
 
-namespace AsusZenStates
+namespace ZenStates
 {
     /// <summary>
     /// Description of SettingsForm.
@@ -101,7 +101,8 @@ namespace AsusZenStates
             // MB/CPU description
             labelMB.Text = NotificationIcon.mbName;
             labelCPU.Text = NotificationIcon.cpuName;
-            smuVersionLabel.Text = NotificationIcon.smuVersionLabel;
+            biosVersionLabel.Text = NotificationIcon.biosVersion;
+            smuVersionLabel.Text = NotificationIcon.smuVersion;
             label1.Text = "version " + Application.ProductVersion.Substring(0, Application.ProductVersion.LastIndexOf("."));
 
             // Pstate controls

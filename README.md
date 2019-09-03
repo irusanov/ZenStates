@@ -11,12 +11,12 @@ Starting from Zen2 release (Matisse), I'm taking over and will try to provide as
 * Supported OS: Windows XP/Vista/7/8/10
 
 ## How To
-The application consists of two executables - the main GUI `AsusZenStates.exe` and a service `AsusZsSrv.exe`.
+The application consists of two executables - the main GUI `ZenStates.exe` and a service `ZenStatesSrv.exe`.
 An additional `uninstall.bat` is provided for an easy uninstall of the previous service version.
 
 1. Extract the provided zip and place in a desired location on the disk
 2. Run `uninstall.bat` if not running for a first time
-3. Run `AsusZenStates.exe`
+3. Run `ZenStates.exe`
 
 
 ## Technical Information

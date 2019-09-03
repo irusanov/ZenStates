@@ -6,7 +6,7 @@
  * 
  * To change this template use Tools | Options | Coding | Edit Standard Headers.
  */
-namespace AsusZenStates
+namespace ZenStates
 {
     partial class SettingsForm
     {
@@ -42,6 +42,8 @@ namespace AsusZenStates
             this.panel1 = new System.Windows.Forms.Panel();
             this.label1 = new System.Windows.Forms.Label();
             this.splitContainer1 = new System.Windows.Forms.SplitContainer();
+            this.smuVersionLabel = new System.Windows.Forms.Label();
+            this.label4 = new System.Windows.Forms.Label();
             this.panel3 = new System.Windows.Forms.Panel();
             this.labelMB = new System.Windows.Forms.Label();
             this.labelCPU = new System.Windows.Forms.Label();
@@ -66,8 +68,8 @@ namespace AsusZenStates
             this.checkBoxGuiOnStart = new System.Windows.Forms.CheckBox();
             this.checkBoxApplyOnStart = new System.Windows.Forms.CheckBox();
             this.panel2 = new System.Windows.Forms.Panel();
-            this.label4 = new System.Windows.Forms.Label();
-            this.smuVersionLabel = new System.Windows.Forms.Label();
+            this.biosVersionLabel = new System.Windows.Forms.Label();
+            this.label5 = new System.Windows.Forms.Label();
             this.panel1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.splitContainer1)).BeginInit();
             this.splitContainer1.Panel1.SuspendLayout();
@@ -163,6 +165,8 @@ namespace AsusZenStates
             // splitContainer1.Panel1
             // 
             this.splitContainer1.Panel1.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(243)))), ((int)(((byte)(243)))), ((int)(((byte)(243)))));
+            this.splitContainer1.Panel1.Controls.Add(this.label5);
+            this.splitContainer1.Panel1.Controls.Add(this.biosVersionLabel);
             this.splitContainer1.Panel1.Controls.Add(this.smuVersionLabel);
             this.splitContainer1.Panel1.Controls.Add(this.label4);
             this.splitContainer1.Panel1.Controls.Add(this.panel3);
@@ -199,6 +203,25 @@ namespace AsusZenStates
             this.splitContainer1.Size = new System.Drawing.Size(428, 266);
             this.splitContainer1.SplitterDistance = 55;
             this.splitContainer1.TabIndex = 59;
+            // 
+            // smuVersionLabel
+            // 
+            this.smuVersionLabel.AutoSize = true;
+            this.smuVersionLabel.Location = new System.Drawing.Point(371, 31);
+            this.smuVersionLabel.Name = "smuVersionLabel";
+            this.smuVersionLabel.Size = new System.Drawing.Size(49, 13);
+            this.smuVersionLabel.TabIndex = 78;
+            this.smuVersionLabel.Text = "00.00.00";
+            this.smuVersionLabel.TextAlign = System.Drawing.ContentAlignment.MiddleRight;
+            // 
+            // label4
+            // 
+            this.label4.AutoSize = true;
+            this.label4.Location = new System.Drawing.Point(338, 31);
+            this.label4.Name = "label4";
+            this.label4.Size = new System.Drawing.Size(31, 13);
+            this.label4.TabIndex = 77;
+            this.label4.Text = "SMU";
             // 
             // panel3
             // 
@@ -434,23 +457,27 @@ namespace AsusZenStates
             this.panel2.Size = new System.Drawing.Size(428, 1);
             this.panel2.TabIndex = 60;
             // 
-            // label4
+            // biosVersionLabel
             // 
-            this.label4.AutoSize = true;
-            this.label4.Location = new System.Drawing.Point(342, 10);
-            this.label4.Name = "label4";
-            this.label4.Size = new System.Drawing.Size(31, 13);
-            this.label4.TabIndex = 77;
-            this.label4.Text = "SMU";
+            this.biosVersionLabel.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.biosVersionLabel.ImageAlign = System.Drawing.ContentAlignment.MiddleLeft;
+            this.biosVersionLabel.Location = new System.Drawing.Point(371, 10);
+            this.biosVersionLabel.Name = "biosVersionLabel";
+            this.biosVersionLabel.Size = new System.Drawing.Size(49, 13);
+            this.biosVersionLabel.TabIndex = 79;
+            this.biosVersionLabel.Text = "0000";
+            this.biosVersionLabel.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
             // 
-            // smuVersionLabel
+            // label5
             // 
-            this.smuVersionLabel.AutoSize = true;
-            this.smuVersionLabel.Location = new System.Drawing.Point(370, 10);
-            this.smuVersionLabel.Name = "smuVersionLabel";
-            this.smuVersionLabel.Size = new System.Drawing.Size(49, 13);
-            this.smuVersionLabel.TabIndex = 78;
-            this.smuVersionLabel.Text = "00.00.00";
+            this.label5.AutoSize = true;
+            this.label5.Location = new System.Drawing.Point(338, 10);
+            this.label5.Name = "label5";
+            this.label5.Size = new System.Drawing.Size(32, 13);
+            this.label5.TabIndex = 80;
+            this.label5.Text = "BIOS";
             // 
             // SettingsForm
             // 
@@ -513,5 +540,7 @@ namespace AsusZenStates
         private System.Windows.Forms.Panel panel3;
         private System.Windows.Forms.Label smuVersionLabel;
         private System.Windows.Forms.Label label4;
+        private System.Windows.Forms.Label biosVersionLabel;
+        private System.Windows.Forms.Label label5;
     }
 }
