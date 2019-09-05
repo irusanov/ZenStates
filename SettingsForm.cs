@@ -18,7 +18,7 @@ namespace ZenStates
         [DllImportAttribute("user32.dll")]
         public static extern bool ReleaseCapture();
 
-        private const int PSTATES = 1;
+        private const int PSTATES = 3;
         private const int FID_MAX = 0xFF;
         private const int FID_MIN = 0x10;
         private const int VID_MAX = 0xA9;
@@ -121,16 +121,16 @@ namespace ZenStates
                 // FID combobox
                 PstateFid[i] = new ComboBox
                 {
-                    Size = new System.Drawing.Size(120, 20),
-                    Location = new System.Drawing.Point(10, 7 + i * 25)
+                    Size = new System.Drawing.Size(115, 20),
+                    Location = new System.Drawing.Point(7, 7 + i * 25)
                 };
-                this.splitContainer1.Panel2.Controls.Add(PstateFid[i]);
+                this.panelManualMode.Controls.Add(PstateFid[i]);
 
                 // DID combobox
                 PstateDid[i] = new ComboBox
                 {
                     Size = new System.Drawing.Size(50, 20),
-                    Location = new System.Drawing.Point(135, 7 + i * 25),
+                    Location = new System.Drawing.Point(130, 7 + i * 25),
                     Enabled = false
                 };
                 foreach (CustomListItem item in DIVIDERS)
@@ -138,13 +138,13 @@ namespace ZenStates
                     PstateDid[i].Items.Add(item);
                 }
                 PstateDid[i].SelectedIndexChanged += UpdateFids;
-                this.splitContainer1.Panel2.Controls.Add(PstateDid[i]);
+                this.panelManualMode.Controls.Add(PstateDid[i]);
 
                 // VID combobox
                 PstateVid[i] = new ComboBox
                 {
-                    Size = new System.Drawing.Size(80, 20),
-                    Location = new System.Drawing.Point(190, 7 + i * 25)
+                    Size = new System.Drawing.Size(77, 20),
+                    Location = new System.Drawing.Point(188, 7 + i * 25)
                 };
                 int k = 0;
                 for (byte j = VID_MIN; j <= VID_MAX; j++)
@@ -153,8 +153,14 @@ namespace ZenStates
                     CustomListItem item = new CustomListItem(k++, j, voltage.ToString("F3") + "V");
                     PstateVid[i].Items.Add(item);
                 }
-                this.splitContainer1.Panel2.Controls.Add(PstateVid[i]);
+                this.panelManualMode.Controls.Add(PstateVid[i]);
             }
+
+            Label test = new Label
+            {
+                Text = "Auto Mode Panel"
+            };
+            this.panelAutoMode.Controls.Add(test);
 
             foreach (CustomListItem item in PERFBIAS)
             {
@@ -234,7 +240,9 @@ namespace ZenStates
             checkBoxC6Package.Checked = Convert.ToBoolean(NotificationIcon.ZenC6Package);
             checkBoxCpb.Checked = Convert.ToBoolean(NotificationIcon.ZenCorePerfBoost);
 
-            checkBoxOc.Checked = Convert.ToBoolean(NotificationIcon.ZenOc);
+            bool isManual = Convert.ToBoolean(NotificationIcon.ZenOc);
+            radioAutoControl.Checked = !isManual;
+            radioManualControl.Checked = isManual;
 
             textBoxPPT.Text = NotificationIcon.ZenPPT.ToString();
             textBoxTDC.Text = NotificationIcon.ZenTDC.ToString();
@@ -302,7 +310,7 @@ namespace ZenStates
                 for (int i = 0; i < PstateFid.Length; i++)
                 {
                     // UInt64 en = Convert.ToUInt64(PstateEn[i].Checked);
-                    UInt64 en = Convert.ToUInt64(checkBoxOc.Checked);
+                    UInt64 en = Convert.ToUInt64(radioManualControl.Checked);
                     UInt64 fid = Convert.ToUInt64(((CustomListItem)PstateFid[i].SelectedItem).value);
                     UInt64 did = Convert.ToUInt64(((CustomListItem)PstateDid[i].SelectedItem).value);
                     UInt64 vid = Convert.ToUInt64(((CustomListItem)PstateVid[i].SelectedItem).value);
@@ -314,8 +322,8 @@ namespace ZenStates
 
                     NotificationIcon.di.MemWrite(DataInterface.REG_P0 + i, ps);
 
-                    PstateFid[i].Enabled = checkBoxOc.Checked;
-                    PstateVid[i].Enabled = checkBoxOc.Checked;
+                    PstateFid[i].Enabled = radioManualControl.Checked;
+                    PstateVid[i].Enabled = radioManualControl.Checked;
                 }
 
                 UInt64 flags = 0;
@@ -325,7 +333,7 @@ namespace ZenStates
                 if (checkBoxC6Core.Checked) flags |= DataInterface.FLAG_C6CORE;
                 if (checkBoxC6Package.Checked) flags |= DataInterface.FLAG_C6PACKAGE;
                 if (checkBoxCpb.Checked) flags |= DataInterface.FLAG_CPB;
-                if (checkBoxOc.Checked) flags |= DataInterface.FLAG_OC;
+                if (radioManualControl.Checked) flags |= DataInterface.FLAG_OC;
 
                 if (!int.TryParse(textBoxPPT.Text, out int ppt))
                 {
@@ -458,6 +466,24 @@ namespace ZenStates
                     break;
                 default:
                     break;
+            }
+        }
+
+        private void RadioAutoControl_CheckedChanged(object sender, EventArgs e)
+        {
+            if (radioAutoControl.Checked)
+            {
+                panelAutoMode.Show();
+                panelManualMode.Hide();
+            }
+        }
+
+        private void RadioManualControl_CheckedChanged(object sender, EventArgs e)
+        {
+            if (radioManualControl.Checked)
+            {
+                panelManualMode.Show();
+                panelAutoMode.Hide();
             }
         }
     }

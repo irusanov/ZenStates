@@ -450,7 +450,7 @@ namespace ZenStatesSrv
             String lpPassword,
             String lpDisplayName);
 
-        [DllImport("advapi32.dll", SetLastError = true, CharSet = CharSet.Auto)]
+        [DllImport("advapi32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
         static extern IntPtr OpenService(
             IntPtr hSCManager, string lpServiceName, uint dwDesiredAccess);
 

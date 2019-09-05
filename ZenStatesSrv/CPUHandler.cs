@@ -132,7 +132,7 @@ namespace ZenStatesSrv
         public bool SettingsSaved = false;
         public bool ShutdownUnclean = false;
 
-        public static int NumPstates = 1;
+        public static int NumPstates = 3;
 
         public UInt64[] PstateAtStart;
         public bool ZenC6CoreAtStart = false;

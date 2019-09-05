@@ -57,7 +57,7 @@ namespace ZenStates
         public static bool SettingsSaved;
 
         public static UInt64[] Pstate;
-        public static int Pstates = 1;
+        public static int Pstates = 3;
 
         public static bool ZenC6Core;
         public static bool ZenC6Package;
