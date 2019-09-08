@@ -133,6 +133,8 @@ namespace ZenStatesSrv
 
             for (int i = 0; i < CPUHandler.NumPstates; i++) di.MemWrite(DataInterface.REG_P0 + i, cpuh.Pstate[i]);
 
+            di.MemWrite(DataInterface.REG_PSTATE_OC, cpuh.PstateOc);
+
             di.MemWrite(DataInterface.REG_PPT, (UInt64)cpuh.ZenPPT);
             di.MemWrite(DataInterface.REG_TDC, (UInt64)cpuh.ZenTDC);
             di.MemWrite(DataInterface.REG_EDC, (UInt64)cpuh.ZenEDC);
@@ -148,7 +150,6 @@ namespace ZenStatesSrv
 
             // Optimize
             MinimizeFootprint();
-
         }
 
         private static void t1Handler(object source, ElapsedEventArgs e)
@@ -204,13 +205,19 @@ namespace ZenStatesSrv
                     SetStartupService(true);
                     SetStartupGUI(cpuh.TrayIconAtStart);
 
-                    cpuh.SetOcMode(cpuh.ZenOc);
                     // Write new P-states
-                    for (int i = 0; i < CPUHandler.NumPstates; i++)
+                    if (cpuh.ZenOc)
                     {
-                        cpuh.WritePstate(i, di.MemRead(DataInterface.REG_P0 + i));
+                        if (cpuh.SetOcMode(true)) cpuh.setOverclockFrequencyAllCores(di.MemRead(DataInterface.REG_PSTATE_OC));
                     }
-                    cpuh.setOverclockFrequencyAllCores(0, di.MemRead(DataInterface.REG_P0));
+                    else
+                    {
+                        cpuh.SetOcMode(false);
+                        for (int i = 0; i < CPUHandler.NumPstates; i++)
+                        {
+                            cpuh.WritePstate(i, di.MemRead(DataInterface.REG_P0 + i));
+                        }
+                    }
 
                     cpuh.SetC6Core(cpuh.ZenC6Core);
                     cpuh.SetC6Package(cpuh.ZenC6Package);
@@ -237,13 +244,19 @@ namespace ZenStatesSrv
 
                     P80Temp = cpuh.P80Temp;
 
-                    cpuh.SetOcMode(cpuh.ZenOc);
-                    // Write new P-states
-                    for (int i = 0; i < CPUHandler.NumPstates; i++)
+                    if (cpuh.ZenOc)
                     {
-                        cpuh.WritePstate(i, cpuh.Pstate[i]);
+                    	if (cpuh.SetOcMode(cpuh.ZenOc)) cpuh.setOverclockFrequencyAllCores(cpuh.PstateOc);
                     }
-                    cpuh.setOverclockFrequencyAllCores(0, cpuh.Pstate[0]);
+                    else
+                    {
+                    	cpuh.SetOcMode(false);
+                        // Write new P-states
+                        for (int i = 0; i < CPUHandler.NumPstates; i++)
+                        {
+                            cpuh.WritePstate(i, cpuh.Pstate[i]);
+                        }
+                    }
 
                     cpuh.SetC6Core(cpuh.ZenC6Core);
                     cpuh.SetC6Package(cpuh.ZenC6Package);
@@ -278,6 +291,8 @@ namespace ZenStatesSrv
                         di.MemWrite(DataInterface.REG_P0 + i, cpuh.Pstate[i]);
                     }
 
+                    di.MemWrite(DataInterface.REG_PSTATE_OC, cpuh.PstateOc);
+
                     di.MemWrite(DataInterface.REG_PPT, (UInt64)cpuh.ZenPPT);
                     di.MemWrite(DataInterface.REG_TDC, (UInt64)cpuh.ZenTDC);
                     di.MemWrite(DataInterface.REG_EDC, (UInt64)cpuh.ZenEDC);
@@ -311,7 +326,7 @@ namespace ZenStatesSrv
             SetServerFlags();
         }
 
-        protected override bool OnPowerEvent(PowerBroadcastStatus powerStatus)
+/*        protected override bool OnPowerEvent(PowerBroadcastStatus powerStatus)
         {
             switch (powerStatus)
             {
@@ -322,14 +337,19 @@ namespace ZenStatesSrv
                     {
                         cpuh.SetOcMode(cpuh.ZenOc);
 
-                        // Write P-states
-                        for (int i = 0; i < CPUHandler.NumPstates; i++)
+                        if (cpuh.ZenOc)
                         {
-                            cpuh.WritePstate(i, cpuh.Pstate[i]);
+                            cpuh.setOverclockFrequencyAllCores(cpuh.PstateOc);
                         }
-
-                        cpuh.setOverclockFrequencyAllCores(0, cpuh.Pstate[0]);
-
+                        else
+                        {
+                            // Write P-states
+                            for (int i = 0; i < CPUHandler.NumPstates; i++)
+                            {
+                                cpuh.WritePstate(i, cpuh.Pstate[i]);
+                            }
+                        }
+                        
                         // Write C-states
                         cpuh.SetC6Core(cpuh.ZenC6Core);
                         cpuh.SetC6Package(cpuh.ZenC6Package);
@@ -338,9 +358,9 @@ namespace ZenStatesSrv
                         // Perf bias
                         cpuh.SetPerfBias(cpuh.PerformanceBias);
 
-                        /*cpuh.SetPPT(cpuh.ZenPPT);
+                        *//*cpuh.SetPPT(cpuh.ZenPPT);
                         cpuh.SetTDC(cpuh.ZenTDC);
-                        cpuh.SetEDC(cpuh.ZenEDC);*/
+                        cpuh.SetEDC(cpuh.ZenEDC);*//*
                         cpuh.SetScalar(cpuh.ZenScalar);
                     }
 
@@ -350,7 +370,7 @@ namespace ZenStatesSrv
             }
 
             return false;
-        }
+        }*/
 
         static void MinimizeFootprint()
         {

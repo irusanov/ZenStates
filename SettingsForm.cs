@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Runtime.InteropServices;
 using System.Windows.Forms;
 
@@ -27,10 +27,16 @@ namespace ZenStates
         private const double FREQ_MAX = 70;
         private const double FREQ_MIN = 5.5;
 
-        // CheckBox[] PstateEn = new CheckBox[PSTATES];
+        // All auto / pre-Matisse
+        CheckBox[] PstateEn = new CheckBox[PSTATES];
         ComboBox[] PstateFid = new ComboBox[PSTATES];
         ComboBox[] PstateDid = new ComboBox[PSTATES];
         ComboBox[] PstateVid = new ComboBox[PSTATES];
+
+        // Manual control
+        ComboBox PstateOcFid;
+        ComboBox PstateOcDid;
+        ComboBox PstateOcVid;
 
         class CustomListItem
         {
@@ -105,62 +111,9 @@ namespace ZenStates
             smuVersionLabel.Text = NotificationIcon.smuVersion;
             label1.Text = "version " + Application.ProductVersion.Substring(0, Application.ProductVersion.LastIndexOf("."));
 
-            // Pstate controls
-            for (int i = 0; i < PstateFid.Length; i++)
-            {
-                // Enable checkbox
-                /*PstateEn[i] = new CheckBox
-                {
-                    Text = "P" + i.ToString(),
-                    Size = new System.Drawing.Size(40, 20),
-                    Location = new System.Drawing.Point(10, 7 + i * 25),
-                    Enabled = false
-                };
-                this.splitContainer1.Panel2.Controls.Add(PstateEn[i]);*/
-
-                // FID combobox
-                PstateFid[i] = new ComboBox
-                {
-                    Size = new System.Drawing.Size(115, 20),
-                    Location = new System.Drawing.Point(7, 7 + i * 25)
-                };
-                this.panelManualMode.Controls.Add(PstateFid[i]);
-
-                // DID combobox
-                PstateDid[i] = new ComboBox
-                {
-                    Size = new System.Drawing.Size(50, 20),
-                    Location = new System.Drawing.Point(130, 7 + i * 25),
-                    Enabled = false
-                };
-                foreach (CustomListItem item in DIVIDERS)
-                {
-                    PstateDid[i].Items.Add(item);
-                }
-                PstateDid[i].SelectedIndexChanged += UpdateFids;
-                this.panelManualMode.Controls.Add(PstateDid[i]);
-
-                // VID combobox
-                PstateVid[i] = new ComboBox
-                {
-                    Size = new System.Drawing.Size(77, 20),
-                    Location = new System.Drawing.Point(188, 7 + i * 25)
-                };
-                int k = 0;
-                for (byte j = VID_MIN; j <= VID_MAX; j++)
-                {
-                    double voltage = 1.55 - j * 0.00625;
-                    CustomListItem item = new CustomListItem(k++, j, voltage.ToString("F3") + "V");
-                    PstateVid[i].Items.Add(item);
-                }
-                this.panelManualMode.Controls.Add(PstateVid[i]);
-            }
-
-            Label test = new Label
-            {
-                Text = "Auto Mode Panel"
-            };
-            this.panelAutoMode.Controls.Add(test);
+            // Auto Pstate controls
+            PopulateAutoControls();
+            PopulateManualControls();
 
             foreach (CustomListItem item in PERFBIAS)
             {
@@ -190,6 +143,98 @@ namespace ZenStates
             toolTip.SetToolTip(labelTDC, "Thermal Design Current (A)");
         }
 
+        public void PopulateAutoControls()
+        {
+            for (int i = 0; i < PSTATES; i++)
+            {
+                // Enable checkbox
+                PstateEn[i] = new CheckBox
+                {
+                    Text = "P" + i.ToString(),
+                    Size = new System.Drawing.Size(40, 21),
+                    Location = new System.Drawing.Point(10, 7 + i * 25),
+                };
+
+                // FID combobox
+                PstateFid[i] = new ComboBox
+                {
+                    Size = new System.Drawing.Size(70, 21),
+                    Location = new System.Drawing.Point(50, 7 + i * 25)
+                };
+
+                // DID combobox
+                PstateDid[i] = new ComboBox
+                {
+                    Size = new System.Drawing.Size(55, 21),
+                    Location = new System.Drawing.Point(130, 7 + i * 25),
+                };
+                foreach (CustomListItem item in DIVIDERS)
+                {
+                    PstateDid[i].Items.Add(item);
+                }
+                PstateDid[i].SelectedIndexChanged += UpdateFids;
+
+                // VID combobox
+                PstateVid[i] = new ComboBox
+                {
+                    Size = new System.Drawing.Size(70, 21),
+                    Location = new System.Drawing.Point(195, 7 + i * 25)
+                };
+                int k = 0;
+                for (byte j = VID_MIN; j <= VID_MAX; j++)
+                {
+                    double voltage = 1.55 - j * 0.00625;
+                    CustomListItem item = new CustomListItem(k++, j, voltage.ToString("F3") + "V");
+                    PstateVid[i].Items.Add(item);
+                }
+
+                this.panelAutoMode.Controls.Add(PstateEn[i]);
+                this.panelAutoMode.Controls.Add(PstateFid[i]);
+                this.panelAutoMode.Controls.Add(PstateDid[i]);
+                this.panelAutoMode.Controls.Add(PstateVid[i]);
+            }
+        }
+
+        public void PopulateManualControls()
+        {
+            // FID combobox
+            PstateOcFid = new ComboBox
+            {
+                Size = new System.Drawing.Size(113, 21),
+                Location = new System.Drawing.Point(7, 7)
+            };
+
+            // DID combobox
+            PstateOcDid = new ComboBox
+            {
+                Size = new System.Drawing.Size(55, 21),
+                Location = new System.Drawing.Point(130, 7),
+            };
+            foreach (CustomListItem item in DIVIDERS)
+            {
+                PstateOcDid.Items.Add(item);
+            }
+            PstateOcDid.SelectedIndexChanged += UpdateOcFid;
+
+            // VID combobox
+            PstateOcVid = new ComboBox
+            {
+                Size = new System.Drawing.Size(70, 21),
+                Location = new System.Drawing.Point(195, 7)
+            };
+            int k = 0;
+            for (byte j = VID_MIN; j <= VID_MAX; j++)
+            {
+                double voltage = 1.55 - j * 0.00625;
+                CustomListItem item = new CustomListItem(k++, j, voltage.ToString("F3") + "V");
+                PstateOcVid.Items.Add(item);
+            }
+
+            this.panelManualMode.Controls.Add(PstateOcFid);
+            this.panelManualMode.Controls.Add(PstateOcDid);
+            this.panelManualMode.Controls.Add(PstateOcVid);
+        }
+
         public void ResetValues()
         {
             try
@@ -202,9 +247,9 @@ namespace ZenStates
                 {
 
                     // PstateEn
-                    // PstateEn[i].Checked = Convert.ToBoolean((NotificationIcon.Pstate[i] >> 63) & 0x1);
+                    PstateEn[i].Checked = Convert.ToBoolean((NotificationIcon.Pstate[i] >> 63) & 0x1);
 
-                    PstateFid[i].Enabled = Convert.ToBoolean(NotificationIcon.ZenOc);
+                    // PstateFid[i].Enabled = Convert.ToBoolean(NotificationIcon.ZenOc);
 
                     // DID
                     byte did = Convert.ToByte((NotificationIcon.Pstate[i] >> 8) & 0x3F);
@@ -219,11 +264,27 @@ namespace ZenStates
                     {
                         if (item.value == vid) PstateVid[i].SelectedIndex = item.id;
                     }
-                    PstateVid[i].Enabled = Convert.ToBoolean(NotificationIcon.ZenOc);
+                    // PstateVid[i].Enabled = Convert.ToBoolean(NotificationIcon.ZenOc);
+                }
+
+                // Populate OC FID, VID and DID from Pstate0
+                // OC DID
+                byte ocDid = Convert.ToByte((NotificationIcon.PstateOc >> 8) & 0x3F);
+                foreach (CustomListItem item in PstateOcDid.Items)
+                {
+                    if (item.value == ocDid) PstateOcDid.SelectedIndex = item.id;
+                }
+
+                // OC VID
+                byte ocVid = Convert.ToByte((NotificationIcon.PstateOc >> 14) & 0xFF);
+                foreach (CustomListItem item in PstateOcVid.Items)
+                {
+                    if (item.value == ocVid) PstateOcVid.SelectedIndex = item.id;
                 }
 
                 // FID/Ratios
                 UpdateFids(null, null);
+                UpdateOcFid(null, null);
 
             }
             catch (Exception ex)
@@ -258,7 +319,7 @@ namespace ZenStates
         private void UpdateFids(object sender, EventArgs e)
         {
 
-            for (int i = 0; i < PstateFid.Length; i++)
+            for (int i = 0; i < PSTATES; i++)
             {
                 // Get current FID
                 byte fid = Convert.ToByte(NotificationIcon.Pstate[i] & 0xFF);
@@ -302,30 +363,85 @@ namespace ZenStates
             }
         }
 
+        private void UpdateOcFid(object sender, EventArgs e)
+        {
+            // Get current FID
+            byte fid = Convert.ToByte(NotificationIcon.PstateOc & 0xFF);
+            try
+            {
+                fid = ((CustomListItem)PstateOcFid.SelectedItem).value;
+            }
+            catch (Exception) { };
+
+            // Get current did
+            byte did = Convert.ToByte((NotificationIcon.PstateOc >> 8) & 0x3F);
+            try
+            {
+                CustomListItem item = (CustomListItem)PstateOcDid.SelectedItem;
+                did = item.value;
+            }
+            catch (Exception ex) { }
+
+            // Calculate old frequency
+
+            PstateOcFid.Items.Clear();
+
+            int select = 0;
+            int k = 0;
+            for (byte j = FID_MAX; j >= FID_MIN; j--)
+            {
+                double freq = (25 * j / (did * 12.5));
+
+                if (FREQ_MAX >= freq && freq >= FREQ_MIN)
+                {
+                    CustomListItem item = new CustomListItem(k++, j, freq.ToString("F2") + "x");
+                    PstateOcFid.Items.Add(item);
+                    if (item.value == fid) select = item.id;
+                    /*double diff = Math.Abs(freq - freq_prev);
+                    if (diff < diff_last) select = PstateFid[i].Items.Count - 1;
+                    diff_last = diff;*/
+                }
+            }
+
+            PstateOcFid.SelectedIndex = select;
+        }
+
         void ButtonApplyClick(object sender, EventArgs e)
         {
             // Apply new settings
             try
             {
-                for (int i = 0; i < PstateFid.Length; i++)
+                if (radioManualControl.Checked)
                 {
-                    // UInt64 en = Convert.ToUInt64(PstateEn[i].Checked);
-                    UInt64 en = Convert.ToUInt64(radioManualControl.Checked);
-                    UInt64 fid = Convert.ToUInt64(((CustomListItem)PstateFid[i].SelectedItem).value);
-                    UInt64 did = Convert.ToUInt64(((CustomListItem)PstateDid[i].SelectedItem).value);
-                    UInt64 vid = Convert.ToUInt64(((CustomListItem)PstateVid[i].SelectedItem).value);
+                    UInt64 ocFid = Convert.ToUInt64(((CustomListItem)PstateOcFid.SelectedItem).value);
+                    UInt64 ocDid = Convert.ToUInt64(((CustomListItem)PstateOcDid.SelectedItem).value);
+                    UInt64 ocVid = Convert.ToUInt64(((CustomListItem)PstateOcVid.SelectedItem).value);
+                    UInt64 ocPs = NotificationIcon.di.MemRead(DataInterface.REG_PSTATE_OC);
 
-                    UInt64 ps = NotificationIcon.di.MemRead(DataInterface.REG_P0 + i);
+                    ocPs &= 0xFFFFFFFFFFC00000;
+                    ocPs |= (ocVid & 0xFF) << 14 | (ocDid & 0xFF) << 8 | ocFid & 0xFF;
 
-                    ps &= 0x7FFFFFFFFFC00000;
-                    ps |= (en & 1) << 63 | (vid & 0xFF) << 14 | (did & 0xFF) << 8 | fid & 0xFF;
-
-                    NotificationIcon.di.MemWrite(DataInterface.REG_P0 + i, ps);
-
-                    PstateFid[i].Enabled = radioManualControl.Checked;
-                    PstateVid[i].Enabled = radioManualControl.Checked;
+                    NotificationIcon.di.MemWrite(DataInterface.REG_PSTATE_OC, ocPs);
                 }
+                else
+                {
+                    for (int i = 0; i < PSTATES; i++)
+                    {
+                        UInt64 en = Convert.ToUInt64(PstateEn[i].Checked);
 
+                        UInt64 fid = Convert.ToUInt64(((CustomListItem)PstateFid[i].SelectedItem).value);
+                        UInt64 did = Convert.ToUInt64(((CustomListItem)PstateDid[i].SelectedItem).value);
+                        UInt64 vid = Convert.ToUInt64(((CustomListItem)PstateVid[i].SelectedItem).value);
+
+                        UInt64 ps = NotificationIcon.di.MemRead(DataInterface.REG_P0 + i);
+
+                        ps &= 0x7FFFFFFFFFC00000;
+                        ps |= (en & 1) << 63 | (vid & 0xFF) << 14 | (did & 0xFF) << 8 | fid & 0xFF;
+
+                        NotificationIcon.di.MemWrite(DataInterface.REG_P0 + i, ps);
+                    }
+                }
+                
                 UInt64 flags = 0;
                 if (checkBoxApplyOnStart.Checked) flags |= DataInterface.FLAG_APPLY_AT_START;
                 if (checkBoxGuiOnStart.Checked) flags |= DataInterface.FLAG_TRAY_ICON_AT_START;
@@ -367,7 +483,6 @@ namespace ZenStates
 
                 // Send update flag command
                 NotificationIcon.Execute(DataInterface.NOTIFY_CLIENT_FLAGS, false);
-
             }
             catch (Exception ex)
             {

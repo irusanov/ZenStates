@@ -1,4 +1,4 @@
-﻿namespace ZenStates
+namespace ZenStates
 {
     partial class SettingsForm
     {

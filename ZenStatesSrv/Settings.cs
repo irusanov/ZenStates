@@ -20,6 +20,7 @@ namespace ZenStatesSrv
 
         // Settings
         public UInt64[] Pstate = new UInt64[CPUHandler.NumPstates];
+        public UInt64 PstateOc = new UInt64();
 
         public bool TrayIconAtStart = false;
         public bool ApplyAtStart = false;
@@ -35,7 +36,7 @@ namespace ZenStatesSrv
         public int ZenScalar = 1;
 
         //public CPUHandler.PerfEnh PerformanceEnhancer = 0;
-        public CPUHandler.PerfBias PerformanceBias = 0;
+        public CPUHandler.PerfBias PerformanceBias = CPUHandler.PerfBias.Auto;
 
         public Settings()
         {
@@ -58,14 +59,14 @@ namespace ZenStatesSrv
             {
                 // Read file
                 res = ReadSettingsFromFile();
-                if (Pstate[0] == 0/* && Pstate[1] == 0 && Pstate[2] == 0*/) SettingsReset = true;
+                if (Pstate[0] == 0 && Pstate[1] == 0 && Pstate[2] == 0) SettingsReset = true;
                 if (ServiceVersion != DataInterface.ServiceVersion) res = false;
             }
 
             if (!res)
             {
                 // Create/overwrite file
-                // WriteSettingsToFile();
+                WriteSettingsToFile();
             }
         }
 
@@ -100,8 +101,9 @@ namespace ZenStatesSrv
                         writer.WriteElementString("ApplyAtStart", ApplyAtStart.ToString());
                         writer.WriteElementString("P80Temp", P80Temp.ToString());
                         writer.WriteElementString("P0", Pstate[0].ToString("X16"));
-                        // writer.WriteElementString("P1", Pstate[1].ToString("X16"));
-                        // writer.WriteElementString("P2", Pstate[2].ToString("X16"));
+                        writer.WriteElementString("P1", Pstate[1].ToString("X16"));
+                        writer.WriteElementString("P2", Pstate[2].ToString("X16"));
+                        writer.WriteElementString("PstateOc", PstateOc.ToString("X16"));
                         writer.WriteElementString("ZenC6Core", ZenC6Core.ToString());
                         writer.WriteElementString("ZenC6Package", ZenC6Package.ToString());
                         writer.WriteElementString("ZenCorePerfBoost", ZenCorePerfBoost.ToString());
@@ -171,8 +173,9 @@ namespace ZenStatesSrv
                                     case "ApplyAtStart": ApplyAtStart = reader.ReadElementContentAsString() == "True" ? true : false; ; break;
                                     case "P80Temp": P80Temp = reader.ReadElementContentAsString() == "True" ? true : false; break;
                                     case "P0": Pstate[0] = Convert.ToUInt64(reader.ReadElementContentAsString(), 16); break;
-                                    // case "P1": Pstate[1] = Convert.ToUInt64(reader.ReadElementContentAsString(), 16); break;
-                                    // case "P2": Pstate[2] = Convert.ToUInt64(reader.ReadElementContentAsString(), 16); break;
+                                    case "P1": Pstate[1] = Convert.ToUInt64(reader.ReadElementContentAsString(),16); break;
+                                    case "P2": Pstate[2] = Convert.ToUInt64(reader.ReadElementContentAsString(),16); break;
+                                    case "PstateOc": PstateOc = Convert.ToUInt64(reader.ReadElementContentAsString(), 16); break;
                                     case "ZenC6Core": ZenC6Core = reader.ReadElementContentAsString() == "True" ? true : false; break;
                                     case "ZenC6Package": ZenC6Package = reader.ReadElementContentAsString() == "True" ? true : false; break;
                                     case "ZenCorePerfBoost": ZenCorePerfBoost = reader.ReadElementContentAsString() == "True" ? true : false; break;

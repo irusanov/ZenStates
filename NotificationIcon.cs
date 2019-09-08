@@ -1,4 +1,4 @@
-﻿/*
+/*
  * NotificationIcon.cs
  * Created by Jon Sandström
  */
@@ -24,7 +24,7 @@ namespace ZenStates
         [DllImport("psapi.dll")]
         static extern int EmptyWorkingSet(IntPtr hwProc);
 
-        public enum PerfBias { Auto, None, Cinebench_R11p5, Cinebench_R15, Geekbench_3 };
+        public enum PerfBias { Auto = 0, None, Cinebench_R11p5, Cinebench_R15, Geekbench_3 };
         public enum PerfEnh { None = 0, Default, Level1, Level2, Level3_OC };
 
         private NotifyIcon notifyIcon;
@@ -58,6 +58,7 @@ namespace ZenStates
 
         public static UInt64[] Pstate;
         public static int Pstates = 3;
+        public static UInt64 PstateOc;
 
         public static bool ZenC6Core;
         public static bool ZenC6Package;
@@ -87,7 +88,8 @@ namespace ZenStates
         public NotificationIcon()
         {
 
-            Pstate = new UInt64[Pstates];
+			Pstate = new UInt64[Pstates];
+            PstateOc = new UInt64();
             // Generate icons
 
             GenTempIcons();
@@ -420,6 +422,8 @@ namespace ZenStates
                 else ApplyAtStart = true;
 
                 for (int i = 0; i < Pstates; i++) Pstate[i] = di.MemRead(DataInterface.REG_P0 + i);
+
+                PstateOc = di.MemRead(DataInterface.REG_PSTATE_OC);
 
                 if ((di.MemRead(DataInterface.REG_SERVER_FLAGS) & DataInterface.FLAG_C6CORE) == 0) ZenC6Core = false;
                 else ZenC6Core = true;

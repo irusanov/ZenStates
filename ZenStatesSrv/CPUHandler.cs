@@ -48,7 +48,7 @@ namespace ZenStatesSrv
     public class CPUHandler
     {
         public enum CPUType { Unsupported = 0, DEBUG = 1, Summit_Ridge, Threadripper, Raven_Ridge, Pinnacle_Ridge, Matisse, Picasso, Rome };
-        public enum PerfBias { Auto, None, Cinebench_R11p5, Cinebench_R15, Geekbench_3 };
+        public enum PerfBias { Auto = 0, None, Cinebench_R11p5, Cinebench_R15, Geekbench_3 };
         //public enum PerfEnh { None = 0, Level1, Level2, Level3_OC, Level4_OC };
 
         // MSR
@@ -135,6 +135,7 @@ namespace ZenStatesSrv
         public static int NumPstates = 3;
 
         public UInt64[] PstateAtStart;
+        public UInt64 PstateOcAtStart;
         public bool ZenC6CoreAtStart = false;
         public bool ZenC6PackageAtStart = false;
         public bool ZenCorePerfBoostAtStart = false;
@@ -142,12 +143,12 @@ namespace ZenStatesSrv
 
         //public bool ZenTscWorkaround = true;
 
-
         public bool TrayIconAtStart = false;
         public bool ApplyAtStart = false;
         public bool P80Temp = false;
 
         public UInt64[] Pstate = new UInt64[CPUHandler.NumPstates];
+        public UInt64 PstateOc = 0x0;
 
         public bool ZenC6Core = false;
         public bool ZenC6Package = false;
@@ -159,7 +160,7 @@ namespace ZenStatesSrv
         public int ZenScalar = 1;
 
         //public CPUHandler.PerfEnh PerformanceEnhancer = 0;
-        public CPUHandler.PerfBias PerformanceBias = 0;
+        public CPUHandler.PerfBias PerformanceBias = PerfBias.Auto;
 
         public CPUHandler()
         {
@@ -253,6 +254,8 @@ namespace ZenStatesSrv
                     Pstate[i] = SettingsStore.Pstate[i];
                 }
 
+                PstateOc = SettingsStore.PstateOc;
+
                 ZenC6Core = SettingsStore.ZenC6Core;
                 ZenC6Package = SettingsStore.ZenC6Package;
                 ZenCorePerfBoost = SettingsStore.ZenCorePerfBoost;
@@ -273,14 +276,16 @@ namespace ZenStatesSrv
 
                 // Get current P-states
                 PstateAtStart = new UInt64[NumPstates];
+                PstateOcAtStart = 0x0;
 
                 uint edx = 0, eax = 0;
 
                 if (cpuType == CPUType.DEBUG)
                 {
                     Pstate[0] = Convert.ToUInt64("80000000000408A0", 16); //unchecked((UInt64)((1 & 1) << 63 | (0x10 & 0xFF) << 14 | (0x08 & 0xFF) << 8 | 0xA0 & 0xFF));
-                    // Pstate[1] = Convert.ToUInt64("8000000000080A90", 16); //unchecked((UInt64)((1 & 1) << 63 | (0x20 & 0xFF) << 14 | (0x0A & 0xFF) << 8 | 0x90 & 0xFF));
-                    // Pstate[2] = Convert.ToUInt64("8000000000100C80", 16); //unchecked((UInt64)((1 & 1) << 63 | (0x30 & 0xFF) << 14 | (0x0C & 0xFF) << 8 | 0x80 & 0xFF));
+                    Pstate[1] = Convert.ToUInt64("8000000000080A90", 16); //unchecked((UInt64)((1 & 1) << 63 | (0x20 & 0xFF) << 14 | (0x0A & 0xFF) << 8 | 0x90 & 0xFF));
+                    Pstate[2] = Convert.ToUInt64("8000000000100C80", 16); //unchecked((UInt64)((1 & 1) << 63 | (0x30 & 0xFF) << 14 | (0x0C & 0xFF) << 8 | 0x80 & 0xFF));
+                    PstateOc = Pstate[0];
                     ZenC6Core = false;
                     ZenC6CoreAtStart = false;
                     ZenC6Package = false;
@@ -304,6 +309,9 @@ namespace ZenStatesSrv
                             }
                         }
                     }
+
+                    PstateOcAtStart = PstateAtStart[0];
+                    if (PstateOc == 0) PstateOc = PstateOcAtStart;
 
                     // Get current C-state settings
                     if (ols.RdmsrTx(MSR_PMGT_MISC, ref eax, ref edx, (UIntPtr)(1)) == 1)
@@ -408,8 +416,7 @@ namespace ZenStatesSrv
                  }
              }
 
-             // Don't set Pstate registers
-             /*for (int j = 0; j < Threads; j++)
+             for (int j = 0; j < Threads; j++)
              {
                  if (res == 1)
                  {
@@ -419,26 +426,41 @@ namespace ZenStatesSrv
                      // Write P-state
                      res = ols.WrmsrTx((uint)(MSR_PStateDef0 + pstate), eax, edx, (UIntPtr)(((UInt64)1) << j));
                  }
-             }*/
+             }
 
             if (res == 1) Pstate[pstate] = data;
 
             return res == 1;
         }
 
-        public bool setOverclockFrequencyAllCores(int pstate, UInt64 data)
+        public bool setOverclockFrequencyAllCores(UInt64 data)
         {
             bool res = false;
+            uint eax = 0, edx = 0;
 
-            byte fid = Convert.ToByte(Pstate[pstate] & 0xFF);
-            byte did = Convert.ToByte((Pstate[pstate] >> 8) & 0x3F);
-            byte vid = Convert.ToByte((Pstate[pstate] >> 14) & 0xFF);
-            double freq = (25 * fid / (did * 12.5)) * 100;
-
-            if (SmuWrite(SMC_MSG_SetOverclockFreqAllCores, (uint)freq))
+            for (int j = 0; j < Threads; j++)
             {
-                if (SmuWrite(SMC_MSG_SetOverclockVid, vid)) res = true;
+
+                // P0 fix C001_0015 HWCR[21]=1
+                if (ols.RdmsrTx(MSR_HWCR, ref eax, ref edx, (UIntPtr)(((UInt64)1) << j)) == 1)
+                {
+                    eax |= 0x200000;
+                    if (ols.WrmsrTx(MSR_HWCR, eax, edx, (UIntPtr)(((UInt64)1) << j)) == 1)
+                    {
+                        byte fid = Convert.ToByte(data & 0xFF);
+                        byte did = Convert.ToByte((data >> 8) & 0x3F);
+                        byte vid = Convert.ToByte((data >> 14) & 0xFF);
+                        double freq = (25 * fid / (did * 12.5)) * 100;
+
+                        if (SmuWrite(SMC_MSG_SetOverclockFreqAllCores, (uint)freq))
+                        {
+                            if (SmuWrite(SMC_MSG_SetOverclockVid, vid)) res = true;
+                        }
+                    }
+                }
             }
+
+            if (res) PstateOc = data;
 
             return res;
         }
@@ -952,7 +974,12 @@ namespace ZenStatesSrv
                 WritePstate(i, PstateAtStart[i]);
             }
 
-            setOverclockFrequencyAllCores(0, PstateAtStart[0]);
+            if (ZenOcAtStart)
+            {
+                setOverclockFrequencyAllCores(PstateOcAtStart);
+            } else {
+                PstateOc = PstateOcAtStart;
+            }
 
             // C-states
             SetC6Core(ZenC6CoreAtStart);
@@ -978,6 +1005,8 @@ namespace ZenStatesSrv
             {
                 SettingsStore.Pstate[i] = Pstate[i];
             }
+
+            SettingsStore.PstateOc = PstateOc;
 
             SettingsStore.ZenC6Core = ZenC6Core;
             SettingsStore.ZenC6Package = ZenC6Package;
