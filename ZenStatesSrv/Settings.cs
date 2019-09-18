@@ -20,6 +20,7 @@ namespace ZenStatesSrv
 
         // Settings
         public UInt64[] Pstate = new UInt64[CPUHandler.NumPstates];
+        public UInt64[] BoostFreq = new UInt64[3];
         public UInt64 PstateOc = new UInt64();
 
         public bool TrayIconAtStart = false;
@@ -103,6 +104,9 @@ namespace ZenStatesSrv
                         writer.WriteElementString("P0", Pstate[0].ToString("X16"));
                         writer.WriteElementString("P1", Pstate[1].ToString("X16"));
                         writer.WriteElementString("P2", Pstate[2].ToString("X16"));
+                        writer.WriteElementString("Boost0", BoostFreq[0].ToString("X16"));
+                        writer.WriteElementString("Boost1", BoostFreq[1].ToString("X16"));
+                        writer.WriteElementString("Boost2", BoostFreq[2].ToString("X16"));
                         writer.WriteElementString("PstateOc", PstateOc.ToString("X16"));
                         writer.WriteElementString("ZenC6Core", ZenC6Core.ToString());
                         writer.WriteElementString("ZenC6Package", ZenC6Package.ToString());
@@ -175,6 +179,9 @@ namespace ZenStatesSrv
                                     case "P0": Pstate[0] = Convert.ToUInt64(reader.ReadElementContentAsString(), 16); break;
                                     case "P1": Pstate[1] = Convert.ToUInt64(reader.ReadElementContentAsString(),16); break;
                                     case "P2": Pstate[2] = Convert.ToUInt64(reader.ReadElementContentAsString(),16); break;
+                                    case "Boost0": BoostFreq[0] = Convert.ToUInt64(reader.ReadElementContentAsString(), 16); break;
+                                    case "Boost1": BoostFreq[1] = Convert.ToUInt64(reader.ReadElementContentAsString(), 16); break;
+                                    case "Boost2": BoostFreq[2] = Convert.ToUInt64(reader.ReadElementContentAsString(), 16); break;
                                     case "PstateOc": PstateOc = Convert.ToUInt64(reader.ReadElementContentAsString(), 16); break;
                                     case "ZenC6Core": ZenC6Core = reader.ReadElementContentAsString() == "True" ? true : false; break;
                                     case "ZenC6Package": ZenC6Package = reader.ReadElementContentAsString() == "True" ? true : false; break;

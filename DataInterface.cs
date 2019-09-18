@@ -43,6 +43,9 @@ namespace ZenStates
         public const int REG_SCALAR = 0x0D;
         public const int REG_SMU_VERSION = 0x0E;
         public const int REG_PSTATE_OC = 0x0F;
+        public const int REG_CPU_TYPE = 0x10;
+        public const int REG_BOOST_FREQ_0 = 0x11;
+        public const int REG_BOOST_FREQ_1 = 0x12;
 
         public const UInt64 FLAG_IS_AVAILABLE = 1 << 0;
         public const UInt64 FLAG_SUPPORTED_CPU = 1 << 1;

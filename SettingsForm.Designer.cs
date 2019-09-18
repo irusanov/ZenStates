@@ -486,7 +486,8 @@ namespace ZenStates
             // 
             this.tableLayoutPanel1.AutoSize = true;
             this.tableLayoutPanel1.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
-            this.tableLayoutPanel1.ColumnCount = 2;
+            this.tableLayoutPanel1.ColumnCount = 3;
+            this.tableLayoutPanel1.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle());
             this.tableLayoutPanel1.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle());
             this.tableLayoutPanel1.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100F));
             this.tableLayoutPanel1.Controls.Add(this.radioAutoControl, 0, 0);
@@ -519,7 +520,7 @@ namespace ZenStates
             this.radioManualControl.Dock = System.Windows.Forms.DockStyle.Top;
             this.radioManualControl.Location = new System.Drawing.Point(59, 3);
             this.radioManualControl.Name = "radioManualControl";
-            this.radioManualControl.Size = new System.Drawing.Size(204, 17);
+            this.radioManualControl.Size = new System.Drawing.Size(60, 17);
             this.radioManualControl.TabIndex = 1;
             this.radioManualControl.Text = "Manual";
             this.radioManualControl.UseVisualStyleBackColor = true;

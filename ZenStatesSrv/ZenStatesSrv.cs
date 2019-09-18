@@ -132,8 +132,10 @@ namespace ZenStatesSrv
             di.MemWrite(DataInterface.REG_SMU_VERSION, cpuh.getSmuVersion());
 
             for (int i = 0; i < CPUHandler.NumPstates; i++) di.MemWrite(DataInterface.REG_P0 + i, cpuh.Pstate[i]);
+            for (int i = 0; i < 2; i++) di.MemWrite(DataInterface.REG_BOOST_FREQ_0 + i, cpuh.Pstate[0]);
 
             di.MemWrite(DataInterface.REG_PSTATE_OC, cpuh.PstateOc);
+            di.MemWrite(DataInterface.REG_CPU_TYPE, (UInt64)cpuh.cpuType);
 
             di.MemWrite(DataInterface.REG_PPT, (UInt64)cpuh.ZenPPT);
             di.MemWrite(DataInterface.REG_TDC, (UInt64)cpuh.ZenTDC);
@@ -217,6 +219,9 @@ namespace ZenStatesSrv
                         {
                             cpuh.WritePstate(i, di.MemRead(DataInterface.REG_P0 + i));
                         }
+
+                        cpuh.setBoostFrequencySingleCore(di.MemRead(DataInterface.REG_BOOST_FREQ_0));
+                        cpuh.setBoostFrequencyAllCores(di.MemRead(DataInterface.REG_BOOST_FREQ_1));
                     }
 
                     cpuh.SetC6Core(cpuh.ZenC6Core);
@@ -256,6 +261,9 @@ namespace ZenStatesSrv
                         {
                             cpuh.WritePstate(i, cpuh.Pstate[i]);
                         }
+
+                        cpuh.setBoostFrequencySingleCore(cpuh.BoostFreq[0]);
+                        cpuh.setBoostFrequencyAllCores(cpuh.BoostFreq[1]);
                     }
 
                     cpuh.SetC6Core(cpuh.ZenC6Core);
@@ -289,6 +297,11 @@ namespace ZenStatesSrv
                     for (int i = 0; i < CPUHandler.NumPstates; i++)
                     {
                         di.MemWrite(DataInterface.REG_P0 + i, cpuh.Pstate[i]);
+                    }
+
+                    for (int i = 0; i < 2; i++)
+                    {
+                        di.MemWrite(DataInterface.REG_BOOST_FREQ_0 + i, cpuh.BoostFreq[i]);
                     }
 
                     di.MemWrite(DataInterface.REG_PSTATE_OC, cpuh.PstateOc);
@@ -326,7 +339,7 @@ namespace ZenStatesSrv
             SetServerFlags();
         }
 
-/*        protected override bool OnPowerEvent(PowerBroadcastStatus powerStatus)
+        protected override bool OnPowerEvent(PowerBroadcastStatus powerStatus)
         {
             switch (powerStatus)
             {
@@ -358,9 +371,9 @@ namespace ZenStatesSrv
                         // Perf bias
                         cpuh.SetPerfBias(cpuh.PerformanceBias);
 
-                        *//*cpuh.SetPPT(cpuh.ZenPPT);
+                        /*cpuh.SetPPT(cpuh.ZenPPT);
                         cpuh.SetTDC(cpuh.ZenTDC);
-                        cpuh.SetEDC(cpuh.ZenEDC);*//*
+                        cpuh.SetEDC(cpuh.ZenEDC);*/
                         cpuh.SetScalar(cpuh.ZenScalar);
                     }
 
@@ -370,7 +383,7 @@ namespace ZenStatesSrv
             }
 
             return false;
-        }*/
+        }
 
         static void MinimizeFootprint()
         {

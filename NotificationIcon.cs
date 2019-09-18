@@ -57,6 +57,7 @@ namespace ZenStates
         public static bool SettingsSaved;
 
         public static UInt64[] Pstate;
+        public static UInt64[] BoostFreq;
         public static int Pstates = 3;
         public static UInt64 PstateOc;
 
@@ -89,6 +90,7 @@ namespace ZenStates
         {
 
 			Pstate = new UInt64[Pstates];
+            BoostFreq = new UInt64[3];
             PstateOc = new UInt64();
             // Generate icons
 
@@ -350,7 +352,6 @@ namespace ZenStates
         {
             try
             {
-
                 // timeout handling
                 if (di.MemRead(DataInterface.REG_PING_PONG) == 0)
                 {
@@ -375,7 +376,6 @@ namespace ZenStates
                 // Manage client commands
                 if (waitCmd != DataInterface.NOTIFY_CLEAR)
                 {
-
                     // Check for execution
                     if (di.MemRead(DataInterface.REG_NOTIFY_STATUS) == DataInterface.NOTIFY_DONE)
                     {
@@ -390,7 +390,6 @@ namespace ZenStates
                         waitCmd = DataInterface.NOTIFY_CLEAR;
 
                     }
-
                 }
 
                 ServiceVersion = di.MemRead(DataInterface.REG_SERVER_VERSION);
@@ -422,6 +421,8 @@ namespace ZenStates
                 else ApplyAtStart = true;
 
                 for (int i = 0; i < Pstates; i++) Pstate[i] = di.MemRead(DataInterface.REG_P0 + i);
+                for (int i = 0; i < 2; i++) BoostFreq[i] = di.MemRead(DataInterface.REG_BOOST_FREQ_0 + i);
+                BoostFreq[2] = Pstate[2];
 
                 PstateOc = di.MemRead(DataInterface.REG_PSTATE_OC);
 
@@ -480,7 +481,6 @@ namespace ZenStates
             {
                 // Suppress exception
             }
-
         }
 
         #endregion
