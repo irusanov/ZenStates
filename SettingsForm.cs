@@ -18,7 +18,7 @@ namespace ZenStates
         [DllImportAttribute("user32.dll")]
         public static extern bool ReleaseCapture();
 
-        private static bool isZen2 = NotificationIcon.di.MemRead(DataInterface.REG_CPU_TYPE) > 5; // CPUType.Matisse = 6
+        private static bool isZen2 = NotificationIcon.di.MemRead(DataInterface.REG_CPU_TYPE) >= 7; // CPUType.Matisse = 7
 
         private const int PSTATES = 3;
         private const int FID_MAX = 0xFF;
@@ -81,7 +81,8 @@ namespace ZenStates
             new CustomListItem(1, "Default"),
             new CustomListItem(2, "Level 1"),
             new CustomListItem(3, "Level 2"),
-            new CustomListItem(4, "Level 3 (OC)")
+            new CustomListItem(4, "Level 3 (OC)"),
+            new CustomListItem(5, "Level 4 (OC)")
         };
 
         CustomListItem[] DIVIDERS = {
@@ -107,8 +108,6 @@ namespace ZenStates
             //
             InitializeComponent();
 
-            MessageBox.Show("Initialize");
-
             // Window management
             labelMB.MouseDown += new MouseEventHandler(SettingsFormMouseDown);
             labelCPU.MouseDown += new MouseEventHandler(SettingsFormMouseDown);
@@ -118,7 +117,7 @@ namespace ZenStates
             labelCPU.Text = NotificationIcon.cpuName;
             biosVersionLabel.Text = NotificationIcon.biosVersion;
             smuVersionLabel.Text = NotificationIcon.smuVersion;
-            label1.Text = "version " + Application.ProductVersion.Substring(0, Application.ProductVersion.LastIndexOf("."));
+            label1.Text = "version " + Application.ProductVersion; //.Substring(0, Application.ProductVersion.LastIndexOf("."));
 
             // Auto Pstate controls
             PopulateAutoControls();
@@ -136,10 +135,18 @@ namespace ZenStates
 
             ResetValues();
 
-            // Disable PPT/TDC/EDC
-            /*textBoxPPT.Enabled = false;
-            textBoxTDC.Enabled = false;
-            textBoxEDC.Enabled = false;*/
+            if (isZen2)
+            {
+                textBoxPPT.Enabled = false;
+                textBoxTDC.Enabled = false;
+                textBoxEDC.Enabled = false;
+                labelPPT.Enabled = false;
+                labelTDC.Enabled = false;
+                labelEDC.Enabled = false;
+                checkBoxSmuPL.Enabled = false;
+                comboBoxPerfenh.Enabled = false;
+                labelPerfEnh.Enabled = false;
+            }
 
             // Save button
             SetSavedButton(false);
@@ -151,6 +158,13 @@ namespace ZenStates
             toolTip.SetToolTip(labelPPT, "Socket Power (W)");
             toolTip.SetToolTip(labelEDC, "Electrical Design Current (A)");
             toolTip.SetToolTip(labelTDC, "Thermal Design Current (A)");
+
+            if (isZen2)
+            {
+                toolTip.SetToolTip(checkBoxSmuPL, "It's currently not working with Zen2 and new AGESA");
+                toolTip.SetToolTip(comboBoxPerfenh, "It's currently not working with Zen2 and new AGESA");
+                toolTip.SetToolTip(checkBoxSmuPL, "It's currently not working with Zen2 and new AGESA");
+            }
         }
 
         public void PopulateAutoControls()
@@ -527,6 +541,18 @@ namespace ZenStates
                     ocPs |= (ocVid & 0xFF) << 14 | (ocDid & 0xFF) << 8 | ocFid & 0xFF;
 
                     NotificationIcon.di.MemWrite(DataInterface.REG_PSTATE_OC, ocPs);
+                    if (!isZen2)
+                    {
+                        for (int i = 0; i < PSTATES - 1; i++)
+                        {
+                            UInt64 en = Convert.ToUInt64(PstateEn[i].Checked);
+                            ocPs |= (en & 1) << 63;
+                            NotificationIcon.di.MemWrite(DataInterface.REG_P0 + i, ocPs);
+                            PstateFid[i].SelectedItem = PstateOcFid.SelectedItem;
+                            PstateDid[i].SelectedItem = PstateOcDid.SelectedItem;
+                            PstateVid[i].SelectedItem = PstateOcVid.SelectedItem;
+                        }
+                    }
                 }
                 else
                 {
@@ -574,6 +600,11 @@ namespace ZenStates
 
                             NotificationIcon.di.MemWrite(DataInterface.REG_P0 + i, ps);
                         }
+
+                        NotificationIcon.di.MemWrite(DataInterface.REG_PSTATE_OC , NotificationIcon.di.MemRead(DataInterface.REG_P0));
+                        PstateOcFid.SelectedItem = PstateFid[0].SelectedItem;
+                        PstateOcDid.SelectedItem = PstateDid[0].SelectedItem;
+                        PstateOcVid.SelectedItem = PstateVid[0].SelectedItem;
                     }
                 }
                 
@@ -710,6 +741,13 @@ namespace ZenStates
                     textBoxPPT.Text = "1000";
                     textBoxTDC.Text = "1000";
                     textBoxEDC.Text = "150";
+                    textBoxScalar.Text = "1";
+                    checkBoxSmuPL.Checked = false;
+                    break;
+                case (int)NotificationIcon.PerfEnh.Level4_OC:
+                    textBoxPPT.Text = "1000";
+                    textBoxTDC.Text = "1000";
+                    textBoxEDC.Text = "1000";
                     textBoxScalar.Text = "1";
                     checkBoxSmuPL.Checked = false;
                     break;

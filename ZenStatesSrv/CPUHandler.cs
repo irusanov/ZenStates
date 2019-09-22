@@ -1,39 +1,3 @@
-/*
-// Feature Control Defines
-#define FEATURE_CCLK_CONTROLLER_BIT    0
-#define FEATURE_FAN_CONTROLLER_BIT     1
-#define FEATURE_DATA_CALCULATION_BIT   2
-#define FEATURE_PPT_BIT                3
-#define FEATURE_TDC_BIT                4
-#define FEATURE_THERMAL_BIT            5
-#define FEATURE_FIT_BIT                6
-#define FEATURE_QOS_BIT                7
-#define FEATURE_CORE_CSTATES_BIT       8
-#define FEATURE_PROCHOT_BIT            9
-#define FEATURE_MCM_DATA_TRANSFER_BIT  10
-#define FEATURE_DLWM_BIT               11
-#define FEATURE_PC6_BIT                12
-#define FEATURE_CSTATE_BOOST_BIT       13
-#define FEATURE_VOLTAGE_CONTROLLER_BIT 14
-#define FEATURE_HOT_PLUG_BIT           15
-#define FEATURE_SPARE_16_BIT           16
-#define FEATURE_FW_DEEPSLEEP_BIT       17
-#define FEATURE_SPARE_18_BIT           18
-#define FEATURE_SPARE_19_BIT           19
-#define FEATURE_SPARE_20_BIT           20
-#define FEATURE_SPARE_21_BIT           21
-#define FEATURE_SPARE_22_BIT           22
-#define FEATURE_SPARE_23_BIT           23
-#define FEATURE_SPARE_24_BIT           24
-#define FEATURE_SPARE_25_BIT           25
-#define FEATURE_SPARE_26_BIT           26
-#define FEATURE_SPARE_27_BIT           27
-#define FEATURE_SPARE_28_BIT           28
-#define FEATURE_SPARE_29_BIT           29
-#define FEATURE_SPARE_30_BIT           30
-#define FEATURE_SPARE_31_BIT           31
-*/
-
 using OpenLibSys;
 using System;
 using System.Configuration;
@@ -47,7 +11,7 @@ namespace ZenStatesSrv
     /// </summary>
     public class CPUHandler
     {
-        public enum CPUType { Unsupported = 0, DEBUG = 1, Summit_Ridge, Threadripper, Raven_Ridge, Pinnacle_Ridge, Matisse, Picasso, Rome };
+        public enum CPUType { Unsupported = 0, DEBUG = 1, Summit_Ridge, Threadripper, Raven_Ridge, Pinnacle_Ridge, Picasso, Matisse, Rome };
         public enum PerfBias { Auto = 0, None, Cinebench_R11p5, Cinebench_R15, Geekbench_3 };
         //public enum PerfEnh { None = 0, Level1, Level2, Level3_OC, Level4_OC };
 
@@ -115,6 +79,27 @@ namespace ZenStatesSrv
         const UInt32 SMU_FeatureFlag_PPT = 0x04;
         const UInt32 SMU_FeatureFlag_TDC = 0x08;
         const UInt32 SMU_FeatureFlag_THERM = 0x10;
+
+        // Legacy (Zen/Zen+)
+        const UInt32 SMU_ADDR_MSG_ZEN1 = 0x03B10528;
+        const UInt32 SMU_ADDR_RSP_ZEN1 = 0x03B10564;
+        const UInt32 SMU_ADDR_ARG0_ZEN1 = 0x03B10598;
+        const UInt32 SMU_ADDR_ARG1_ZEN1 = SMU_ADDR_ARG0_ZEN1 + 0x4;
+
+        const UInt32 SMC_MSG_EnableSmuFeatures_ZEN1 = 0x09;
+        const UInt32 SMC_MSG_DisableSmuFeatures_ZEN1 = 0x0A;
+        const UInt32 SMC_MSG_EnableOverclocking_ZEN1 = 0x23;
+        const UInt32 SMC_MSG_DisableOverclocking_ZEN1 = 0x24;
+        const UInt32 SMC_MSG_SetOverclockFreqAllCores_ZEN1 = 0x26;
+        const UInt32 SMC_MSG_SetOverclockFreqPerCore_ZEN1 = 0x27;
+        const UInt32 SMC_MSG_SetOverclockVid_ZEN1 = 0x28;
+        const UInt32 SMC_MSG_SetPPTLimit_ZEN1 = 0x31;
+        const UInt32 SMC_MSG_TCTL_OFFSET_ZEN1 = 0x3A;
+        const UInt32 SMC_MSG_SetTDCLimit_ZEN1 = 0x43;
+        const UInt32 SMC_MSG_SetEDCLimit_ZEN1 = 0x44;
+        const UInt32 SMC_MSG_SetFITLimit_ZEN1 = 0x45;
+        const UInt32 SMC_MSG_SetTjMax_ZEN1 = 0x46;
+        const UInt32 SMC_MSG_SetFITLimitScalar_ZEN1 = 0x48;
 
         private Ols ols;
 
@@ -460,20 +445,44 @@ namespace ZenStatesSrv
                         byte vid = Convert.ToByte((data >> 14) & 0xFF);
                         double freq = (25 * fid / (did * 12.5)) * 100;
 
-                        if (SmuWrite(SMC_MSG_SetOverclockFreqAllCores, (uint)freq))
+                        if (cpuType >= CPUType.Matisse)
                         {
-                            if (SmuWrite(SMC_MSG_SetOverclockVid, vid)) res = true;
+                            if (SmuWrite(SMC_MSG_SetOverclockFreqAllCores, (uint)freq))
+                            {
+                                if (SmuWrite(SMC_MSG_SetOverclockVid, vid)) res = true;
+                            }
+                        }
+                        else
+                        {
+                            /*if (SmuWrite(SMC_MSG_SetOverclockFreqAllCores_ZEN1, (uint)freq))
+                            {
+                                if (SmuWrite(SMC_MSG_SetOverclockVid_ZEN1, vid)) res = true;
+                            }*/
+                            res = true;
                         }
                     }
                 }
             }
 
-            WritePstate(0, data);
-            WritePstate(1, data);
+            /*if (cpuType >= CPUType.Matisse)
+            {
+                WritePstate(0, data);
+                WritePstate(1, data);
+            }*/
 
-            if (res) PstateOc = data;
+            if (res)
+            {
+                PstateOc = data;
+                WritePstate(0, data);
+                WritePstate(1, data);
+            }
 
             return res;
+        }
+
+        public bool setCmdTemp(uint msg, uint data)
+        {
+            return SmuWrite(msg, data);
         }
 
         public bool setBoostFrequencySingleCore(UInt64 data)
@@ -594,13 +603,11 @@ namespace ZenStatesSrv
             res = ols.Rdmsr(MSR_HWCR, ref eax, ref edx);
             if (res == 1)
             {
-
                 if (!en) eax = eax | 1 << 25;
                 else eax = eax & 0xFDFFFFFF;
 
                 // Rewrite settings
                 res = ols.Wrmsr(MSR_HWCR, eax, edx);
-
             }
 
             if (res == 1) ZenCorePerfBoost = en;
@@ -686,7 +693,10 @@ namespace ZenStatesSrv
         {
             bool res;
 
-            res = SmuWrite(SMC_MSG_SetPPTLimit, (UInt32)ppt * 1000);
+            if (cpuType >= CPUType.Matisse)
+                res = SmuWrite(SMC_MSG_SetPPTLimit, (UInt32)ppt * 1000);
+            else
+                res = SmuWrite(SMC_MSG_SetPPTLimit_ZEN1, (UInt32)ppt * 1000);
 
             if (res) ZenPPT = ppt;
 
@@ -697,7 +707,10 @@ namespace ZenStatesSrv
         {
             bool res;
 
-            res = SmuWrite(SMC_MSG_SetTDCLimit, (UInt32)tdc * 1000);
+            if (cpuType >= CPUType.Matisse)
+                res = SmuWrite(SMC_MSG_SetTDCLimit, (UInt32)tdc * 1000);
+            else
+                res = SmuWrite(SMC_MSG_SetTDCLimit_ZEN1, (UInt32)tdc * 1000);
 
             if (res) ZenTDC = tdc;
 
@@ -707,7 +720,11 @@ namespace ZenStatesSrv
         public bool SetEDC(int edc)
         {
             bool res;
-            res = SmuWrite(SMC_MSG_SetEDCLimit, (UInt32)edc * 1000);
+
+            if (cpuType >= CPUType.Matisse)
+                res = SmuWrite(SMC_MSG_SetEDCLimit, (UInt32)edc * 1000);
+            else
+                res = SmuWrite(SMC_MSG_SetEDCLimit_ZEN1, (UInt32)edc * 1000);
 
             if (res) ZenEDC = edc;
 
@@ -717,7 +734,10 @@ namespace ZenStatesSrv
         public bool SetScalar(int scalar)
         {
             bool res;
-            res = SmuWrite(SMC_MSG_SetFITLimitScalar, (UInt32)scalar);
+            if (cpuType >= CPUType.Matisse)
+                res = SmuWrite(SMC_MSG_SetFITLimitScalar, (UInt32)scalar);
+            else
+                res = SmuWrite(SMC_MSG_SetFITLimitScalar_ZEN1, (UInt32)scalar);
 
             if (res) ZenScalar = scalar;
 
@@ -728,8 +748,20 @@ namespace ZenStatesSrv
         {
             bool res;
 
-            if (manual) res = SmuWrite(SMC_MSG_EnableOverclocking, 0);
-            else res = SmuWrite(SMC_MSG_DisableOverclocking, 0);
+            if (manual)
+            {
+                if (cpuType >= CPUType.Matisse)
+                    res = SmuWrite(SMC_MSG_EnableOverclocking, 0);
+                else
+                    res = true; //SmuWrite(SMC_MSG_EnableOverclocking_ZEN1, 0);
+            }
+            else
+            {
+                if (cpuType >= CPUType.Matisse)
+                    res = SmuWrite(SMC_MSG_DisableOverclocking, 0);
+                else
+                    res = true; //SmuWrite(SMC_MSG_DisableOverclocking_ZEN1, 0);
+            }
 
             if (res) ZenOc = manual;
 
@@ -771,7 +803,10 @@ namespace ZenStatesSrv
             UInt32 data = 0;
             while ((!res || data != 1) && --timeout > 0)
             {
-                res = SmuReadReg(SMU_ADDR_RSP, ref data);
+                if (cpuType >= CPUType.Matisse)
+                    res = SmuReadReg(SMU_ADDR_RSP, ref data);
+                else
+                    res = SmuReadReg(SMU_ADDR_RSP_ZEN1, ref data);
             }
 
             if (timeout == 0 || data != 1) res = false;
@@ -784,11 +819,18 @@ namespace ZenStatesSrv
             bool res;
 
             // Clear response
-            res = SmuWriteReg(SMU_ADDR_RSP, 0);
+            if (cpuType >= CPUType.Matisse)
+                res = SmuWriteReg(SMU_ADDR_RSP, 0);
+            else
+                res = SmuWriteReg(SMU_ADDR_RSP_ZEN1, 0);
+
             if (res)
             {
                 // Send message
-                res = SmuWriteReg(SMU_ADDR_MSG, msg);
+                if (cpuType >= CPUType.Matisse)
+                    res = SmuWriteReg(SMU_ADDR_MSG, msg);
+                else
+                    res = SmuWriteReg(SMU_ADDR_MSG_ZEN1, msg);
                 if (res)
                 {
                     // Check completion
@@ -796,7 +838,10 @@ namespace ZenStatesSrv
 
                     if (res)
                     {
-                        res = SmuReadReg(SMU_ADDR_ARG0, ref data);
+                        if (cpuType >= CPUType.Matisse)
+                            res = SmuReadReg(SMU_ADDR_ARG0, ref data);
+                        else
+                            res = SmuReadReg(SMU_ADDR_ARG0_ZEN1, ref data);
                     }
                 }
             }
@@ -812,17 +857,35 @@ namespace ZenStatesSrv
             res = hMutexPci.WaitOne(5000);
 
             // Clear response
-            if (res) res = SmuWriteReg(SMU_ADDR_RSP, 0);
+            if (res)
+            {
+                if (cpuType >= CPUType.Matisse)
+                    res = SmuWriteReg(SMU_ADDR_RSP, 0);
+                else
+                    res = SmuWriteReg(SMU_ADDR_RSP_ZEN1, 0);
+            }
+
             if (res)
             {
                 // Write data
-                res = SmuWriteReg(SMU_ADDR_ARG0, data);
+                if (cpuType >= CPUType.Matisse)
+                    res = SmuWriteReg(SMU_ADDR_ARG0, data);
+                else
+                    res = SmuWriteReg(SMU_ADDR_ARG0_ZEN1, data);
+
                 if (res)
                 {
-                    SmuWriteReg(SMU_ADDR_ARG1, 0);
+                    if (cpuType >= CPUType.Matisse)
+                        SmuWriteReg(SMU_ADDR_ARG1, 0);
+                    else
+                        SmuWriteReg(SMU_ADDR_ARG1_ZEN1, 0);
                 }
                 // Send message
-                res = SmuWriteReg(SMU_ADDR_MSG, msg);
+                if (cpuType >= CPUType.Matisse)
+                    res = SmuWriteReg(SMU_ADDR_MSG, msg);
+                else
+                    res = SmuWriteReg(SMU_ADDR_MSG_ZEN1, msg);
+
                 if (res)
                 {
                     res = SmuWaitDone();
@@ -894,7 +957,6 @@ namespace ZenStatesSrv
             int temp_out = (tens << 4) | ones;
 
             return (ols.WriteIoPortByteEx(0x80, (byte)temp_out) == 1);
-
         }
 
         public void Restore()

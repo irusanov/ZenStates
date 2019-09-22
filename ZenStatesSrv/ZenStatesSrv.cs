@@ -154,6 +154,48 @@ namespace ZenStatesSrv
             MinimizeFootprint();
         }
 
+        private static void applySettings()
+        {
+            SetStartupService(true);
+            SetStartupGUI(cpuh.TrayIconAtStart);
+
+            // P80Temp = cpuh.P80Temp;
+
+            if (cpuh.ZenOc)
+            {
+                if (cpuh.SetOcMode(true)) cpuh.setOverclockFrequencyAllCores(cpuh.PstateOc);
+            }
+            else
+            {
+                cpuh.SetOcMode(false);
+                // Write new P-states
+                for (int i = 0; i < CPUHandler.NumPstates; i++)
+                {
+                    cpuh.WritePstate(i, cpuh.Pstate[i]);
+                }
+
+                if (cpuh.cpuType >= CPUHandler.CPUType.Matisse)
+                {
+                    cpuh.setBoostFrequencySingleCore(cpuh.BoostFreq[0]);
+                    cpuh.setBoostFrequencyAllCores(cpuh.BoostFreq[1]);
+                }
+            }
+
+            cpuh.SetC6Core(cpuh.ZenC6Core);
+            cpuh.SetC6Package(cpuh.ZenC6Package);
+            cpuh.SetCpb(cpuh.ZenCorePerfBoost);
+
+            if (cpuh.cpuType < CPUHandler.CPUType.Matisse)
+            {
+                cpuh.SetPPT(cpuh.ZenPPT);
+                cpuh.SetTDC(cpuh.ZenTDC);
+                cpuh.SetEDC(cpuh.ZenEDC);
+            }
+
+            cpuh.SetScalar(cpuh.ZenScalar);
+            cpuh.SetPerfBias(cpuh.PerformanceBias);
+        }
+
         private static void t1Handler(object source, ElapsedEventArgs e)
         {
 
@@ -202,80 +244,70 @@ namespace ZenStatesSrv
 
                     // PerfBias
                     cpuh.PerformanceBias = (CPUHandler.PerfBias)di.MemRead(DataInterface.REG_PERF_BIAS);
+                    cpuh.PstateOc = di.MemRead(DataInterface.REG_PSTATE_OC);
 
-                    // Apply settings
-                    SetStartupService(true);
-                    SetStartupGUI(cpuh.TrayIconAtStart);
-
-                    // Write new P-states
-                    if (cpuh.ZenOc)
+                    for (int i = 0; i < CPUHandler.NumPstates; i++)
                     {
-                        if (cpuh.SetOcMode(true)) cpuh.setOverclockFrequencyAllCores(di.MemRead(DataInterface.REG_PSTATE_OC));
+                        cpuh.Pstate[i] = di.MemRead(DataInterface.REG_P0 + i);
                     }
-                    else
+
+                    for (int i = 0; i < CPUHandler.NumPstates - 1; i++)
                     {
-                        cpuh.SetOcMode(false);
-                        for (int i = 0; i < CPUHandler.NumPstates; i++)
+                        cpuh.BoostFreq[i] = di.MemRead(DataInterface.REG_BOOST_FREQ_0 + i);
+                    }
+                    /*
+                        // Apply settings
+                        SetStartupService(true);
+                        SetStartupGUI(cpuh.TrayIconAtStart);
+
+                        // Write new P-states
+                        if (cpuh.ZenOc)
                         {
-                            cpuh.WritePstate(i, di.MemRead(DataInterface.REG_P0 + i));
+                            if (cpuh.SetOcMode(true)) cpuh.setOverclockFrequencyAllCores(di.MemRead(DataInterface.REG_PSTATE_OC));
+                            //cpuh.setCmdTemp(Convert.ToUInt32(cpuh.ZenScalar), Convert.ToUInt32(cpuh.ZenEDC));
+                        }
+                        else
+                        {
+                            cpuh.SetOcMode(false);
+                            for (int i = 0; i < CPUHandler.NumPstates; i++)
+                            {
+                                cpuh.WritePstate(i, di.MemRead(DataInterface.REG_P0 + i));
+                            }
+
+                            if (cpuh.cpuType >= CPUHandler.CPUType.Matisse)
+                            {
+                                cpuh.setBoostFrequencySingleCore(di.MemRead(DataInterface.REG_BOOST_FREQ_0));
+                                cpuh.setBoostFrequencyAllCores(di.MemRead(DataInterface.REG_BOOST_FREQ_1));
+                            }
                         }
 
-                        cpuh.setBoostFrequencySingleCore(di.MemRead(DataInterface.REG_BOOST_FREQ_0));
-                        cpuh.setBoostFrequencyAllCores(di.MemRead(DataInterface.REG_BOOST_FREQ_1));
-                    }
+                        cpuh.SetC6Core(cpuh.ZenC6Core);
+                        cpuh.SetC6Package(cpuh.ZenC6Package);
+                        cpuh.SetCpb(cpuh.ZenCorePerfBoost);
 
-                    cpuh.SetC6Core(cpuh.ZenC6Core);
-                    cpuh.SetC6Package(cpuh.ZenC6Package);
-                    cpuh.SetCpb(cpuh.ZenCorePerfBoost);
+                        if (cpuh.cpuType < CPUHandler.CPUType.Matisse)
+                        {
+                            cpuh.SetPPT(cpuh.ZenPPT);
+                            cpuh.SetTDC(cpuh.ZenTDC);
+                            cpuh.SetEDC(cpuh.ZenEDC);
+                        }
 
-                    /*cpuh.SetPPT(cpuh.ZenPPT);
-                    cpuh.SetTDC(cpuh.ZenTDC);
-                    cpuh.SetEDC(cpuh.ZenEDC);*/
-                    cpuh.SetScalar(cpuh.ZenScalar);
+                        cpuh.SetScalar(cpuh.ZenScalar);
+                        cpuh.SetPerfBias(cpuh.PerformanceBias);
+                    */
 
-                    cpuh.SetPerfBias(cpuh.PerformanceBias);
-
+                    applySettings();
                     cpuh.SettingsSaved = false;
 
-                    // Notify done
+                    // Notify apply
                     di.MemWrite(DataInterface.REG_NOTIFY_STATUS, DataInterface.NOTIFY_DONE);
 
                     break;
 
                 case DataInterface.NOTIFY_APPLY:
-
-                    SetStartupService(true);
-                    SetStartupGUI(cpuh.TrayIconAtStart);
+                    applySettings();
 
                     P80Temp = cpuh.P80Temp;
-
-                    if (cpuh.ZenOc)
-                    {
-                    	if (cpuh.SetOcMode(cpuh.ZenOc)) cpuh.setOverclockFrequencyAllCores(cpuh.PstateOc);
-                    }
-                    else
-                    {
-                    	cpuh.SetOcMode(false);
-                        // Write new P-states
-                        for (int i = 0; i < CPUHandler.NumPstates; i++)
-                        {
-                            cpuh.WritePstate(i, cpuh.Pstate[i]);
-                        }
-
-                        cpuh.setBoostFrequencySingleCore(cpuh.BoostFreq[0]);
-                        cpuh.setBoostFrequencyAllCores(cpuh.BoostFreq[1]);
-                    }
-
-                    cpuh.SetC6Core(cpuh.ZenC6Core);
-                    cpuh.SetC6Package(cpuh.ZenC6Package);
-                    cpuh.SetCpb(cpuh.ZenCorePerfBoost);
-
-                    /*cpuh.SetPPT(cpuh.ZenPPT);
-                    cpuh.SetTDC(cpuh.ZenTDC);
-                    cpuh.SetEDC(cpuh.ZenEDC);*/
-                    cpuh.SetScalar(cpuh.ZenScalar);
-
-                    cpuh.SetPerfBias(cpuh.PerformanceBias);
 
                     // Notify done
                     di.MemWrite(DataInterface.REG_NOTIFY_STATUS, DataInterface.NOTIFY_DONE);
@@ -362,7 +394,7 @@ namespace ZenStatesSrv
                                 cpuh.WritePstate(i, cpuh.Pstate[i]);
                             }
                         }
-                        
+
                         // Write C-states
                         cpuh.SetC6Core(cpuh.ZenC6Core);
                         cpuh.SetC6Package(cpuh.ZenC6Package);
@@ -371,9 +403,12 @@ namespace ZenStatesSrv
                         // Perf bias
                         cpuh.SetPerfBias(cpuh.PerformanceBias);
 
-                        /*cpuh.SetPPT(cpuh.ZenPPT);
-                        cpuh.SetTDC(cpuh.ZenTDC);
-                        cpuh.SetEDC(cpuh.ZenEDC);*/
+                        if (cpuh.cpuType >= CPUHandler.CPUType.Matisse)
+                        {
+                            cpuh.SetPPT(cpuh.ZenPPT);
+                            cpuh.SetTDC(cpuh.ZenTDC);
+                            cpuh.SetEDC(cpuh.ZenEDC);
+                        }
                         cpuh.SetScalar(cpuh.ZenScalar);
                     }
 

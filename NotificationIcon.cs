@@ -25,7 +25,7 @@ namespace ZenStates
         static extern int EmptyWorkingSet(IntPtr hwProc);
 
         public enum PerfBias { Auto = 0, None, Cinebench_R11p5, Cinebench_R15, Geekbench_3 };
-        public enum PerfEnh { None = 0, Default, Level1, Level2, Level3_OC };
+        public enum PerfEnh { None = 0, Default, Level1, Level2, Level3_OC, Level4_OC };
 
         private NotifyIcon notifyIcon;
         private ContextMenu notificationMenu;
@@ -172,6 +172,8 @@ namespace ZenStates
             tempTimer.Start();
             serviceTimeout = 0;
             tempTimerHandler(null, null);
+
+            checkSmuVersion();
 
             notifyIcon.Visible = true;
 
@@ -541,6 +543,23 @@ namespace ZenStates
                     Icon.FromHandle(iconBitmap.GetHicon()).Save(stream);
                 }
             }
+        }
+
+        static void checkSmuVersion()
+        {
+            UInt64 cpuType = di.MemRead(DataInterface.REG_CPU_TYPE);
+            UInt64 version = di.MemRead(DataInterface.REG_SMU_VERSION);
+            int smuMajor = (int)((version & 0x00FF0000) >> 16);
+            int smuMinor = (int)((version & 0x0000FF00) >> 8);
+            int smu = smuMajor * 100 + smuMinor;
+
+            // MessageBox.Show(Convert.ToString(smu));
+
+            if ((smu <= 2583 && di.MemRead(DataInterface.REG_CPU_TYPE) <= 4)
+                 || (smu <= 4316 && cpuType > 4 && cpuType <= 6))
+             {
+                 MessageBox.Show("Newer SMU version required. The application will most probably not work correctly. Please use version older than 0.8.0.");
+             }
         }
 
         static void initVendorInfo()

@@ -62,7 +62,7 @@ namespace ZenStates
             this.comboBoxPerfenh = new System.Windows.Forms.ComboBox();
             this.comboBoxPerfbias = new System.Windows.Forms.ComboBox();
             this.labelPerfbias = new System.Windows.Forms.Label();
-            this.label2 = new System.Windows.Forms.Label();
+            this.labelPerfEnh = new System.Windows.Forms.Label();
             this.tableLayoutPanel3 = new System.Windows.Forms.TableLayoutPanel();
             this.textBoxScalar = new System.Windows.Forms.TextBox();
             this.label5 = new System.Windows.Forms.Label();
@@ -357,7 +357,6 @@ namespace ZenStates
             this.checkBoxSmuPL.AutoSize = true;
             this.checkBoxSmuPL.CheckAlign = System.Drawing.ContentAlignment.MiddleRight;
             this.checkBoxSmuPL.Dock = System.Windows.Forms.DockStyle.Top;
-            this.checkBoxSmuPL.Enabled = false;
             this.checkBoxSmuPL.Location = new System.Drawing.Point(7, 79);
             this.checkBoxSmuPL.Name = "checkBoxSmuPL";
             this.checkBoxSmuPL.Padding = new System.Windows.Forms.Padding(0, 2, 0, 2);
@@ -536,7 +535,7 @@ namespace ZenStates
             this.tableLayoutPanel2.Controls.Add(this.comboBoxPerfenh, 1, 1);
             this.tableLayoutPanel2.Controls.Add(this.comboBoxPerfbias, 1, 0);
             this.tableLayoutPanel2.Controls.Add(this.labelPerfbias, 0, 0);
-            this.tableLayoutPanel2.Controls.Add(this.label2, 0, 1);
+            this.tableLayoutPanel2.Controls.Add(this.labelPerfEnh, 0, 1);
             this.tableLayoutPanel2.Dock = System.Windows.Forms.DockStyle.Fill;
             this.tableLayoutPanel2.GrowStyle = System.Windows.Forms.TableLayoutPanelGrowStyle.FixedSize;
             this.tableLayoutPanel2.Location = new System.Drawing.Point(3, 32);
@@ -550,12 +549,12 @@ namespace ZenStates
             // comboBoxPerfenh
             // 
             this.comboBoxPerfenh.Dock = System.Windows.Forms.DockStyle.Left;
-            this.comboBoxPerfenh.Enabled = false;
             this.comboBoxPerfenh.FormattingEnabled = true;
             this.comboBoxPerfenh.Location = new System.Drawing.Point(127, 30);
             this.comboBoxPerfenh.Name = "comboBoxPerfenh";
             this.comboBoxPerfenh.Size = new System.Drawing.Size(135, 21);
             this.comboBoxPerfenh.TabIndex = 73;
+            this.comboBoxPerfenh.SelectedIndexChanged += new System.EventHandler(this.comboBoxPerfenh_SelectedIndexChanged);
             // 
             // comboBoxPerfbias
             // 
@@ -577,16 +576,15 @@ namespace ZenStates
             this.labelPerfbias.Text = "Performance Bias";
             this.labelPerfbias.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
             // 
-            // label2
+            // labelPerfEnh
             // 
-            this.label2.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.label2.Enabled = false;
-            this.label2.Location = new System.Drawing.Point(3, 27);
-            this.label2.Name = "label2";
-            this.label2.Size = new System.Drawing.Size(118, 27);
-            this.label2.TabIndex = 71;
-            this.label2.Text = "Performance Enhancer";
-            this.label2.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
+            this.labelPerfEnh.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.labelPerfEnh.Location = new System.Drawing.Point(3, 27);
+            this.labelPerfEnh.Name = "labelPerfEnh";
+            this.labelPerfEnh.Size = new System.Drawing.Size(118, 27);
+            this.labelPerfEnh.TabIndex = 71;
+            this.labelPerfEnh.Text = "Performance Enhancer";
+            this.labelPerfEnh.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
             // 
             // tableLayoutPanel3
             // 
@@ -638,7 +636,6 @@ namespace ZenStates
             // 
             // textBoxEDC
             // 
-            this.textBoxEDC.Enabled = false;
             this.textBoxEDC.Location = new System.Drawing.Point(39, 30);
             this.textBoxEDC.MaxLength = 4;
             this.textBoxEDC.Name = "textBoxEDC";
@@ -651,7 +648,6 @@ namespace ZenStates
             // labelEDC
             // 
             this.labelEDC.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.labelEDC.Enabled = false;
             this.labelEDC.Location = new System.Drawing.Point(3, 27);
             this.labelEDC.Name = "labelEDC";
             this.labelEDC.Size = new System.Drawing.Size(30, 27);
@@ -661,7 +657,6 @@ namespace ZenStates
             // 
             // textBoxTDC
             // 
-            this.textBoxTDC.Enabled = false;
             this.textBoxTDC.Location = new System.Drawing.Point(127, 3);
             this.textBoxTDC.MaxLength = 4;
             this.textBoxTDC.Name = "textBoxTDC";
@@ -673,7 +668,6 @@ namespace ZenStates
             // labelTDC
             // 
             this.labelTDC.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.labelTDC.Enabled = false;
             this.labelTDC.Location = new System.Drawing.Point(77, 0);
             this.labelTDC.Name = "labelTDC";
             this.labelTDC.Size = new System.Drawing.Size(41, 27);
@@ -683,7 +677,6 @@ namespace ZenStates
             // 
             // textBoxPPT
             // 
-            this.textBoxPPT.Enabled = false;
             this.textBoxPPT.Location = new System.Drawing.Point(39, 3);
             this.textBoxPPT.MaxLength = 4;
             this.textBoxPPT.Name = "textBoxPPT";
@@ -696,7 +689,6 @@ namespace ZenStates
             // labelPPT
             // 
             this.labelPPT.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.labelPPT.Enabled = false;
             this.labelPPT.Location = new System.Drawing.Point(3, 0);
             this.labelPPT.Name = "labelPPT";
             this.labelPPT.Size = new System.Drawing.Size(30, 27);
@@ -818,7 +810,7 @@ namespace ZenStates
         private System.Windows.Forms.RadioButton radioManualControl;
         private System.Windows.Forms.TableLayoutPanel tableLayoutPanel2;
         private System.Windows.Forms.Label labelPerfbias;
-        private System.Windows.Forms.Label label2;
+        private System.Windows.Forms.Label labelPerfEnh;
         private System.Windows.Forms.ComboBox comboBoxPerfbias;
         private System.Windows.Forms.ComboBox comboBoxPerfenh;
         private System.Windows.Forms.TableLayoutPanel tableLayoutPanel3;
