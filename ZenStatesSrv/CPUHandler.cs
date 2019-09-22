@@ -1,54 +1,18 @@
-﻿/*
-// Feature Control Defines
-#define FEATURE_CCLK_CONTROLLER_BIT    0
-#define FEATURE_FAN_CONTROLLER_BIT     1
-#define FEATURE_DATA_CALCULATION_BIT   2
-#define FEATURE_PPT_BIT                3
-#define FEATURE_TDC_BIT                4
-#define FEATURE_THERMAL_BIT            5
-#define FEATURE_FIT_BIT                6
-#define FEATURE_QOS_BIT                7
-#define FEATURE_CORE_CSTATES_BIT       8
-#define FEATURE_PROCHOT_BIT            9
-#define FEATURE_MCM_DATA_TRANSFER_BIT  10
-#define FEATURE_DLWM_BIT               11
-#define FEATURE_PC6_BIT                12
-#define FEATURE_CSTATE_BOOST_BIT       13
-#define FEATURE_VOLTAGE_CONTROLLER_BIT 14
-#define FEATURE_HOT_PLUG_BIT           15
-#define FEATURE_SPARE_16_BIT           16
-#define FEATURE_FW_DEEPSLEEP_BIT       17
-#define FEATURE_SPARE_18_BIT           18
-#define FEATURE_SPARE_19_BIT           19
-#define FEATURE_SPARE_20_BIT           20
-#define FEATURE_SPARE_21_BIT           21
-#define FEATURE_SPARE_22_BIT           22
-#define FEATURE_SPARE_23_BIT           23
-#define FEATURE_SPARE_24_BIT           24
-#define FEATURE_SPARE_25_BIT           25
-#define FEATURE_SPARE_26_BIT           26
-#define FEATURE_SPARE_27_BIT           27
-#define FEATURE_SPARE_28_BIT           28
-#define FEATURE_SPARE_29_BIT           29
-#define FEATURE_SPARE_30_BIT           30
-#define FEATURE_SPARE_31_BIT           31
-*/
-
 using OpenLibSys;
 using System;
 using System.Configuration;
 using System.IO;
 using System.Threading;
 
-namespace AsusZsSrv
+namespace ZenStatesSrv
 {
     /// <summary>
     /// Description of CPUHandler.
     /// </summary>
     public class CPUHandler
     {
-        public enum CPUType { Unsupported = 0, DEBUG = 1, Summit_Ridge, Threadripper, Raven_Ridge, Pinnacle_Ridge, Matisse, Picasso, Rome };
-        public enum PerfBias { None = 0, Cinebench_R15, Cinebench_R11p5, Geekbench_3 };
+        public enum CPUType { Unsupported = 0, DEBUG = 1, Summit_Ridge, Threadripper, Raven_Ridge, Pinnacle_Ridge, Picasso, Matisse, Rome };
+        public enum PerfBias { Auto = 0, None, Cinebench_R11p5, Cinebench_R15, Geekbench_3 };
         //public enum PerfEnh { None = 0, Level1, Level2, Level3_OC, Level4_OC };
 
         // MSR
@@ -77,26 +41,65 @@ namespace AsusZsSrv
         const UInt32 SMU_OFFSET_ADDR = 0xB8;
         const UInt32 SMU_OFFSET_DATA = 0xBC;
 
-        const UInt32 SMU_ADDR_MSG = 0x03B10528;
-        const UInt32 SMU_ADDR_RSP = 0x03B10564;
-        const UInt32 SMU_ADDR_ARG0 = 0x03B10598;
-        const UInt32 SMU_ADDR_ARG1 = 0x03B1059C;
+        //const UInt32 SMU_ADDR_MSG = 0x03B10528;
+        const UInt32 SMU_ADDR_MSG = 0x03B10530; // Matisse;
+        // const UInt32 SMU_ADDR_RSP = 0x03B10564;
+        const UInt32 SMU_ADDR_RSP = 0x03B1057C; // Matisse;
+        //const UInt32 SMU_ADDR_ARG0 = 0x03B10998;
+        const UInt32 SMU_ADDR_ARG0 = 0x03B109C4; // Matisse
+        const UInt32 SMU_ADDR_ARG1 = SMU_ADDR_ARG0 + 0x4;
+
         const UInt32 THM_TCON_CUR_TMP = 0x00059800;
         const UInt32 THM_TCON_THERM_TRIP = 0x00059808;
 
-        const UInt32 SMC_MSG_EnableSmuFeatures = 0x09;
-        const UInt32 SMC_MSG_DisableSmuFeatures = 0x0A;
+        const UInt32 SMC_MSG_TestMessage = 0x1;
+        const UInt32 SMC_MSG_GetSmuVersion = 0x2;
+        const UInt32 SMC_MSG_EnableSmuFeatures = 0x3;
+        const UInt32 SMC_MSG_DisableSmuFeatures = 0x4; // Doesn't work with Matisse;
+        const UInt32 SMC_MSG_SetTjMax = 0x23;
+        const UInt32 SMC_MSG_EnableOverclocking = 0x24;
+        const UInt32 SMC_MSG_DisableOverclocking = 0x25;
+        const UInt32 SMC_MSG_SetOverclockFreqAllCores = 0x26;
+        const UInt32 SMC_MSG_SetOverclockFreqPerCore = 0x27;
+        const UInt32 SMC_MSG_SetOverclockVid = 0x28;
+        const UInt32 SMC_MSG_SetBoostLimitFrequency = 0x29;
+        const UInt32 SMC_MSG_SetBoostLimitFrequencyAllCores = 0x2B;
+        const UInt32 SMC_MSG_GetOverclockCap = 0x2C;
+        const UInt32 SMC_MSG_MessageCount = 0x2D;
+
+        // Unknown/disabled in AGESA 1.0.0.2+
         const UInt32 SMC_MSG_SetPPTLimit = 0x31;
         const UInt32 SMC_MSG_TCTL_OFFSET = 0x3A;
         const UInt32 SMC_MSG_SetTDCLimit = 0x43;
         const UInt32 SMC_MSG_SetEDCLimit = 0x44;
         const UInt32 SMC_MSG_SetFITLimit = 0x45;
-        const UInt32 SMC_MSG_SetTjMax = 0x46;
-        const UInt32 SMC_MSG_SetFITLimitScalar = 0x48;
+        // AGESA 1.0.0.2+
+        const UInt32 SMC_MSG_SetFITLimitScalar = 0x2F;
 
         const UInt32 SMU_FeatureFlag_PPT = 0x04;
         const UInt32 SMU_FeatureFlag_TDC = 0x08;
         const UInt32 SMU_FeatureFlag_THERM = 0x10;
+
+        // Legacy (Zen/Zen+)
+        const UInt32 SMU_ADDR_MSG_ZEN1 = 0x03B10528;
+        const UInt32 SMU_ADDR_RSP_ZEN1 = 0x03B10564;
+        const UInt32 SMU_ADDR_ARG0_ZEN1 = 0x03B10598;
+        const UInt32 SMU_ADDR_ARG1_ZEN1 = SMU_ADDR_ARG0_ZEN1 + 0x4;
+
+        const UInt32 SMC_MSG_EnableSmuFeatures_ZEN1 = 0x09;
+        const UInt32 SMC_MSG_DisableSmuFeatures_ZEN1 = 0x0A;
+        const UInt32 SMC_MSG_EnableOverclocking_ZEN1 = 0x23;
+        const UInt32 SMC_MSG_DisableOverclocking_ZEN1 = 0x24;
+        const UInt32 SMC_MSG_SetOverclockFreqAllCores_ZEN1 = 0x26;
+        const UInt32 SMC_MSG_SetOverclockFreqPerCore_ZEN1 = 0x27;
+        const UInt32 SMC_MSG_SetOverclockVid_ZEN1 = 0x28;
+        const UInt32 SMC_MSG_SetPPTLimit_ZEN1 = 0x31;
+        const UInt32 SMC_MSG_TCTL_OFFSET_ZEN1 = 0x3A;
+        const UInt32 SMC_MSG_SetTDCLimit_ZEN1 = 0x43;
+        const UInt32 SMC_MSG_SetEDCLimit_ZEN1 = 0x44;
+        const UInt32 SMC_MSG_SetFITLimit_ZEN1 = 0x45;
+        const UInt32 SMC_MSG_SetTjMax_ZEN1 = 0x46;
+        const UInt32 SMC_MSG_SetFITLimitScalar_ZEN1 = 0x48;
 
         private Ols ols;
 
@@ -117,29 +120,33 @@ namespace AsusZsSrv
         public static int NumPstates = 3;
 
         public UInt64[] PstateAtStart;
+        public UInt64 PstateOcAtStart;
         public bool ZenC6CoreAtStart = false;
         public bool ZenC6PackageAtStart = false;
         public bool ZenCorePerfBoostAtStart = false;
+        public bool ZenOcAtStart = false;
 
         //public bool ZenTscWorkaround = true;
-
 
         public bool TrayIconAtStart = false;
         public bool ApplyAtStart = false;
         public bool P80Temp = false;
 
         public UInt64[] Pstate = new UInt64[CPUHandler.NumPstates];
+        public UInt64[] BoostFreq = new UInt64[3];
+        public UInt64 PstateOc = 0x0;
 
         public bool ZenC6Core = false;
         public bool ZenC6Package = false;
         public bool ZenCorePerfBoost = false;
+        public bool ZenOc = false;
         public int ZenPPT = 0;
         public int ZenTDC = 0;
         public int ZenEDC = 0;
         public int ZenScalar = 1;
 
         //public CPUHandler.PerfEnh PerformanceEnhancer = 0;
-        public CPUHandler.PerfBias PerformanceBias = 0;
+        public CPUHandler.PerfBias PerformanceBias = PerfBias.Auto;
 
         public CPUHandler()
         {
@@ -233,9 +240,17 @@ namespace AsusZsSrv
                     Pstate[i] = SettingsStore.Pstate[i];
                 }
 
+                for (int i = 0; i < 3; i++)
+                {
+                    BoostFreq[i] = SettingsStore.BoostFreq[i];
+                }
+
+                PstateOc = SettingsStore.PstateOc;
+
                 ZenC6Core = SettingsStore.ZenC6Core;
                 ZenC6Package = SettingsStore.ZenC6Package;
                 ZenCorePerfBoost = SettingsStore.ZenCorePerfBoost;
+                ZenOc = SettingsStore.ZenOc;
                 ZenPPT = SettingsStore.ZenPPT;
                 ZenTDC = SettingsStore.ZenTDC;
                 ZenEDC = SettingsStore.ZenEDC;
@@ -252,69 +267,86 @@ namespace AsusZsSrv
 
                 // Get current P-states
                 PstateAtStart = new UInt64[NumPstates];
+                PstateOcAtStart = 0x0;
 
                 uint edx = 0, eax = 0;
-
-                if (cpuType == CPUType.DEBUG)
+                
+                for (uint i = 0; i < NumPstates; i++)
                 {
-                    Pstate[0] = Convert.ToUInt64("80000000000408A0", 16); //unchecked((UInt64)((1 & 1) << 63 | (0x10 & 0xFF) << 14 | (0x08 & 0xFF) << 8 | 0xA0 & 0xFF));
-                    Pstate[1] = Convert.ToUInt64("8000000000080A90", 16); //unchecked((UInt64)((1 & 1) << 63 | (0x20 & 0xFF) << 14 | (0x0A & 0xFF) << 8 | 0x90 & 0xFF));
-                    Pstate[2] = Convert.ToUInt64("8000000000100C80", 16); //unchecked((UInt64)((1 & 1) << 63 | (0x30 & 0xFF) << 14 | (0x0C & 0xFF) << 8 | 0x80 & 0xFF));
-                    ZenC6Core = false;
-                    ZenC6CoreAtStart = false;
-                    ZenC6Package = false;
-                    ZenC6PackageAtStart = false;
-                    ZenCorePerfBoost = true;
-                    ZenCorePerfBoostAtStart = true;
-                    TctlOffset = 0;
-                }
-                else if (cpuType != CPUType.Unsupported)
-                {
-                    for (uint i = 0; i < NumPstates; i++)
+                    if (ols.RdmsrTx(MSR_PStateDef0 + i, ref eax, ref edx, (UIntPtr)(1)) == 1)
                     {
-                        if (ols.RdmsrTx(MSR_PStateDef0 + i, ref eax, ref edx, (UIntPtr)(1)) == 1)
+                        PstateAtStart[i] = ((UInt64)edx << 32) | eax;
+                        if (Pstate[i] == 0)
                         {
-                            PstateAtStart[i] = ((UInt64)edx << 32) | eax;
-                            if (Pstate[i] == 0)
-                            {
-                                Pstate[i] = PstateAtStart[i];
-                            }
+                            Pstate[i] = PstateAtStart[i];
                         }
                     }
-
-                    // Get current C-state settings
-                    if (ols.RdmsrTx(MSR_PMGT_MISC, ref eax, ref edx, (UIntPtr)(1)) == 1)
-                    {
-                        ZenC6PackageAtStart = Convert.ToBoolean(edx & 1);
-                        if (SettingsStore.SettingsReset) ZenC6Package = ZenC6PackageAtStart;
-                    }
-                    if (ols.RdmsrTx(MSR_CSTATE_CONFIG, ref eax, ref edx, (UIntPtr)(1)) == 1)
-                    {
-                        bool CCR0_CC6EN = Convert.ToBoolean((eax >> 6) & 1);
-                        bool CCR1_CC6EN = Convert.ToBoolean((eax >> 14) & 1);
-                        bool CCR2_CC6EN = Convert.ToBoolean((eax >> 22) & 1);
-                        if (CCR0_CC6EN && CCR1_CC6EN && CCR2_CC6EN)
-                        {
-                            ZenC6CoreAtStart = true;
-                        }
-                        else
-                        {
-                            ZenC6CoreAtStart = false;
-                        }
-                        if (SettingsStore.SettingsReset) ZenC6Core = ZenC6CoreAtStart;
-                    }
-
-                    // Get current CPB
-                    if (ols.RdmsrTx(MSR_HWCR, ref eax, ref edx, (UIntPtr)(1)) == 1)
-                    {
-                        ZenCorePerfBoostAtStart = !Convert.ToBoolean((eax >> 25) & 1);
-                        if (SettingsStore.SettingsReset) ZenCorePerfBoost = ZenCorePerfBoostAtStart;
-                    }
-
-                    // Get Tctl offset
-                    GetTctlOffset(ref TctlOffset);
                 }
 
+                BoostFreq[0] = Pstate[0];
+                BoostFreq[1] = Pstate[0];
+                BoostFreq[2] = Pstate[2];
+
+                PstateOcAtStart = PstateAtStart[0];
+                if (PstateOc == 0) PstateOc = PstateOcAtStart;
+
+                // Get current C-state settings
+                if (ols.RdmsrTx(MSR_PMGT_MISC, ref eax, ref edx, (UIntPtr)(1)) == 1)
+                {
+                    ZenC6PackageAtStart = Convert.ToBoolean(edx & 1);
+                    if (SettingsStore.SettingsReset) ZenC6Package = ZenC6PackageAtStart;
+                }
+                if (ols.RdmsrTx(MSR_CSTATE_CONFIG, ref eax, ref edx, (UIntPtr)(1)) == 1)
+                {
+                    bool CCR0_CC6EN = Convert.ToBoolean((eax >> 6) & 1);
+                    bool CCR1_CC6EN = Convert.ToBoolean((eax >> 14) & 1);
+                    bool CCR2_CC6EN = Convert.ToBoolean((eax >> 22) & 1);
+                    if (CCR0_CC6EN && CCR1_CC6EN && CCR2_CC6EN)
+                    {
+                        ZenC6CoreAtStart = true;
+                    }
+                    else
+                    {
+                        ZenC6CoreAtStart = false;
+                    }
+                    if (SettingsStore.SettingsReset) ZenC6Core = ZenC6CoreAtStart;
+                }
+
+                // Get current CPB
+                if (ols.RdmsrTx(MSR_HWCR, ref eax, ref edx, (UIntPtr)(1)) == 1)
+                {
+                    ZenCorePerfBoostAtStart = !Convert.ToBoolean((eax >> 25) & 1);
+                    if (SettingsStore.SettingsReset) ZenCorePerfBoost = ZenCorePerfBoostAtStart;
+                }
+
+                // Get OC Mode
+                if (ols.RdmsrTx(MSR_PStateStat, ref eax, ref edx, (UIntPtr)(1)) == 1)
+                {
+                    ZenOcAtStart = Convert.ToBoolean((eax >> 1) & 1);
+                    if (SettingsStore.SettingsReset) ZenOc = ZenOcAtStart;
+                }
+
+                // Get Tctl offset
+                GetTctlOffset(ref TctlOffset);
+            }
+            else if (cpuType == CPUType.DEBUG)
+            {
+                Pstate[0] = Convert.ToUInt64("80000000000408A0", 16); //unchecked((UInt64)((1 & 1) << 63 | (0x10 & 0xFF) << 14 | (0x08 & 0xFF) << 8 | 0xA0 & 0xFF));
+                Pstate[1] = Convert.ToUInt64("8000000000080A90", 16); //unchecked((UInt64)((1 & 1) << 63 | (0x20 & 0xFF) << 14 | (0x0A & 0xFF) << 8 | 0x90 & 0xFF));
+                Pstate[2] = Convert.ToUInt64("8000000000100C80", 16); //unchecked((UInt64)((1 & 1) << 63 | (0x30 & 0xFF) << 14 | (0x0C & 0xFF) << 8 | 0x80 & 0xFF));
+                BoostFreq[0] = Pstate[0];
+                BoostFreq[1] = Pstate[0];
+                BoostFreq[2] = Pstate[2];
+                PstateOc = Pstate[0];
+                ZenC6Core = false;
+                ZenC6CoreAtStart = false;
+                ZenC6Package = false;
+                ZenC6PackageAtStart = false;
+                ZenCorePerfBoost = true;
+                ZenCorePerfBoostAtStart = true;
+                ZenOc = false;
+                ZenOcAtStart = false;
+                TctlOffset = 0;
             }
         }
 
@@ -360,43 +392,156 @@ namespace AsusZsSrv
             for (int j = 0; j < Threads; j++)
             {
 
-                // P0 fix C001_0015 HWCR[21]=1
-                res = ols.RdmsrTx(MSR_HWCR, ref eax, ref edx, (UIntPtr)(((UInt64)1) << j));
-                if (res == 1)
-                {
+                 // P0 fix C001_0015 HWCR[21]=1
+                 res = ols.RdmsrTx(MSR_HWCR, ref eax, ref edx, (UIntPtr)(((UInt64)1) << j));
+                 if (res == 1)
+                 {
                     /*if (P0TscWorkaround && (eax & 0x200000) != 0x200000)
-                    {
-                        eax |= 0x200000;
-                        res = ols.WrmsrTx(MSR_HWCR, eax, edx, (UIntPtr)(1 << j));
-                    }
-                    else if ((eax & 0x200000) != 0)
-                    {
-                        eax &= 0xFFDFFFFF;
-                        res = ols.WrmsrTx(MSR_HWCR, eax, edx, (UIntPtr)(1 << j));
+                     {
+                         eax |= 0x200000;
+                         res = ols.WrmsrTx(MSR_HWCR, eax, edx, (UIntPtr)(1 << j));
+                     }
+                     else if ((eax & 0x200000) != 0)
+                     {
+                         eax &= 0xFFDFFFFF;
+                         res = ols.WrmsrTx(MSR_HWCR, eax, edx, (UIntPtr)(1 << j));
                     }*/
-                    eax |= 0x200000;
-                    res = ols.WrmsrTx(MSR_HWCR, eax, edx, (UIntPtr)(((UInt64)1) << j));
+                     eax |= 0x200000;
+                     res = ols.WrmsrTx(MSR_HWCR, eax, edx, (UIntPtr)(((UInt64)1) << j));
+
+                     eax = (UInt32)(data & 0xFFFFFFFF);
+                     edx = (UInt32)(data >> 32) & 0xFFFFFFFF;
+
+                     // Write P-state
+                     res = ols.WrmsrTx((uint)(MSR_PStateDef0 + pstate), eax, edx, (UIntPtr)(((UInt64)1) << j));
+
+                    if (res == 1)
+                    {
+                    	Pstate[pstate] = data;
+                    	if (pstate == 2) BoostFreq[pstate] = Pstate[pstate];
+                   	}
                 }
-            }
-
-            for (int j = 0; j < Threads; j++)
-            {
-                if (res == 1)
-                {
-                    eax = (UInt32)(data & 0xFFFFFFFF);
-                    edx = (UInt32)(data >> 32) & 0xFFFFFFFF;
-
-                    // Write P-state
-                    res = ols.WrmsrTx((uint)(MSR_PStateDef0 + pstate), eax, edx, (UIntPtr)(((UInt64)1) << j));
-                }
-            }
-
-            if (res == 1)
-            {
-                Pstate[pstate] = data;
             }
 
             return res == 1;
+        }
+
+        public bool setOverclockFrequencyAllCores(UInt64 data)
+        {
+            bool res = false;
+            uint eax = 0, edx = 0;
+
+            for (int j = 0; j < Threads; j++)
+            {
+
+                // P0 fix C001_0015 HWCR[21]=1
+                if (ols.RdmsrTx(MSR_HWCR, ref eax, ref edx, (UIntPtr)(((UInt64)1) << j)) == 1)
+                {
+                    eax |= 0x200000;
+                    if (ols.WrmsrTx(MSR_HWCR, eax, edx, (UIntPtr)(((UInt64)1) << j)) == 1)
+                    {
+                        byte fid = Convert.ToByte(data & 0xFF);
+                        byte did = Convert.ToByte((data >> 8) & 0x3F);
+                        byte vid = Convert.ToByte((data >> 14) & 0xFF);
+                        double freq = (25 * fid / (did * 12.5)) * 100;
+
+                        if (cpuType >= CPUType.Matisse)
+                        {
+                            if (SmuWrite(SMC_MSG_SetOverclockFreqAllCores, (uint)freq))
+                            {
+                                if (SmuWrite(SMC_MSG_SetOverclockVid, vid)) res = true;
+                            }
+                        }
+                        else
+                        {
+                            /*if (SmuWrite(SMC_MSG_SetOverclockFreqAllCores_ZEN1, (uint)freq))
+                            {
+                                if (SmuWrite(SMC_MSG_SetOverclockVid_ZEN1, vid)) res = true;
+                            }*/
+                            res = true;
+                        }
+                    }
+                }
+            }
+
+            /*if (cpuType >= CPUType.Matisse)
+            {
+                WritePstate(0, data);
+                WritePstate(1, data);
+            }*/
+
+            if (res)
+            {
+                PstateOc = data;
+                WritePstate(0, data);
+                WritePstate(1, data);
+            }
+
+            return res;
+        }
+
+        public bool setCmdTemp(uint msg, uint data)
+        {
+            return SmuWrite(msg, data);
+        }
+
+        public bool setBoostFrequencySingleCore(UInt64 data)
+        {
+            bool res = false;
+            uint eax = 0, edx = 0;
+
+            for (int j = 0; j < Threads; j++)
+            {
+
+                // P0 fix C001_0015 HWCR[21]=1
+                if (ols.RdmsrTx(MSR_HWCR, ref eax, ref edx, (UIntPtr)(((UInt64)1) << j)) == 1)
+                {
+                    eax |= 0x200000;
+                    if (ols.WrmsrTx(MSR_HWCR, eax, edx, (UIntPtr)(((UInt64)1) << j)) == 1)
+                    {
+                        byte fid = Convert.ToByte(data & 0xFF);
+                        byte did = Convert.ToByte((data >> 8) & 0x3F);
+                        double freq = (25 * fid / (did * 12.5)) * 100;
+
+                        if (SmuWrite(SMC_MSG_SetBoostLimitFrequency, (uint)freq)) res = true;
+                    }
+                }
+            }
+
+            if (res) BoostFreq[0] = data;
+
+            WritePstate(0, data);
+            WritePstate(1, data);
+
+            return res;
+        }
+
+        public bool setBoostFrequencyAllCores(UInt64 data)
+        {
+            bool res = false;
+            uint eax = 0, edx = 0;
+
+            for (int j = 0; j < Threads; j++)
+            {
+
+                // P0 fix C001_0015 HWCR[21]=1
+                if (ols.RdmsrTx(MSR_HWCR, ref eax, ref edx, (UIntPtr)(((UInt64)1) << j)) == 1)
+                {
+                    eax |= 0x200000;
+                    if (ols.WrmsrTx(MSR_HWCR, eax, edx, (UIntPtr)(((UInt64)1) << j)) == 1)
+                    {
+                        byte fid = Convert.ToByte(data & 0xFF);
+                        byte did = Convert.ToByte((data >> 8) & 0x3F);
+                        double freq = (25 * fid / (did * 12.5)) * 100;
+
+                        if (SmuWrite(SMC_MSG_SetBoostLimitFrequencyAllCores, (uint)freq)) res = true;
+                    }
+                }
+            }
+
+            if (res) BoostFreq[1] = data;
+
+            return res;
         }
 
         public bool SetC6Core(bool en)
@@ -448,6 +593,7 @@ namespace AsusZsSrv
 
             return res == 1;
         }
+
         public bool SetCpb(bool en)
         {
             uint eax = 0, edx = 0;
@@ -457,13 +603,11 @@ namespace AsusZsSrv
             res = ols.Rdmsr(MSR_HWCR, ref eax, ref edx);
             if (res == 1)
             {
-
                 if (!en) eax = eax | 1 << 25;
                 else eax = eax & 0xFDFFFFFF;
 
                 // Rewrite settings
                 res = ols.Wrmsr(MSR_HWCR, eax, edx);
-
             }
 
             if (res == 1) ZenCorePerfBoost = en;
@@ -473,7 +617,6 @@ namespace AsusZsSrv
 
         public bool SetPerfBias(PerfBias pb)
         {
-
             uint pb1_eax = 0, pb1_edx = 0, pb2_eax = 0, pb2_edx = 0, pb3_eax = 0, pb3_edx = 0, pb4_eax = 0, pb4_edx = 0, pb5_eax = 0, pb5_edx = 0;
 
             // Read current settings
@@ -486,6 +629,7 @@ namespace AsusZsSrv
             // Clear by default
             pb1_eax &= 0xFFFFFFEF;
             pb2_eax &= 0xFF83FFFF;
+            pb2_eax |= 0x02000000;
             pb3_eax &= 0xFFFFFFF8;
             pb4_eax &= 0xFFF9FFEF;
             pb5_eax &= 0xFFFFFFFE;
@@ -497,20 +641,35 @@ namespace AsusZsSrv
                     pb1_eax |= 0x10;
                     pb2_eax |= (8 & 0x1F) << 18;
                     pb3_eax |= (7 & 0x7);
-                    break;
-                case PerfBias.Cinebench_R15:
-                    pb2_eax |= (3 & 0x1F) << 18;
-                    pb3_eax |= (6 & 0x7);
-                    pb5_eax |= 1;
+                    pb4_eax |= 0x10;
                     break;
                 case PerfBias.Cinebench_R11p5:
+                    pb2_eax &= 0xF1FFFFEF;
                     pb3_eax |= (7 & 0x7);
                     pb4_eax |= 0x60010;
                     break;
+                /*case PerfBias.Cinebench_R15:
+                    pb2_eax |= (3 & 0x1F) << 18;
+                    pb2_eax &= 0xF1FFFFEF;
+                    pb3_eax |= (6 & 0x7);
+                    pb4_eax |= 0x10;
+                    pb5_eax |= 1;
+                    break;*/
+                case PerfBias.Cinebench_R15:
+                    pb1_edx &= 0xFFF00F0F;
+                    pb2_eax |= (3 & 0x1F) << 18;
+                    pb2_eax &= 0xF1FFFFEF;
+                    pb3_eax |= (7 & 0x7);
+                    pb4_eax |= 0x10;
+                    pb5_eax |= 1;
+                    break;
                 case PerfBias.Geekbench_3:
+                    //pb2_eax &= 0xF1FFFFEF;
                     pb2_eax |= (4 & 0x1F) << 18;
                     pb3_eax |= (7 & 0x7);
+                    pb4_eax |= 0x10;
                     break;
+                case PerfBias.Auto:
                 default:
                     return false;
             }
@@ -532,283 +691,82 @@ namespace AsusZsSrv
 
         public bool SetPPT(int ppt)
         {
-
             bool res;
 
-            // Mutex
-            res = hMutexPci.WaitOne(5000);
-
-            // Clear response
-            if (res)
-            {
-                res = SmuWriteReg(SMU_ADDR_RSP, 0);
-                if (res)
-                {
-                    // Set arg0
-                    res = SmuWriteReg(SMU_ADDR_ARG0, (UInt32)ppt * 1000);
-                    if (res)
-                    {
-                        // Send message
-                        res = SmuWriteReg(SMU_ADDR_MSG, SMC_MSG_SetPPTLimit);
-                        if (res)
-                        {
-                            res = SmuWaitDone();
-                        }
-                    }
-                }
-
-                hMutexPci.ReleaseMutex();
-            }
+            if (cpuType >= CPUType.Matisse)
+                res = SmuWrite(SMC_MSG_SetPPTLimit, (UInt32)ppt * 1000);
+            else
+                res = SmuWrite(SMC_MSG_SetPPTLimit_ZEN1, (UInt32)ppt * 1000);
 
             if (res) ZenPPT = ppt;
 
             return res;
-
         }
 
         public bool SetTDC(int tdc)
         {
-
             bool res;
 
-            // Mutex
-            res = hMutexPci.WaitOne(5000);
-
-            // Clear response
-            if (res)
-            {
-                res = SmuWriteReg(SMU_ADDR_RSP, 0);
-                if (res)
-                {
-                    // Set arg0
-                    res = SmuWriteReg(SMU_ADDR_ARG0, (UInt32)tdc * 1000);
-                    if (res)
-                    {
-                        // Send message
-                        res = SmuWriteReg(SMU_ADDR_MSG, SMC_MSG_SetTDCLimit);
-                        if (res)
-                        {
-                            res = SmuWaitDone();
-                        }
-                    }
-                }
-
-                hMutexPci.ReleaseMutex();
-            }
+            if (cpuType >= CPUType.Matisse)
+                res = SmuWrite(SMC_MSG_SetTDCLimit, (UInt32)tdc * 1000);
+            else
+                res = SmuWrite(SMC_MSG_SetTDCLimit_ZEN1, (UInt32)tdc * 1000);
 
             if (res) ZenTDC = tdc;
 
             return res;
-
         }
 
         public bool SetEDC(int edc)
         {
-
             bool res;
 
-            // Mutex
-            res = hMutexPci.WaitOne(5000);
-
-            // Clear response
-            if (res)
-            {
-                res = SmuWriteReg(SMU_ADDR_RSP, 0);
-                if (res)
-                {
-                    // Set arg0
-                    res = SmuWriteReg(SMU_ADDR_ARG0, (UInt32)edc * 1000);
-                    if (res)
-                    {
-                        // Send message
-                        res = SmuWriteReg(SMU_ADDR_MSG, SMC_MSG_SetEDCLimit);
-                        if (res)
-                        {
-                            res = SmuWaitDone();
-                        }
-                    }
-                }
-
-                hMutexPci.ReleaseMutex();
-            }
+            if (cpuType >= CPUType.Matisse)
+                res = SmuWrite(SMC_MSG_SetEDCLimit, (UInt32)edc * 1000);
+            else
+                res = SmuWrite(SMC_MSG_SetEDCLimit_ZEN1, (UInt32)edc * 1000);
 
             if (res) ZenEDC = edc;
 
             return res;
-
         }
 
         public bool SetScalar(int scalar)
         {
-
             bool res;
+            if (cpuType >= CPUType.Matisse)
+                res = SmuWrite(SMC_MSG_SetFITLimitScalar, (UInt32)scalar);
+            else
+                res = SmuWrite(SMC_MSG_SetFITLimitScalar_ZEN1, (UInt32)scalar);
 
-            // Mutex
-            res = hMutexPci.WaitOne(5000);
-
-            // Clear response
-            if (res)
-            {
-                res = SmuWriteReg(SMU_ADDR_RSP, 0);
-                if (res)
-                {
-                    // Set arg0
-                    res = SmuWriteReg(SMU_ADDR_ARG0, (UInt32)scalar);
-                    if (res)
-                    {
-                        // Send message
-                        res = SmuWriteReg(SMU_ADDR_MSG, SMC_MSG_SetFITLimitScalar);
-                        if (res)
-                        {
-                            res = SmuWaitDone();
-                        }
-                    }
-                }
-
-                hMutexPci.ReleaseMutex();
-            }
+            if (res) ZenScalar = scalar;
 
             return res;
-
         }
 
-        /*public bool SetPerfEnhancer(PerfEnh pe) {
-            bool res = true;
-            //if(pe == PerformanceEnhancer) return true;
+        public bool SetOcMode(bool manual)
+        {
+            bool res;
 
-            // Mutex
-            res = hMutexPci.WaitOne(5000);
-
-            // Level 1/2/3/4
-            if(res && cpuType == CPUType.Pinnacle_Ridge) {
-                UInt32 ppt = 0, tdc = 0, edc = 0, scalar = 0;
-                switch(pe) {
-                    case PerfEnh.None:
-                        ppt = 0;
-                        tdc = 0;
-                        edc = 0;
-                        scalar = 1;
-                        break;
-                    case PerfEnh.Level1:
-                        ppt = 1000000;
-                        tdc = 1000000;
-                        edc = 150000;
-                        scalar = 10;
-                        break;
-                    case PerfEnh.Level2:
-                        ppt = 1000000;
-                        tdc = 1000000;
-                        edc = 1000000;
-                        scalar = 10;
-                        break;
-                    case PerfEnh.Level3_OC:
-                        ppt = 1000000;
-                        tdc = 1000000;
-                        edc = 150000;
-                        scalar = 1;
-                        break;
-                    case PerfEnh.Level4_OC:
-                        ppt = 1000000;
-                        tdc = 1000000;
-                        edc = 1000000;
-                        scalar = 1;
-                        break;
-                    default:
-                        break;
-                }
-
-                // Clear response
-                res = SmuWriteReg(SMU_ADDR_RSP, 0);
-                if(res) {
-                    // Set arg0
-                    res = SmuWriteReg(SMU_ADDR_ARG0, ppt);
-                    if(res) {
-                        // Send message
-                        res = SmuWriteReg(SMU_ADDR_MSG, SMC_MSG_SetPPTLimit);
-                        if(res) {
-                            // Wait for completion
-                            res = SmuWaitDone();
-                            if(res) {
-                                res = SmuWriteReg(SMU_ADDR_RSP, 0);
-                                if(res) {
-                                    res = SmuWriteReg(SMU_ADDR_ARG0, tdc);
-                                    if(res) {
-                                        res = SmuWriteReg(SMU_ADDR_MSG, SMC_MSG_SetTDCLimit);
-                                        if(res) {
-                                            res = SmuWaitDone();
-                                            if(res) {
-                                                res = SmuWriteReg(SMU_ADDR_RSP, 0);
-                                                if(res) {
-                                                    res = SmuWriteReg(SMU_ADDR_ARG0, edc);
-                                                    if(res) {
-                                                        res = SmuWriteReg(SMU_ADDR_MSG, SMC_MSG_SetEDCLimit);
-                                                        if(res) {
-                                                            res = SmuWaitDone();
-                                                            if(res) {
-                                                                res = SmuWriteReg(SMU_ADDR_RSP, 0);
-                                                                if(res) {
-                                                                    res = SmuWriteReg(SMU_ADDR_ARG0, scalar);
-                                                                    if(res) {
-                                                                        res = SmuWriteReg(SMU_ADDR_MSG, SMC_MSG_SetFITLimitScalar);
-                                                                        if(res) {
-                                                                            res = SmuWaitDone();
-                                                                        }
-                                                                    }
-                                                                }
-                                                            }
-                                                        }
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
+            if (manual)
+            {
+                if (cpuType >= CPUType.Matisse)
+                    res = SmuWrite(SMC_MSG_EnableOverclocking, 0);
+                else
+                    res = true; //SmuWrite(SMC_MSG_EnableOverclocking_ZEN1, 0);
+            }
+            else
+            {
+                if (cpuType >= CPUType.Matisse)
+                    res = SmuWrite(SMC_MSG_DisableOverclocking, 0);
+                else
+                    res = true; //SmuWrite(SMC_MSG_DisableOverclocking_ZEN1, 0);
             }
 
-            // Level 3/4
-            /*if(res) {
-                // Clear response
-                res = SmuWriteReg(SMU_ADDR_RSP, 0);
-                if(res) {
-
-                    // Arg0 0x3B10598
-                    res = SmuWriteReg(SMU_ADDR_ARG0, 0x1C);
-                    if(res) {
-
-                        // Arg1 0x03B1059C
-                        for(int i = 0; i < 5 && res; i++) {
-                            res = SmuWriteReg(SMU_ADDR_ARG1, 0);
-                        }
-
-                        if(res) {
-                            switch(pe) {
-                                case PerfEnh.Level3_OC:
-                                case PerfEnh.Level4_OC:
-                                    res = SmuWriteReg(SMU_ADDR_MSG, SMC_MSG_DisableSmuFeatures); break;
-                                default:
-                                    res = SmuWriteReg(SMU_ADDR_MSG, SMC_MSG_EnableSmuFeatures); break;
-                            }
-
-                            if(res) {
-                                res = SmuWaitDone();
-                            }
-
-                        }
-                    }
-                }
-            }
-
-            hMutexPci.ReleaseMutex();
-
-            if(res) PerformanceEnhancer = pe;
+            if (res) ZenOc = manual;
 
             return res;
-
-        }*/
+        }
 
         private bool SmuWriteReg(UInt32 addr, UInt32 data)
         {
@@ -845,7 +803,10 @@ namespace AsusZsSrv
             UInt32 data = 0;
             while ((!res || data != 1) && --timeout > 0)
             {
-                res = SmuReadReg(SMU_ADDR_RSP, ref data);
+                if (cpuType >= CPUType.Matisse)
+                    res = SmuReadReg(SMU_ADDR_RSP, ref data);
+                else
+                    res = SmuReadReg(SMU_ADDR_RSP_ZEN1, ref data);
             }
 
             if (timeout == 0 || data != 1) res = false;
@@ -858,69 +819,82 @@ namespace AsusZsSrv
             bool res;
 
             // Clear response
-            res = SmuWriteReg(SMU_ADDR_RSP, 0);
+            if (cpuType >= CPUType.Matisse)
+                res = SmuWriteReg(SMU_ADDR_RSP, 0);
+            else
+                res = SmuWriteReg(SMU_ADDR_RSP_ZEN1, 0);
+
             if (res)
             {
                 // Send message
-                res = SmuWriteReg(SMU_ADDR_MSG, msg);
+                if (cpuType >= CPUType.Matisse)
+                    res = SmuWriteReg(SMU_ADDR_MSG, msg);
+                else
+                    res = SmuWriteReg(SMU_ADDR_MSG_ZEN1, msg);
                 if (res)
                 {
                     // Check completion
-                    UInt32 status = 0;
-                    UInt32 timeout = 1000;
-
-                    while ((!res || status != 1) && --timeout > 0)
-                    {
-                        res = SmuReadReg(SMU_ADDR_RSP, ref status);
-                    }
-
-                    if (status != 1 || timeout == 0) res = false;
+                    res = SmuWaitDone();
 
                     if (res)
                     {
-                        res = SmuReadReg(SMU_ADDR_ARG0, ref data);
+                        if (cpuType >= CPUType.Matisse)
+                            res = SmuReadReg(SMU_ADDR_ARG0, ref data);
+                        else
+                            res = SmuReadReg(SMU_ADDR_ARG0_ZEN1, ref data);
                     }
                 }
             }
 
             return res;
-
         }
 
         private bool SmuWrite(UInt32 msg, UInt32 data)
         {
             bool res;
 
+            // Mutex
+            res = hMutexPci.WaitOne(5000);
+
             // Clear response
-            res = SmuWriteReg(SMU_ADDR_RSP, 0);
+            if (res)
+            {
+                if (cpuType >= CPUType.Matisse)
+                    res = SmuWriteReg(SMU_ADDR_RSP, 0);
+                else
+                    res = SmuWriteReg(SMU_ADDR_RSP_ZEN1, 0);
+            }
+
             if (res)
             {
                 // Write data
-                res = SmuWriteReg(SMU_ADDR_ARG0, data);
+                if (cpuType >= CPUType.Matisse)
+                    res = SmuWriteReg(SMU_ADDR_ARG0, data);
+                else
+                    res = SmuWriteReg(SMU_ADDR_ARG0_ZEN1, data);
+
                 if (res)
                 {
-                    res = SmuWriteReg(SMU_ADDR_ARG1, 0);
+                    if (cpuType >= CPUType.Matisse)
+                        SmuWriteReg(SMU_ADDR_ARG1, 0);
+                    else
+                        SmuWriteReg(SMU_ADDR_ARG1_ZEN1, 0);
                 }
                 // Send message
-                res = SmuWriteReg(SMU_ADDR_MSG, msg);
+                if (cpuType >= CPUType.Matisse)
+                    res = SmuWriteReg(SMU_ADDR_MSG, msg);
+                else
+                    res = SmuWriteReg(SMU_ADDR_MSG_ZEN1, msg);
+
                 if (res)
                 {
-                    // Check completion
-                    UInt32 status = 0;
-                    UInt32 timeout = 1000;
-
-                    while (!res && status != 1 && --timeout > 0)
-                    {
-                        res = SmuReadReg(SMU_ADDR_RSP, ref status);
-                    }
-
-                    if (status != 1 || timeout == 0) res = false;
-
+                    res = SmuWaitDone();
                 }
             }
 
-            return res;
+            hMutexPci.ReleaseMutex();
 
+            return res;
         }
 
         public bool GetTctlOffset(ref UInt32 offset)
@@ -963,9 +937,16 @@ namespace AsusZsSrv
             return res;
         }
 
+        public UInt32 getSmuVersion()
+        {
+            UInt32 version = 0;
+
+            SmuRead(SMC_MSG_GetSmuVersion, ref version);
+            return version;
+        }
+
         public bool WritePort80Temp(double temp)
         {
-
             if (temp > 99) temp = 99;
             else if (temp < 0) temp = 0;
 
@@ -976,36 +957,40 @@ namespace AsusZsSrv
             int temp_out = (tens << 4) | ones;
 
             return (ols.WriteIoPortByteEx(0x80, (byte)temp_out) == 1);
-
         }
 
         public void Restore()
         {
-
             // P-states
             for (int i = 0; i < NumPstates; i++)
             {
-                WritePstate(i, PstateAtStart[i]);
+                Pstate[i] = PstateAtStart[i];
             }
 
-            // C-states
-            SetC6Core(ZenC6CoreAtStart);
-            SetC6Package(ZenC6PackageAtStart);
-            SetCpb(ZenCorePerfBoostAtStart);
+            PstateOc = PstateOcAtStart;
 
-            SetPPT(0);
-            SetTDC(0);
-            SetEDC(0);
-            SetScalar(1);
+            BoostFreq[0] = Pstate[0];
+            BoostFreq[1] = Pstate[0];
+            BoostFreq[2] = Pstate[2];
+
+            //ZenOc = ZenOcAtStart;
+
+            // C-states
+            ZenC6Core = ZenC6CoreAtStart;
+            ZenC6Package = ZenC6PackageAtStart;
+            ZenCorePerfBoost = ZenCorePerfBoostAtStart;
+
+            ZenPPT = 0;
+            ZenEDC = 0;
+            ZenTDC = 0;
+            ZenScalar = 1;
 
             // Perf Bias
-            SetPerfBias(PerfBias.None);
-
+            PerformanceBias = PerfBias.Auto;
         }
 
         public void SaveSettings()
         {
-
             SettingsStore.TrayIconAtStart = TrayIconAtStart;
             SettingsStore.ApplyAtStart = ApplyAtStart;
             SettingsStore.P80Temp = P80Temp;
@@ -1015,6 +1000,12 @@ namespace AsusZsSrv
                 SettingsStore.Pstate[i] = Pstate[i];
             }
 
+            for (int i = 0; i < NumPstates; i++)
+            {
+                SettingsStore.BoostFreq[i] = BoostFreq[i];
+            }
+
+            SettingsStore.PstateOc = PstateOc;
             SettingsStore.ZenC6Core = ZenC6Core;
             SettingsStore.ZenC6Package = ZenC6Package;
             SettingsStore.ZenCorePerfBoost = ZenCorePerfBoost;
@@ -1022,6 +1013,7 @@ namespace AsusZsSrv
             SettingsStore.ZenTDC = ZenTDC;
             SettingsStore.ZenEDC = ZenEDC;
             SettingsStore.ZenScalar = ZenScalar;
+            SettingsStore.ZenOc = ZenOc;
 
             SettingsStore.PerformanceBias = PerformanceBias;
 
@@ -1030,7 +1022,6 @@ namespace AsusZsSrv
             SettingsStore.Save();
 
             SettingsSaved = true;
-
         }
 
         public void Unload()

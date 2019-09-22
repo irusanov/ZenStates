@@ -1,4 +1,4 @@
-﻿using AsusZenStates;
+using ZenStates;
 using Microsoft.Win32;
 using System;
 using System.Collections.Specialized;
@@ -10,14 +10,14 @@ using System.ServiceProcess;
 using System.Threading;
 using System.Timers;
 
-namespace AsusZsSrv
+namespace ZenStatesSrv
 {
-    public class AsusZsSrv : ServiceBase
+    public class ZenStatesSrv : ServiceBase
     {
-        public const string MyServiceName = "AsusZsSrv";
+        public const string MyServiceName = "ZenStatesSrv";
 
-        private const string fileNameGUI = "AsusZenStates.exe";
-        private const string softwareName = "ASUS ZenStates";
+        private const string fileNameGUI = "ZenStates.exe";
+        private const string softwareName = "ZenStates";
 
         [DllImport("psapi.dll")]
         static extern int EmptyWorkingSet(IntPtr hwProc);
@@ -31,7 +31,7 @@ namespace AsusZsSrv
 
         private static bool P80Temp = false;
 
-        public AsusZsSrv()
+        public ZenStatesSrv()
         {
             this.ServiceName = MyServiceName;
             ((ISupportInitialize)this.EventLog).BeginInit();
@@ -129,8 +129,13 @@ namespace AsusZsSrv
             di.MemWrite(DataInterface.REG_NOTIFY_STATUS, 0x00);
             di.MemWrite(DataInterface.REG_SERVER_VERSION, DataInterface.ServiceVersion);
             di.MemWrite(DataInterface.REG_PING_PONG, 0x01);
+            di.MemWrite(DataInterface.REG_SMU_VERSION, cpuh.getSmuVersion());
 
             for (int i = 0; i < CPUHandler.NumPstates; i++) di.MemWrite(DataInterface.REG_P0 + i, cpuh.Pstate[i]);
+            for (int i = 0; i < 2; i++) di.MemWrite(DataInterface.REG_BOOST_FREQ_0 + i, cpuh.Pstate[0]);
+
+            di.MemWrite(DataInterface.REG_PSTATE_OC, cpuh.PstateOc);
+            di.MemWrite(DataInterface.REG_CPU_TYPE, (UInt64)cpuh.cpuType);
 
             di.MemWrite(DataInterface.REG_PPT, (UInt64)cpuh.ZenPPT);
             di.MemWrite(DataInterface.REG_TDC, (UInt64)cpuh.ZenTDC);
@@ -147,7 +152,48 @@ namespace AsusZsSrv
 
             // Optimize
             MinimizeFootprint();
+        }
 
+        private static void applySettings()
+        {
+            SetStartupService(true);
+            SetStartupGUI(cpuh.TrayIconAtStart);
+
+            // P80Temp = cpuh.P80Temp;
+
+            if (cpuh.ZenOc)
+            {
+                if (cpuh.SetOcMode(true)) cpuh.setOverclockFrequencyAllCores(cpuh.PstateOc);
+            }
+            else
+            {
+                cpuh.SetOcMode(false);
+                // Write new P-states
+                for (int i = 0; i < CPUHandler.NumPstates; i++)
+                {
+                    cpuh.WritePstate(i, cpuh.Pstate[i]);
+                }
+
+                if (cpuh.cpuType >= CPUHandler.CPUType.Matisse)
+                {
+                    cpuh.setBoostFrequencySingleCore(cpuh.BoostFreq[0]);
+                    cpuh.setBoostFrequencyAllCores(cpuh.BoostFreq[1]);
+                }
+            }
+
+            cpuh.SetC6Core(cpuh.ZenC6Core);
+            cpuh.SetC6Package(cpuh.ZenC6Package);
+            cpuh.SetCpb(cpuh.ZenCorePerfBoost);
+
+            if (cpuh.cpuType < CPUHandler.CPUType.Matisse)
+            {
+                cpuh.SetPPT(cpuh.ZenPPT);
+                cpuh.SetTDC(cpuh.ZenTDC);
+                cpuh.SetEDC(cpuh.ZenEDC);
+            }
+
+            cpuh.SetScalar(cpuh.ZenScalar);
+            cpuh.SetPerfBias(cpuh.PerformanceBias);
         }
 
         private static void t1Handler(object source, ElapsedEventArgs e)
@@ -187,6 +233,9 @@ namespace AsusZsSrv
                     if ((CLIENT_FLAGS & DataInterface.FLAG_CPB) == 0) cpuh.ZenCorePerfBoost = false;
                     else cpuh.ZenCorePerfBoost = true;
 
+                    if ((CLIENT_FLAGS & DataInterface.FLAG_OC) == 0) cpuh.ZenOc = false;
+                    else cpuh.ZenOc = true;
+
                     // XFR2
                     cpuh.ZenPPT = (int)di.MemRead(DataInterface.REG_PPT);
                     cpuh.ZenTDC = (int)di.MemRead(DataInterface.REG_TDC);
@@ -195,58 +244,70 @@ namespace AsusZsSrv
 
                     // PerfBias
                     cpuh.PerformanceBias = (CPUHandler.PerfBias)di.MemRead(DataInterface.REG_PERF_BIAS);
+                    cpuh.PstateOc = di.MemRead(DataInterface.REG_PSTATE_OC);
 
-                    // Apply settings
-                    SetStartupService(true);
-                    SetStartupGUI(cpuh.TrayIconAtStart);
-
-                    // Write new P-states
                     for (int i = 0; i < CPUHandler.NumPstates; i++)
                     {
-                        cpuh.WritePstate(i, di.MemRead(DataInterface.REG_P0 + i));
+                        cpuh.Pstate[i] = di.MemRead(DataInterface.REG_P0 + i);
                     }
 
-                    cpuh.SetC6Core(cpuh.ZenC6Core);
-                    cpuh.SetC6Package(cpuh.ZenC6Package);
-                    cpuh.SetCpb(cpuh.ZenCorePerfBoost);
+                    for (int i = 0; i < CPUHandler.NumPstates - 1; i++)
+                    {
+                        cpuh.BoostFreq[i] = di.MemRead(DataInterface.REG_BOOST_FREQ_0 + i);
+                    }
+                    /*
+                        // Apply settings
+                        SetStartupService(true);
+                        SetStartupGUI(cpuh.TrayIconAtStart);
 
-                    cpuh.SetPPT(cpuh.ZenPPT);
-                    cpuh.SetTDC(cpuh.ZenTDC);
-                    cpuh.SetEDC(cpuh.ZenEDC);
-                    cpuh.SetScalar(cpuh.ZenScalar);
+                        // Write new P-states
+                        if (cpuh.ZenOc)
+                        {
+                            if (cpuh.SetOcMode(true)) cpuh.setOverclockFrequencyAllCores(di.MemRead(DataInterface.REG_PSTATE_OC));
+                            //cpuh.setCmdTemp(Convert.ToUInt32(cpuh.ZenScalar), Convert.ToUInt32(cpuh.ZenEDC));
+                        }
+                        else
+                        {
+                            cpuh.SetOcMode(false);
+                            for (int i = 0; i < CPUHandler.NumPstates; i++)
+                            {
+                                cpuh.WritePstate(i, di.MemRead(DataInterface.REG_P0 + i));
+                            }
 
-                    cpuh.SetPerfBias(cpuh.PerformanceBias);
+                            if (cpuh.cpuType >= CPUHandler.CPUType.Matisse)
+                            {
+                                cpuh.setBoostFrequencySingleCore(di.MemRead(DataInterface.REG_BOOST_FREQ_0));
+                                cpuh.setBoostFrequencyAllCores(di.MemRead(DataInterface.REG_BOOST_FREQ_1));
+                            }
+                        }
 
+                        cpuh.SetC6Core(cpuh.ZenC6Core);
+                        cpuh.SetC6Package(cpuh.ZenC6Package);
+                        cpuh.SetCpb(cpuh.ZenCorePerfBoost);
+
+                        if (cpuh.cpuType < CPUHandler.CPUType.Matisse)
+                        {
+                            cpuh.SetPPT(cpuh.ZenPPT);
+                            cpuh.SetTDC(cpuh.ZenTDC);
+                            cpuh.SetEDC(cpuh.ZenEDC);
+                        }
+
+                        cpuh.SetScalar(cpuh.ZenScalar);
+                        cpuh.SetPerfBias(cpuh.PerformanceBias);
+                    */
+
+                    applySettings();
                     cpuh.SettingsSaved = false;
 
-                    // Notify done
+                    // Notify apply
                     di.MemWrite(DataInterface.REG_NOTIFY_STATUS, DataInterface.NOTIFY_DONE);
 
                     break;
 
                 case DataInterface.NOTIFY_APPLY:
-
-                    SetStartupService(true);
-                    SetStartupGUI(cpuh.TrayIconAtStart);
+                    applySettings();
 
                     P80Temp = cpuh.P80Temp;
-
-                    // Write new P-states
-                    for (int i = 0; i < CPUHandler.NumPstates; i++)
-                    {
-                        cpuh.WritePstate(i, cpuh.Pstate[i]);
-                    }
-
-                    cpuh.SetC6Core(cpuh.ZenC6Core);
-                    cpuh.SetC6Package(cpuh.ZenC6Package);
-                    cpuh.SetCpb(cpuh.ZenCorePerfBoost);
-
-                    cpuh.SetPPT(cpuh.ZenPPT);
-                    cpuh.SetTDC(cpuh.ZenTDC);
-                    cpuh.SetEDC(cpuh.ZenEDC);
-                    cpuh.SetScalar(cpuh.ZenScalar);
-
-                    cpuh.SetPerfBias(cpuh.PerformanceBias);
 
                     // Notify done
                     di.MemWrite(DataInterface.REG_NOTIFY_STATUS, DataInterface.NOTIFY_DONE);
@@ -269,6 +330,13 @@ namespace AsusZsSrv
                     {
                         di.MemWrite(DataInterface.REG_P0 + i, cpuh.Pstate[i]);
                     }
+
+                    for (int i = 0; i < 2; i++)
+                    {
+                        di.MemWrite(DataInterface.REG_BOOST_FREQ_0 + i, cpuh.BoostFreq[i]);
+                    }
+
+                    di.MemWrite(DataInterface.REG_PSTATE_OC, cpuh.PstateOc);
 
                     di.MemWrite(DataInterface.REG_PPT, (UInt64)cpuh.ZenPPT);
                     di.MemWrite(DataInterface.REG_TDC, (UInt64)cpuh.ZenTDC);
@@ -301,7 +369,6 @@ namespace AsusZsSrv
 
             // Update server flags
             SetServerFlags();
-
         }
 
         protected override bool OnPowerEvent(PowerBroadcastStatus powerStatus)
@@ -313,10 +380,19 @@ namespace AsusZsSrv
 
                     if (!cpuh.ShutdownUnclean)
                     {
-                        // Write P-states
-                        for (int i = 0; i < CPUHandler.NumPstates; i++)
+                        cpuh.SetOcMode(cpuh.ZenOc);
+
+                        if (cpuh.ZenOc)
                         {
-                            cpuh.WritePstate(i, cpuh.Pstate[i]);
+                            cpuh.setOverclockFrequencyAllCores(cpuh.PstateOc);
+                        }
+                        else
+                        {
+                            // Write P-states
+                            for (int i = 0; i < CPUHandler.NumPstates; i++)
+                            {
+                                cpuh.WritePstate(i, cpuh.Pstate[i]);
+                            }
                         }
 
                         // Write C-states
@@ -327,9 +403,12 @@ namespace AsusZsSrv
                         // Perf bias
                         cpuh.SetPerfBias(cpuh.PerformanceBias);
 
-                        cpuh.SetPPT(cpuh.ZenPPT);
-                        cpuh.SetTDC(cpuh.ZenTDC);
-                        cpuh.SetEDC(cpuh.ZenEDC);
+                        if (cpuh.cpuType >= CPUHandler.CPUType.Matisse)
+                        {
+                            cpuh.SetPPT(cpuh.ZenPPT);
+                            cpuh.SetTDC(cpuh.ZenTDC);
+                            cpuh.SetEDC(cpuh.ZenEDC);
+                        }
                         cpuh.SetScalar(cpuh.ZenScalar);
                     }
 
@@ -391,6 +470,7 @@ namespace AsusZsSrv
             if (cpuh.ZenC6Core) server_flags |= DataInterface.FLAG_C6CORE;
             if (cpuh.ZenC6Package) server_flags |= DataInterface.FLAG_C6PACKAGE;
             if (cpuh.ZenCorePerfBoost) server_flags |= DataInterface.FLAG_CPB;
+            if (cpuh.ZenOc) server_flags |= DataInterface.FLAG_OC;
 
             di.MemWrite(DataInterface.REG_SERVER_FLAGS, server_flags);
         }
@@ -438,7 +518,7 @@ namespace AsusZsSrv
             String lpPassword,
             String lpDisplayName);
 
-        [DllImport("advapi32.dll", SetLastError = true, CharSet = CharSet.Auto)]
+        [DllImport("advapi32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
         static extern IntPtr OpenService(
             IntPtr hSCManager, string lpServiceName, uint dwDesiredAccess);
 

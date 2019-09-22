@@ -2,7 +2,7 @@
 using System.Configuration.Install;
 using System.ServiceProcess;
 
-namespace AsusZsSrv
+namespace ZenStatesSrv
 {
     [RunInstaller(true)]
     public class ProjectInstaller : Installer
@@ -17,7 +17,7 @@ namespace AsusZsSrv
             // Here you can set properties on serviceProcessInstaller or register event handlers
             serviceProcessInstaller.Account = ServiceAccount.LocalSystem;
 
-            serviceInstaller.ServiceName = AsusZsSrv.MyServiceName;
+            serviceInstaller.ServiceName = ZenStatesSrv.MyServiceName;
             this.Installers.AddRange(new Installer[] { serviceProcessInstaller, serviceInstaller });
         }
     }

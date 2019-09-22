@@ -4,7 +4,7 @@ using System.IO.MemoryMappedFiles;
 using System.Security.AccessControl;
 using System.Security.Principal;
 
-namespace AsusZenStates
+namespace ZenStates
 {
     /// <summary>
     /// Description of DataInterface.
@@ -14,9 +14,9 @@ namespace AsusZenStates
 
         // Constants
 
-        public const UInt64 ServiceVersion = 9; // 0 = 0.1/b, 1 = 0.2, 2 = 0.2.x, 3 = 0.3, 4 = 0.3.xxxx, 5 = 0.4/0.5, 6 = 0.5, 7 = 0.6, 8 = 0.7, 9 = 0.7.1
+        public const UInt64 ServiceVersion = 10; // 0 = 0.1/b, 1 = 0.2, 2 = 0.2.x, 3 = 0.3, 4 = 0.3.xxxx, 5 = 0.4/0.5, 6 = 0.5, 7 = 0.6, 8 = 0.7, 9 = 0.7.1. 10 = 0.8.0
         private const int bufferSize = 16;
-        private const string mmf_path = @"Global\AsusZenStates";
+        private const string mmf_path = @"Global\ZenStates";
 
         // Memory register map
 
@@ -40,8 +40,12 @@ namespace AsusZenStates
         public const int REG_PING_PONG = 0x0A;
         public const int REG_NOTIFY_STATUS = 0x0B;
         public const int REG_SERVER_VERSION = 0x0C;
-
         public const int REG_SCALAR = 0x0D;
+        public const int REG_SMU_VERSION = 0x0E;
+        public const int REG_PSTATE_OC = 0x0F;
+        public const int REG_CPU_TYPE = 0x10;
+        public const int REG_BOOST_FREQ_0 = 0x11;
+        public const int REG_BOOST_FREQ_1 = 0x12;
 
         public const UInt64 FLAG_IS_AVAILABLE = 1 << 0;
         public const UInt64 FLAG_SUPPORTED_CPU = 1 << 1;
@@ -54,6 +58,7 @@ namespace AsusZenStates
         public const UInt64 FLAG_SHUTDOWN_UNCLEAN = 1 << 8;
         public const UInt64 FLAG_P80_TEMP_EN = 1 << 9;
         public const UInt64 FLAG_CPB = 1 << 10;
+        public const UInt64 FLAG_OC = 1 << 11;
 
         public const UInt64 NOTIFY_CLEAR = 0x00;
         public const UInt64 NOTIFY_CLIENT_FLAGS = 0x01;

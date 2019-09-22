@@ -1,14 +1,14 @@
-﻿using AsusZenStates;
+﻿using ZenStates;
 using System;
 using System.IO;
 using System.Xml;
 
-namespace AsusZsSrv
+namespace ZenStatesSrv
 {
     public class Settings
     {
 
-        private const string FileName = "AsusZsSettings.xml";
+        private const string FileName = "ZenStatesSettings.xml";
         private string FilePath;
         private string FullFilePath;
 
@@ -20,6 +20,8 @@ namespace AsusZsSrv
 
         // Settings
         public UInt64[] Pstate = new UInt64[CPUHandler.NumPstates];
+        public UInt64[] BoostFreq = new UInt64[3];
+        public UInt64 PstateOc = new UInt64();
 
         public bool TrayIconAtStart = false;
         public bool ApplyAtStart = false;
@@ -28,19 +30,20 @@ namespace AsusZsSrv
         public bool ZenC6Core = false;
         public bool ZenC6Package = false;
         public bool ZenCorePerfBoost = false;
+        public bool ZenOc = false;
         public int ZenPPT = 0;
         public int ZenTDC = 0;
         public int ZenEDC = 0;
         public int ZenScalar = 1;
 
         //public CPUHandler.PerfEnh PerformanceEnhancer = 0;
-        public CPUHandler.PerfBias PerformanceBias = 0;
+        public CPUHandler.PerfBias PerformanceBias = CPUHandler.PerfBias.Auto;
 
         public Settings()
         {
 
             // Path
-            FilePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "ASUS ZenStates");
+            FilePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "ZenStates");
             FullFilePath = Path.Combine(FilePath, FileName);
 
             // Check if directory exists
@@ -66,7 +69,6 @@ namespace AsusZsSrv
                 // Create/overwrite file
                 WriteSettingsToFile();
             }
-
         }
 
         public void Save()
@@ -88,7 +90,7 @@ namespace AsusZsSrv
                     using (XmlWriter writer = XmlWriter.Create(fs, xmlWriterSettings))
                     {
                         writer.WriteStartDocument();
-                        writer.WriteComment("ASUS ZenStates Settings file");
+                        writer.WriteComment("ZenStates Settings file");
                         writer.WriteStartElement("ZenStates");
                         writer.WriteStartElement("Application");
                         writer.WriteElementString("ServiceVersion", DataInterface.ServiceVersion.ToString());
@@ -102,9 +104,14 @@ namespace AsusZsSrv
                         writer.WriteElementString("P0", Pstate[0].ToString("X16"));
                         writer.WriteElementString("P1", Pstate[1].ToString("X16"));
                         writer.WriteElementString("P2", Pstate[2].ToString("X16"));
+                        writer.WriteElementString("Boost0", BoostFreq[0].ToString("X16"));
+                        writer.WriteElementString("Boost1", BoostFreq[1].ToString("X16"));
+                        writer.WriteElementString("Boost2", BoostFreq[2].ToString("X16"));
+                        writer.WriteElementString("PstateOc", PstateOc.ToString("X16"));
                         writer.WriteElementString("ZenC6Core", ZenC6Core.ToString());
                         writer.WriteElementString("ZenC6Package", ZenC6Package.ToString());
                         writer.WriteElementString("ZenCorePerfBoost", ZenCorePerfBoost.ToString());
+                        writer.WriteElementString("ZenOc", ZenOc.ToString());
                         writer.WriteElementString("ZenPPT", ZenPPT.ToString());
                         writer.WriteElementString("ZenTDC", ZenTDC.ToString());
                         writer.WriteElementString("ZenEDC", ZenEDC.ToString());
@@ -170,11 +177,16 @@ namespace AsusZsSrv
                                     case "ApplyAtStart": ApplyAtStart = reader.ReadElementContentAsString() == "True" ? true : false; ; break;
                                     case "P80Temp": P80Temp = reader.ReadElementContentAsString() == "True" ? true : false; break;
                                     case "P0": Pstate[0] = Convert.ToUInt64(reader.ReadElementContentAsString(), 16); break;
-                                    case "P1": Pstate[1] = Convert.ToUInt64(reader.ReadElementContentAsString(), 16); break;
-                                    case "P2": Pstate[2] = Convert.ToUInt64(reader.ReadElementContentAsString(), 16); break;
+                                    case "P1": Pstate[1] = Convert.ToUInt64(reader.ReadElementContentAsString(),16); break;
+                                    case "P2": Pstate[2] = Convert.ToUInt64(reader.ReadElementContentAsString(),16); break;
+                                    case "Boost0": BoostFreq[0] = Convert.ToUInt64(reader.ReadElementContentAsString(), 16); break;
+                                    case "Boost1": BoostFreq[1] = Convert.ToUInt64(reader.ReadElementContentAsString(), 16); break;
+                                    case "Boost2": BoostFreq[2] = Convert.ToUInt64(reader.ReadElementContentAsString(), 16); break;
+                                    case "PstateOc": PstateOc = Convert.ToUInt64(reader.ReadElementContentAsString(), 16); break;
                                     case "ZenC6Core": ZenC6Core = reader.ReadElementContentAsString() == "True" ? true : false; break;
                                     case "ZenC6Package": ZenC6Package = reader.ReadElementContentAsString() == "True" ? true : false; break;
                                     case "ZenCorePerfBoost": ZenCorePerfBoost = reader.ReadElementContentAsString() == "True" ? true : false; break;
+                                    case "ZenOc": ZenOc = reader.ReadElementContentAsString() == "True" ? true : false; break;
                                     case "ZenPPT": ZenPPT = reader.ReadElementContentAsInt(); break;
                                     case "ZenTDC": ZenTDC = reader.ReadElementContentAsInt(); break;
                                     case "ZenEDC": ZenEDC = reader.ReadElementContentAsInt(); break;

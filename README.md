@@ -1,24 +1,51 @@
-# ASUS ZenStates
+# ZenStates
 
-This project was originally created to enable simple P-state overclocking on ASUS AM4 motherboards from the OS. It's no longer maintained but may be freely used as a base or for parts for anyone interested in continuing this project.
+This project was originally created to enable simple P-state overclocking on ASUS AM4 motherboards from the OS.
+The original owner of the project, Jon Sandström (a.k.a. [elmor/eelmor](https://github.com/eelmor)) is no longer maintaining it.
+Starting from Zen2 release (Matisse), I'm taking over and will try to provide as much functionality as possible.
 
-It was created using Visual Studio 2017 and requires the WinRing driver and library to run (https://1drv.ms/u/s!Atmpv-6qHr_6r-YV1-C0ht0nCQiHKA).
+
+## Prerequisites
+* [WinRing driver](https://1drv.ms/u/s!Atmpv-6qHr_6r-YV1-C0ht0nCQiHKA)
+* .Net Framework v4.0
+* Supported OS: Windows XP/Vista/7/8/10
+
+## How To
+The application consists of two executables - the main GUI `ZenStates.exe` and a service `ZenStatesSrv.exe`.
+An additional `uninstall.bat` is provided for an easy uninstall of the previous service version.
+
+1. Extract the provided zip and place in a desired location on the disk
+2. Run `uninstall.bat` if not running for a first time
+3. Run `ZenStates.exe`
 
 
-# SMU Commands
+## Technical Information
 
-There's no public document describing the available commands, however I was able to guess some of them with trial and error and the help of the publicly released "worktool" app and the info provided by FlyGoat's repo: (https://github.com/FlyGoat/ryzen_nb_smu)
+### What have changed with Zen2
+1. SMU mailbox message address changed from `0x03B10528` to `0x03B10530`
+2. SMU mailbox response address changed from `0x03B10564` to `0x03B1057C`
+3. ARG base address changed from `0x03B10998` to `0x03B109C4`
 
-| ID | Name | Note |
+### SMU Commands
+
+There's no public document describing the available commands, however I was able reverse-engineer some of them with the help of the publicly released "worktool" app, ReadWriteEverything, [CrystalCPUID](https://crystalmark.info/en/download/) and the info provided by [FlyGoat](https://github.com/FlyGoat/ryzen_nb_smu).
+
+The research is based on SMU version 64.40.00.
+
+| ID | Name | Description |
 | :------| :------ | :------ |
-| 0x1 | TestMessage |  |
-| 0x2 | GetSmuVersion |  |
-| 0x24 | EnableOverclocking | Forces base clock and manual overclock mode. |
-| 0x25 | DisableOverclocking |  |
-| 0x26 | SetOverclockFreqAllCore | Sets all core frequency, EnableOverclocking first. |
-| 0x27 | SetOverclockFreqPerCore | Always sets core #0, probably needs additional parameters. EnableOverclocking first.  |
-| 0x28 | SetOverclockVid | Alters the VID (in HEX). EnableOverclocking first. |
-| 0x29 | SetBoostLimitFreqAllCores | Probably sets fmax |
-| 0x2B | ? | Sets maximum boost frequency |
-| 0x2C | GetOverclockCap | ? |
-| 0x2F | ? | With multi manually set to 40x, sets the multi to 39.50x |
+| 0x1 | TestMessage | A test command to check if Mailbox responds. Returns 0x1 if successful. |
+| 0x2 | GetSmuVersion | Gets the SMU Firmware version. |
+| 0x3 | EnableSmuFeatures | |
+| 0x4 | DisableSmuFeatures | The command is rejected (`0xFD`). Seems to be currently blocked by AMD |
+| 0x23 | SetTjMax | Set TjMax temperature, probably in degrees C° |
+| 0x24 | EnableOverclocking | Forces manual overclock mode. All limits, except overtemperature protection, are lifted. OC means FID != default. |
+| 0x25 | DisableOverclocking | Reverts back to non-OC mode. |
+| 0x26 | SetOverclockFreqAllCores | Sets all core OC frequency, depends on `0x24` |
+| 0x27 | SetOverclockFreqPerCore | Set overclock frequency per core. Probably requires 2 arguments. Depends on 0x24. |
+| 0x28 | SetOverclockVid | Alters the VID (in HEX). Depends on `0x24`. |
+| 0x29 | etBoostLimitFrequency | Sets single-thread max boost frequency. |
+| 0x2B | SetBoostLimitFrequencyAllCores | Sets maximum boost frequency for multi-thread applications. Still depends on PBO limits. |
+| 0x2C | GetOverclockCap | Gets OC capability, which is unclear to me how it could be used and what does it mean exactly. |
+| 0x2F | SetFITLimitScalar | Sets Scalar from 1 to 10 |
+| 0x30 | MessageCount | Get current messages count in the queue |

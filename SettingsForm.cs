@@ -1,8 +1,8 @@
-﻿using System;
+using System;
 using System.Runtime.InteropServices;
 using System.Windows.Forms;
 
-namespace AsusZenStates
+namespace ZenStates
 {
     /// <summary>
     /// Description of SettingsForm.
@@ -18,6 +18,8 @@ namespace AsusZenStates
         [DllImportAttribute("user32.dll")]
         public static extern bool ReleaseCapture();
 
+        private static bool isZen2 = NotificationIcon.di.MemRead(DataInterface.REG_CPU_TYPE) >= 7; // CPUType.Matisse = 7
+
         private const int PSTATES = 3;
         private const int FID_MAX = 0xFF;
         private const int FID_MIN = 0x10;
@@ -27,10 +29,21 @@ namespace AsusZenStates
         private const double FREQ_MAX = 70;
         private const double FREQ_MIN = 5.5;
 
+        // All auto / pre-Matisse
         CheckBox[] PstateEn = new CheckBox[PSTATES];
         ComboBox[] PstateFid = new ComboBox[PSTATES];
         ComboBox[] PstateDid = new ComboBox[PSTATES];
         ComboBox[] PstateVid = new ComboBox[PSTATES];
+
+        // All auto / Matisse
+        Label[] BoostFreqLabel = new Label[3];
+        ComboBox[] BoostFreqFid = new ComboBox[3];
+        ComboBox[] BoostFreqDid = new ComboBox[3];
+
+        // Manual control
+        ComboBox PstateOcFid;
+        ComboBox PstateOcDid;
+        ComboBox PstateOcVid;
 
         class CustomListItem
         {
@@ -56,10 +69,11 @@ namespace AsusZenStates
         }
 
         CustomListItem[] PERFBIAS = {
-            new CustomListItem(0, "Disabled"),
-            new CustomListItem(1, "Cinebench R15 / AIDA64"),
+            new CustomListItem(0, "Auto (BIOS)"),
+            new CustomListItem(1, "Disabled"),
             new CustomListItem(2, "Cinebench R11.5"),
-            new CustomListItem(3, "Geekbench 3")
+            new CustomListItem(3, "Cinebench R15 / R20"),
+            new CustomListItem(4, "Geekbench 3 / AIDA64")
         };
 
         CustomListItem[] PERFENH = {
@@ -67,7 +81,8 @@ namespace AsusZenStates
             new CustomListItem(1, "Default"),
             new CustomListItem(2, "Level 1"),
             new CustomListItem(3, "Level 2"),
-            new CustomListItem(4, "Level 3 (OC)")
+            new CustomListItem(4, "Level 3 (OC)"),
+            new CustomListItem(5, "Level 4 (OC)")
         };
 
         CustomListItem[] DIVIDERS = {
@@ -100,58 +115,13 @@ namespace AsusZenStates
             // MB/CPU description
             labelMB.Text = NotificationIcon.mbName;
             labelCPU.Text = NotificationIcon.cpuName;
-            label1.Text = "version " + Application.ProductVersion.Substring(0, Application.ProductVersion.LastIndexOf("."));
+            biosVersionLabel.Text = NotificationIcon.biosVersion;
+            smuVersionLabel.Text = NotificationIcon.smuVersion;
+            label1.Text = "version " + Application.ProductVersion; //.Substring(0, Application.ProductVersion.LastIndexOf("."));
 
-            // Pstate controls
-            for (int i = 0; i < PstateEn.Length; i++)
-            {
-
-                // Enable checkbox
-                PstateEn[i] = new CheckBox
-                {
-                    Text = "P" + i.ToString(),
-                    Size = new System.Drawing.Size(40, 20),
-                    Location = new System.Drawing.Point(10, 50 + i * 25)
-                };
-                this.Controls.Add(PstateEn[i]);
-
-                // FID combobox
-                PstateFid[i] = new ComboBox
-                {
-                    Size = new System.Drawing.Size(80, 20),
-                    Location = new System.Drawing.Point(50, 50 + i * 25)
-                };
-                this.Controls.Add(PstateFid[i]);
-
-                // DID combobox
-                PstateDid[i] = new ComboBox
-                {
-                    Size = new System.Drawing.Size(50, 20),
-                    Location = new System.Drawing.Point(135, 50 + i * 25)
-                };
-                foreach (CustomListItem item in DIVIDERS)
-                {
-                    PstateDid[i].Items.Add(item);
-                }
-                PstateDid[i].SelectedIndexChanged += UpdateFids;
-                this.Controls.Add(PstateDid[i]);
-
-                // VID combobox
-                PstateVid[i] = new ComboBox
-                {
-                    Size = new System.Drawing.Size(80, 20),
-                    Location = new System.Drawing.Point(190, 50 + i * 25)
-                };
-                int k = 0;
-                for (byte j = VID_MIN; j <= VID_MAX; j++)
-                {
-                    double voltage = 1.55 - j * 0.00625;
-                    CustomListItem item = new CustomListItem(k++, j, voltage.ToString("F3") + "V");
-                    PstateVid[i].Items.Add(item);
-                }
-                this.Controls.Add(PstateVid[i]);
-
-            }
+            // Auto Pstate controls
+            PopulateAutoControls();
+            PopulateManualControls();
 
             foreach (CustomListItem item in PERFBIAS)
             {
@@ -165,13 +135,22 @@ namespace AsusZenStates
 
             ResetValues();
 
-            // Disable PPT/TDC/EDC
-            /*textBoxPPT.Enabled = false;
-            textBoxTDC.Enabled = false;
-            textBoxEDC.Enabled = false;*/
+            if (isZen2)
+            {
+                textBoxPPT.Enabled = false;
+                textBoxTDC.Enabled = false;
+                textBoxEDC.Enabled = false;
+                labelPPT.Enabled = false;
+                labelTDC.Enabled = false;
+                labelEDC.Enabled = false;
+                checkBoxSmuPL.Enabled = false;
+                comboBoxPerfenh.Enabled = false;
+                labelPerfEnh.Enabled = false;
+            }
 
             // Save button
-            buttonSave.Enabled = false;
+            SetSavedButton(false);
+            //SwitchControlMode(NotificationIcon.ZenOc);
 
             // ToolTip
             ToolTip toolTip = new ToolTip();
@@ -180,42 +159,215 @@ namespace AsusZenStates
             toolTip.SetToolTip(labelEDC, "Electrical Design Current (A)");
             toolTip.SetToolTip(labelTDC, "Thermal Design Current (A)");
 
+            if (isZen2)
+            {
+                toolTip.SetToolTip(checkBoxSmuPL, "It's currently not working with Zen2 and new AGESA");
+                toolTip.SetToolTip(comboBoxPerfenh, "It's currently not working with Zen2 and new AGESA");
+                toolTip.SetToolTip(checkBoxSmuPL, "It's currently not working with Zen2 and new AGESA");
+            }
+        }
+
+        public void PopulateAutoControls()
+        {
+            if (isZen2)
+            {
+                for (int i = 0; i < 3; i++)
+                {
+                    // Enable checkbox
+                    BoostFreqLabel[i] = new Label
+                    {
+                        Size = new System.Drawing.Size(120, 27),
+                        Location = new System.Drawing.Point(7, 7 + i * 25),
+                    };
+
+                    // FID combobox
+                    BoostFreqFid[i] = new ComboBox
+                    {
+                        Size = new System.Drawing.Size(62, 21),
+                        Location = new System.Drawing.Point(130, 7 + i * 25)
+                    };
+
+                    // DID combobox
+                    BoostFreqDid[i] = new ComboBox
+                    {
+                        Size = new System.Drawing.Size(62, 21),
+                        Location = new System.Drawing.Point(202, 7 + i * 25),
+                    };
+                    foreach (CustomListItem item in DIVIDERS)
+                    {
+                        BoostFreqDid[i].Items.Add(item);
+                    }
+                    BoostFreqDid[i].SelectedIndexChanged += UpdateFids;
+
+                    this.panelAutoMode.Controls.Add(BoostFreqLabel[i]);
+                    this.panelAutoMode.Controls.Add(BoostFreqFid[i]);
+                    this.panelAutoMode.Controls.Add(BoostFreqDid[i]);
+                }
+
+                BoostFreqLabel[0].Text = "Max Boost Single Core";
+                BoostFreqLabel[1].Text = "Max Boost All Cores";
+                BoostFreqLabel[2].Text = "Idle Frequency";
+            }
+            else
+            {
+                for (int i = 0; i < PSTATES; i++)
+                {
+                    // Enable checkbox
+                    PstateEn[i] = new CheckBox
+                    {
+                        Text = "P" + i.ToString(),
+                        Size = new System.Drawing.Size(40, 21),
+                        Location = new System.Drawing.Point(10, 7 + i * 25),
+                    };
+
+                    // FID combobox
+                    PstateFid[i] = new ComboBox
+                    {
+                        Size = new System.Drawing.Size(70, 21),
+                        Location = new System.Drawing.Point(50, 7 + i * 25)
+                    };
+
+                    // DID combobox
+                    PstateDid[i] = new ComboBox
+                    {
+                        Size = new System.Drawing.Size(62, 21),
+                        Location = new System.Drawing.Point(130, 7 + i * 25),
+                    };
+                    foreach (CustomListItem item in DIVIDERS)
+                    {
+                        PstateDid[i].Items.Add(item);
+                    }
+                    PstateDid[i].SelectedIndexChanged += UpdateFids;
+
+                    // VID combobox
+                    PstateVid[i] = new ComboBox
+                    {
+                        Size = new System.Drawing.Size(62, 21),
+                        Location = new System.Drawing.Point(202, 7 + i * 25)
+                    };
+                    int k = 0;
+                    for (byte j = VID_MIN; j <= VID_MAX; j++)
+                    {
+                        double voltage = 1.55 - j * 0.00625;
+                        CustomListItem item = new CustomListItem(k++, j, voltage.ToString("F3") + "V");
+                        PstateVid[i].Items.Add(item);
+                    }
+
+                    this.panelAutoMode.Controls.Add(PstateEn[i]);
+                    this.panelAutoMode.Controls.Add(PstateFid[i]);
+                    this.panelAutoMode.Controls.Add(PstateDid[i]);
+                    this.panelAutoMode.Controls.Add(PstateVid[i]);
+                }
+            }
+        }
+
+        public void PopulateManualControls()
+        {
+            // FID combobox
+            PstateOcFid = new ComboBox
+            {
+                Size = new System.Drawing.Size(113, 21),
+                Location = new System.Drawing.Point(7, 7)
+            };
+
+            // DID combobox
+            PstateOcDid = new ComboBox
+            {
+                Size = new System.Drawing.Size(55, 21),
+                Location = new System.Drawing.Point(130, 7),
+            };
+            foreach (CustomListItem item in DIVIDERS)
+            {
+                PstateOcDid.Items.Add(item);
+            }
+            PstateOcDid.SelectedIndexChanged += UpdateOcFid;
+
+            // VID combobox
+            PstateOcVid = new ComboBox
+            {
+                Size = new System.Drawing.Size(70, 21),
+                Location = new System.Drawing.Point(195, 7)
+            };
+            int k = 0;
+            for (byte j = VID_MIN; j <= VID_MAX; j++)
+            {
+                double voltage = 1.55 - j * 0.00625;
+                CustomListItem item = new CustomListItem(k++, j, voltage.ToString("F3") + "V");
+                PstateOcVid.Items.Add(item);
+            }
+
+            this.panelManualMode.Controls.Add(PstateOcFid);
+            this.panelManualMode.Controls.Add(PstateOcDid);
+            this.panelManualMode.Controls.Add(PstateOcVid);
+        }
+
+        public void SwitchControlMode(bool manual)
+        {
+            radioAutoControl.Checked = !manual;
+            radioManualControl.Checked = manual;
         }
 
         public void ResetValues()
         {
             try
             {
-
                 // PerfBias
                 comboBoxPerfbias.SelectedIndex = (int)NotificationIcon.perfBias;
                 //comboBoxPerfenh.SelectedIndex = (int)NotificationIcon.PerfEnh.None;
 
-                for (int i = 0; i < PSTATES; i++)
+                if (isZen2)
                 {
-
-                    // PstateEn
-                    PstateEn[i].Checked = Convert.ToBoolean((NotificationIcon.Pstate[i] >> 63) & 0x1);
-
-                    // DID
-                    byte did = Convert.ToByte((NotificationIcon.Pstate[i] >> 8) & 0x3F);
-                    foreach (CustomListItem item in PstateDid[i].Items)
+                    for (int i = 0; i < 3; i++)
                     {
-                        if (item.value == did) PstateDid[i].SelectedIndex = item.id;
+                        // DID
+                        byte did = Convert.ToByte((NotificationIcon.BoostFreq[i] >> 8) & 0x3F);
+                        foreach (CustomListItem item in BoostFreqDid[i].Items)
+                        {
+                            if (item.value == did) BoostFreqDid[i].SelectedIndex = item.id;
+                        }
                     }
-
-                    // VID
-                    byte vid = Convert.ToByte((NotificationIcon.Pstate[i] >> 14) & 0xFF);
-
-                    foreach (CustomListItem item in PstateVid[i].Items)
+                }
+                else
+                {
+                    for (int i = 0; i < PSTATES; i++)
                     {
-                        if (item.value == vid) PstateVid[i].SelectedIndex = item.id;
+                        // PstateEn
+                        PstateEn[i].Checked = Convert.ToBoolean((NotificationIcon.Pstate[i] >> 63) & 0x1);
+
+                        // DID
+                        byte did = Convert.ToByte((NotificationIcon.Pstate[i] >> 8) & 0x3F);
+                        foreach (CustomListItem item in PstateDid[i].Items)
+                        {
+                            if (item.value == did) PstateDid[i].SelectedIndex = item.id;
+                        }
+
+                        // VID
+                        byte vid = Convert.ToByte((NotificationIcon.Pstate[i] >> 14) & 0xFF);
+                        foreach (CustomListItem item in PstateVid[i].Items)
+                        {
+                            if (item.value == vid) PstateVid[i].SelectedIndex = item.id;
+                        }
                     }
+                }
+
+                // Populate OC FID, VID and DID from Pstate0
+                // OC DID
+                byte ocDid = Convert.ToByte((NotificationIcon.PstateOc >> 8) & 0x3F);
+                foreach (CustomListItem item in PstateOcDid.Items)
+                {
+                    if (item.value == ocDid) PstateOcDid.SelectedIndex = item.id;
+                }
+
+                // OC VID
+                byte ocVid = Convert.ToByte((NotificationIcon.PstateOc >> 14) & 0xFF);
+                foreach (CustomListItem item in PstateOcVid.Items)
+                {
+                    if (item.value == ocVid) PstateOcVid.SelectedIndex = item.id;
                 }
 
                 // FID/Ratios
                 UpdateFids(null, null);
-
+                UpdateOcFid(null, null);
             }
             catch (Exception ex)
             {
@@ -223,19 +375,22 @@ namespace AsusZenStates
             }
 
             // Checkboxes
-            if (NotificationIcon.ApplyAtStart) checkBoxApplyOnStart.Checked = true;
-            if (NotificationIcon.TrayIconAtStart) checkBoxGuiOnStart.Checked = true;
-            if (NotificationIcon.P80Temp) checkBoxP80temp.Checked = true;
+            checkBoxApplyOnStart.Checked = NotificationIcon.ApplyAtStart;
+            checkBoxGuiOnStart.Checked = NotificationIcon.TrayIconAtStart;
+            checkBoxP80temp.Checked = NotificationIcon.P80Temp;
 
-            if (NotificationIcon.ZenC6Core) checkBoxC6Core.Checked = true;
-            if (NotificationIcon.ZenC6Package) checkBoxC6Package.Checked = true;
-            if (NotificationIcon.ZenCorePerfBoost) checkBoxCpb.Checked = true;
+            checkBoxC6Core.Checked = NotificationIcon.ZenC6Core;
+            checkBoxC6Package.Checked = NotificationIcon.ZenC6Package;
+            checkBoxCpb.Checked = NotificationIcon.ZenCorePerfBoost;
+
+            bool isManual = NotificationIcon.ZenOc;
+            radioAutoControl.Checked = !isManual;
+            radioManualControl.Checked = isManual;
 
             textBoxPPT.Text = NotificationIcon.ZenPPT.ToString();
             textBoxTDC.Text = NotificationIcon.ZenTDC.ToString();
             textBoxEDC.Text = NotificationIcon.ZenEDC.ToString();
             textBoxScalar.Text = NotificationIcon.ZenScalar.ToString();
-
         }
 
         public void SetSavedButton(bool state)
@@ -245,49 +400,129 @@ namespace AsusZenStates
 
         private void UpdateFids(object sender, EventArgs e)
         {
-
-            for (int i = 0; i < PstateFid.Length; i++)
+            if (isZen2)
             {
-                // Get current FID
-                byte fid = Convert.ToByte(NotificationIcon.Pstate[i] & 0xFF);
-                try
+                for (int i = 0; i < 3; i++)
                 {
-                    fid = ((CustomListItem)PstateFid[i].SelectedItem).value;
-                }
-                catch (Exception) { };
-
-                // Get current did
-                byte did = Convert.ToByte((NotificationIcon.Pstate[i] >> 8) & 0x3F);
-                try
-                {
-                    CustomListItem item = (CustomListItem)PstateDid[i].SelectedItem;
-                    did = item.value;
-                }
-                catch (Exception ex) { }
-
-                // Calculate old frequency
-
-                PstateFid[i].Items.Clear();
-
-                int select = 0;
-                int k = 0;
-                for (byte j = FID_MAX; j >= FID_MIN; j--)
-                {
-                    double freq = (25 * j / (did * 12.5));
-
-                    if (FREQ_MAX >= freq && freq >= FREQ_MIN)
+                    // Get current FID
+                    byte fid = Convert.ToByte(NotificationIcon.BoostFreq[i] & 0xFF);
+                    try
                     {
-                        CustomListItem item = new CustomListItem(k++, j, freq.ToString("F2") + "x");
-                        PstateFid[i].Items.Add(item);
-                        if (item.value == fid) select = item.id;
-                        /*double diff = Math.Abs(freq - freq_prev);
-                        if (diff < diff_last) select = PstateFid[i].Items.Count - 1;
-                        diff_last = diff;*/
+                        if (!NotificationIcon.SettingsReset) fid = ((CustomListItem)BoostFreqFid[i].SelectedItem).value;
                     }
-                }
+                    catch (Exception) { };
 
-                PstateFid[i].SelectedIndex = select;
+                    // Get current did
+                    byte did = Convert.ToByte((NotificationIcon.BoostFreq[i] >> 8) & 0x3F);
+                    try
+                    {
+                        if (!NotificationIcon.SettingsReset) did = ((CustomListItem)BoostFreqDid[i].SelectedItem).value;
+                    }
+                    catch (Exception ex) { }
+
+                    BoostFreqFid[i].Items.Clear();
+
+                    int select = 0;
+                    int k = 0;
+                    for (byte j = FID_MAX; j >= FID_MIN; j--)
+                    {
+                        double freq = (25 * j / (did * 12.5));
+
+                        if (FREQ_MAX >= freq && freq >= FREQ_MIN)
+                        {
+                            CustomListItem item = new CustomListItem(k++, j, freq.ToString("F2") + "x");
+                            BoostFreqFid[i].Items.Add(item);
+                            if (item.value == fid) select = item.id;
+                        }
+                    }
+
+                    BoostFreqFid[i].SelectedIndex = select;
+                }
             }
+            else
+            {
+                for (int i = 0; i < PSTATES; i++)
+                {
+                    // Get current FID
+                    byte fid = Convert.ToByte(NotificationIcon.Pstate[i] & 0xFF);
+                    try
+                    {
+                        if (!NotificationIcon.SettingsReset) fid = ((CustomListItem)PstateFid[i].SelectedItem).value;
+                    }
+                    catch (Exception) { };
+
+                    // Get current did
+                    byte did = Convert.ToByte((NotificationIcon.Pstate[i] >> 8) & 0x3F);
+                    try
+                    {
+                        if (!NotificationIcon.SettingsReset) did = ((CustomListItem)PstateDid[i].SelectedItem).value;
+                    }
+                    catch (Exception ex) { }
+
+                    PstateFid[i].Items.Clear();
+
+                    int select = 0;
+                    int k = 0;
+                    for (byte j = FID_MAX; j >= FID_MIN; j--)
+                    {
+                        double freq = (25 * j / (did * 12.5));
+
+                        if (FREQ_MAX >= freq && freq >= FREQ_MIN)
+                        {
+                            CustomListItem item = new CustomListItem(k++, j, freq.ToString("F2") + "x");
+                            PstateFid[i].Items.Add(item);
+                            if (item.value == fid) select = item.id;
+                            /*double diff = Math.Abs(freq - freq_prev);
+                            if (diff < diff_last) select = PstateFid[i].Items.Count - 1;
+                            diff_last = diff;*/
+                        }
+                    }
+
+                    PstateFid[i].SelectedIndex = select;
+                }
+            }
+        }
+
+        private void UpdateOcFid(object sender, EventArgs e)
+        {
+            // Get current FID
+            byte fid = Convert.ToByte(NotificationIcon.PstateOc & 0xFF);
+            try
+            {
+                if (!NotificationIcon.SettingsReset) fid = ((CustomListItem)PstateOcFid.SelectedItem).value;
+            }
+            catch (Exception) { };
+
+            // Get current did
+            byte did = Convert.ToByte((NotificationIcon.PstateOc >> 8) & 0x3F);
+            try
+            {
+                if (!NotificationIcon.SettingsReset) did = ((CustomListItem)PstateOcDid.SelectedItem).value;
+            }
+            catch (Exception ex) { }
+
+            // Calculate old frequency
+
+            PstateOcFid.Items.Clear();
+
+            int select = 0;
+            int k = 0;
+            for (byte j = FID_MAX; j >= FID_MIN; j--)
+            {
+                double freq = (25 * j / (did * 12.5));
+
+                if (FREQ_MAX >= freq && freq >= FREQ_MIN)
+                {
+                    CustomListItem item = new CustomListItem(k++, j, freq.ToString("F2") + "x");
+                    PstateOcFid.Items.Add(item);
+                    if (item.value == fid) select = item.id;
+                    /*double diff = Math.Abs(freq - freq_prev);
+                    if (diff < diff_last) select = PstateFid[i].Items.Count - 1;
+                    diff_last = diff;*/
+                }
+            }
+
+            PstateOcFid.SelectedIndex = select;
         }
 
         void ButtonApplyClick(object sender, EventArgs e)
@@ -295,21 +530,84 @@ namespace AsusZenStates
             // Apply new settings
             try
             {
-                for (int i = 0; i < PstateFid.Length; i++)
+                if (radioManualControl.Checked)
                 {
-                    UInt64 en = Convert.ToUInt64(PstateEn[i].Checked);
-                    UInt64 fid = Convert.ToUInt64(((CustomListItem)PstateFid[i].SelectedItem).value);
-                    UInt64 did = Convert.ToUInt64(((CustomListItem)PstateDid[i].SelectedItem).value);
-                    UInt64 vid = Convert.ToUInt64(((CustomListItem)PstateVid[i].SelectedItem).value);
+                    UInt64 ocFid = Convert.ToUInt64(((CustomListItem)PstateOcFid.SelectedItem).value);
+                    UInt64 ocDid = Convert.ToUInt64(((CustomListItem)PstateOcDid.SelectedItem).value);
+                    UInt64 ocVid = Convert.ToUInt64(((CustomListItem)PstateOcVid.SelectedItem).value);
+                    UInt64 ocPs = NotificationIcon.di.MemRead(DataInterface.REG_PSTATE_OC);
 
-                    UInt64 ps = NotificationIcon.di.MemRead(DataInterface.REG_P0 + i);
+                    ocPs &= 0xFFFFFFFFFFC00000;
+                    ocPs |= (ocVid & 0xFF) << 14 | (ocDid & 0xFF) << 8 | ocFid & 0xFF;
 
-                    ps &= 0x7FFFFFFFFFC00000;
-                    ps |= (en & 1) << 63 | (vid & 0xFF) << 14 | (did & 0xFF) << 8 | fid & 0xFF;
-
-                    NotificationIcon.di.MemWrite(DataInterface.REG_P0 + i, ps);
+                    NotificationIcon.di.MemWrite(DataInterface.REG_PSTATE_OC, ocPs);
+                    if (!isZen2)
+                    {
+                        for (int i = 0; i < PSTATES - 1; i++)
+                        {
+                            UInt64 en = Convert.ToUInt64(PstateEn[i].Checked);
+                            ocPs |= (en & 1) << 63;
+                            NotificationIcon.di.MemWrite(DataInterface.REG_P0 + i, ocPs);
+                            PstateFid[i].SelectedItem = PstateOcFid.SelectedItem;
+                            PstateDid[i].SelectedItem = PstateOcDid.SelectedItem;
+                            PstateVid[i].SelectedItem = PstateOcVid.SelectedItem;
+                        }
+                    }
                 }
+                else
+                {
+                    if (isZen2)
+                    {
+                        // Pstate2
+                        UInt64 fid = Convert.ToUInt64(((CustomListItem)BoostFreqFid[2].SelectedItem).value);
+                        UInt64 did = Convert.ToUInt64(((CustomListItem)BoostFreqDid[2].SelectedItem).value);
 
+                        UInt64 ps = NotificationIcon.di.MemRead(DataInterface.REG_P2);
+
+                        ps &= 0xFFFFFFFFFFFF0000;
+                        ps |= (did & 0xFF) << 8 | fid & 0xFF;
+
+                        NotificationIcon.di.MemWrite(DataInterface.REG_P2, ps);
+
+                        // Max boost frequencies
+                        for (int i = 0; i < 2; i++)
+                        {
+                            fid = Convert.ToUInt64(((CustomListItem)BoostFreqFid[i].SelectedItem).value);
+                            did = Convert.ToUInt64(((CustomListItem)BoostFreqDid[i].SelectedItem).value);
+                            // double freq = (25 * boostFid / (boostDid * 12.5)) * 100;
+                            ps = NotificationIcon.di.MemRead(DataInterface.REG_BOOST_FREQ_0 + i);
+
+                            ps &= 0xFFFFFFFFFFFF0000;
+                            ps |= (did & 0xFF) << 8 | fid & 0xFF;
+
+                            NotificationIcon.di.MemWrite(DataInterface.REG_BOOST_FREQ_0 + i, ps);
+                        }
+                    }
+                    else
+                    {
+                        for (int i = 0; i < PSTATES; i++)
+                        {
+                            UInt64 en = Convert.ToUInt64(PstateEn[i].Checked);
+
+                            UInt64 fid = Convert.ToUInt64(((CustomListItem)PstateFid[i].SelectedItem).value);
+                            UInt64 did = Convert.ToUInt64(((CustomListItem)PstateDid[i].SelectedItem).value);
+                            UInt64 vid = Convert.ToUInt64(((CustomListItem)PstateVid[i].SelectedItem).value);
+
+                            UInt64 ps = NotificationIcon.di.MemRead(DataInterface.REG_P0 + i);
+
+                            ps &= 0x7FFFFFFFFFC00000;
+                            ps |= (en & 1) << 63 | (vid & 0xFF) << 14 | (did & 0xFF) << 8 | fid & 0xFF;
+
+                            NotificationIcon.di.MemWrite(DataInterface.REG_P0 + i, ps);
+                        }
+
+                        NotificationIcon.di.MemWrite(DataInterface.REG_PSTATE_OC , NotificationIcon.di.MemRead(DataInterface.REG_P0));
+                        PstateOcFid.SelectedItem = PstateFid[0].SelectedItem;
+                        PstateOcDid.SelectedItem = PstateDid[0].SelectedItem;
+                        PstateOcVid.SelectedItem = PstateVid[0].SelectedItem;
+                    }
+                }
+                
                 UInt64 flags = 0;
                 if (checkBoxApplyOnStart.Checked) flags |= DataInterface.FLAG_APPLY_AT_START;
                 if (checkBoxGuiOnStart.Checked) flags |= DataInterface.FLAG_TRAY_ICON_AT_START;
@@ -317,7 +615,7 @@ namespace AsusZenStates
                 if (checkBoxC6Core.Checked) flags |= DataInterface.FLAG_C6CORE;
                 if (checkBoxC6Package.Checked) flags |= DataInterface.FLAG_C6PACKAGE;
                 if (checkBoxCpb.Checked) flags |= DataInterface.FLAG_CPB;
-
+                if (radioManualControl.Checked) flags |= DataInterface.FLAG_OC;
 
                 if (!int.TryParse(textBoxPPT.Text, out int ppt))
                 {
@@ -351,13 +649,11 @@ namespace AsusZenStates
 
                 // Send update flag command
                 NotificationIcon.Execute(DataInterface.NOTIFY_CLIENT_FLAGS, false);
-
             }
             catch (Exception ex)
             {
                 MessageBox.Show(ex.Message);
             }
-
         }
 
         void SettingsFormMouseDown(object sender, MouseEventArgs e)
@@ -386,7 +682,6 @@ namespace AsusZenStates
                 NotificationIcon.Execute(DataInterface.NOTIFY_RESTORE, true);
 
                 buttonSave.Enabled = !NotificationIcon.SettingsSaved;
-
             }
             catch (Exception ex)
             {
@@ -449,8 +744,33 @@ namespace AsusZenStates
                     textBoxScalar.Text = "1";
                     checkBoxSmuPL.Checked = false;
                     break;
+                case (int)NotificationIcon.PerfEnh.Level4_OC:
+                    textBoxPPT.Text = "1000";
+                    textBoxTDC.Text = "1000";
+                    textBoxEDC.Text = "1000";
+                    textBoxScalar.Text = "1";
+                    checkBoxSmuPL.Checked = false;
+                    break;
                 default:
                     break;
+            }
+        }
+
+        private void RadioAutoControl_CheckedChanged(object sender, EventArgs e)
+        {
+            if (radioAutoControl.Checked)
+            {
+                panelAutoMode.Show();
+                panelManualMode.Hide();
+            }
+        }
+
+        private void RadioManualControl_CheckedChanged(object sender, EventArgs e)
+        {
+            if (radioManualControl.Checked)
+            {
+                panelManualMode.Show();
+                panelAutoMode.Hide();
             }
         }
     }
