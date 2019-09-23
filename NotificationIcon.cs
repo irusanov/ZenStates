@@ -40,6 +40,8 @@ namespace ZenStates
         public static string mbVendor;
         public static string cpuName;
         public static string smuVersion;
+        public static int smuVersionInt;
+        public static UInt64 cpuType;
         public static string biosVersion;
 
         public static DataInterface di;
@@ -172,8 +174,6 @@ namespace ZenStates
             tempTimer.Start();
             serviceTimeout = 0;
             tempTimerHandler(null, null);
-
-            checkSmuVersion();
 
             notifyIcon.Visible = true;
 
@@ -398,6 +398,15 @@ namespace ZenStates
 
                 NotificationIcon.smuVersion = getSmuVersionString(di.MemRead(DataInterface.REG_SMU_VERSION));
 
+                NotificationIcon.cpuType = di.MemRead(DataInterface.REG_CPU_TYPE);
+                NotificationIcon.smuVersionInt = checkSmuVersion();
+
+                if ((smuVersionInt <= 2583 && cpuType <= 4)
+                     || (smuVersionInt <= 4316 && cpuType > 4 && cpuType <= 6))
+                {
+                    MessageBox.Show("Newer SMU version required. The application will most probably not work correctly. Please use version older than 0.8.0.");
+                }
+
                 if ((di.MemRead(DataInterface.REG_SERVER_FLAGS) & DataInterface.FLAG_IS_AVAILABLE) == 0) isAvailable = false;
                 else isAvailable = true;
 
@@ -545,21 +554,14 @@ namespace ZenStates
             }
         }
 
-        static void checkSmuVersion()
+        static int checkSmuVersion()
         {
-            UInt64 cpuType = di.MemRead(DataInterface.REG_CPU_TYPE);
             UInt64 version = di.MemRead(DataInterface.REG_SMU_VERSION);
             int smuMajor = (int)((version & 0x00FF0000) >> 16);
             int smuMinor = (int)((version & 0x0000FF00) >> 8);
             int smu = smuMajor * 100 + smuMinor;
 
-            // MessageBox.Show(Convert.ToString(smu));
-
-            if ((smu <= 2583 && di.MemRead(DataInterface.REG_CPU_TYPE) <= 4)
-                 || (smu <= 4316 && cpuType > 4 && cpuType <= 6))
-             {
-                 MessageBox.Show("Newer SMU version required. The application will most probably not work correctly. Please use version older than 0.8.0.");
-             }
+            return smu;
         }
 
         static void initVendorInfo()

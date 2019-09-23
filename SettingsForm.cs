@@ -135,7 +135,12 @@ namespace ZenStates
 
             ResetValues();
 
-            if (isZen2)
+            MessageBox.Show(Convert.ToString(NotificationIcon.smuVersionInt));
+
+            // if (isZen2)
+            if ((NotificationIcon.smuVersionInt > 2583 && NotificationIcon.cpuType <= 4)
+                 || (NotificationIcon.smuVersionInt > 4316 && NotificationIcon.cpuType > 4 && NotificationIcon.cpuType <= 6))
+
             {
                 textBoxPPT.Enabled = false;
                 textBoxTDC.Enabled = false;
@@ -159,7 +164,10 @@ namespace ZenStates
             toolTip.SetToolTip(labelEDC, "Electrical Design Current (A)");
             toolTip.SetToolTip(labelTDC, "Thermal Design Current (A)");
 
-            if (isZen2)
+            //if (isZen2)
+            if ((NotificationIcon.smuVersionInt > 2583 && NotificationIcon.cpuType <= 4)
+                 || (NotificationIcon.smuVersionInt > 4316 && NotificationIcon.cpuType > 4 && NotificationIcon.cpuType <= 6))
+
             {
                 toolTip.SetToolTip(checkBoxSmuPL, "It's currently not working with Zen2 and new AGESA");
                 toolTip.SetToolTip(comboBoxPerfenh, "It's currently not working with Zen2 and new AGESA");

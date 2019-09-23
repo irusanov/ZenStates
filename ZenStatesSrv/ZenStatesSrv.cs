@@ -164,6 +164,7 @@ namespace ZenStatesSrv
             if (cpuh.ZenOc)
             {
                 if (cpuh.SetOcMode(true)) cpuh.setOverclockFrequencyAllCores(cpuh.PstateOc);
+                // cpuh.setCmdTemp(Convert.ToUInt32(cpuh.ZenScalar), Convert.ToUInt32(cpuh.ZenEDC));
             }
             else
             {
@@ -185,12 +186,12 @@ namespace ZenStatesSrv
             cpuh.SetC6Package(cpuh.ZenC6Package);
             cpuh.SetCpb(cpuh.ZenCorePerfBoost);
 
-            if (cpuh.cpuType < CPUHandler.CPUType.Matisse)
+            /*if (cpuh.cpuType < CPUHandler.CPUType.Matisse)
             {
                 cpuh.SetPPT(cpuh.ZenPPT);
                 cpuh.SetTDC(cpuh.ZenTDC);
                 cpuh.SetEDC(cpuh.ZenEDC);
-            }
+            }*/
 
             cpuh.SetScalar(cpuh.ZenScalar);
             cpuh.SetPerfBias(cpuh.PerformanceBias);
@@ -403,12 +404,12 @@ namespace ZenStatesSrv
                         // Perf bias
                         cpuh.SetPerfBias(cpuh.PerformanceBias);
 
-                        if (cpuh.cpuType >= CPUHandler.CPUType.Matisse)
+                        /*if (cpuh.cpuType >= CPUHandler.CPUType.Matisse)
                         {
                             cpuh.SetPPT(cpuh.ZenPPT);
                             cpuh.SetTDC(cpuh.ZenTDC);
                             cpuh.SetEDC(cpuh.ZenEDC);
-                        }
+                        }*/
                         cpuh.SetScalar(cpuh.ZenScalar);
                     }
 

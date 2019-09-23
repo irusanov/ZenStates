@@ -734,10 +734,10 @@ namespace ZenStatesSrv
         public bool SetScalar(int scalar)
         {
             bool res;
-            if (cpuType >= CPUType.Matisse)
+            //if (cpuType >= CPUType.Matisse)
                 res = SmuWrite(SMC_MSG_SetFITLimitScalar, (UInt32)scalar);
-            else
-                res = SmuWrite(SMC_MSG_SetFITLimitScalar_ZEN1, (UInt32)scalar);
+            //else
+            //  res = SmuWrite(SMC_MSG_SetFITLimitScalar_ZEN1, (UInt32)scalar);
 
             if (res) ZenScalar = scalar;
 
