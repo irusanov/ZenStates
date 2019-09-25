@@ -306,9 +306,9 @@ namespace ZenStatesSrv
                     break;
 
                 case DataInterface.NOTIFY_APPLY:
-                    applySettings();
-
                     P80Temp = cpuh.P80Temp;
+
+                    applySettings();
 
                     // Notify done
                     di.MemWrite(DataInterface.REG_NOTIFY_STATUS, DataInterface.NOTIFY_DONE);
@@ -316,7 +316,6 @@ namespace ZenStatesSrv
                     break;
 
                 case DataInterface.NOTIFY_SAVE:
-
                     cpuh.SaveSettings();
 
                     di.MemWrite(DataInterface.REG_NOTIFY_STATUS, DataInterface.NOTIFY_DONE);

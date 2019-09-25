@@ -115,7 +115,6 @@ namespace ZenStates
                 }
             }
 
-
             // Init tray icon
             notifyIcon = new NotifyIcon
             {
@@ -130,6 +129,10 @@ namespace ZenStates
 
             // Load service data interface
             di = new DataInterface(false);
+
+            smuVersion = getSmuVersionString(di.MemRead(DataInterface.REG_SMU_VERSION));
+            cpuType = di.MemRead(DataInterface.REG_CPU_TYPE);
+            smuVersionInt = checkSmuVersion(di.MemRead(DataInterface.REG_SMU_VERSION));
 
             // Load initial temp value + icon
             tempTimerHandler(null, null);
@@ -176,6 +179,12 @@ namespace ZenStates
             tempTimerHandler(null, null);
 
             notifyIcon.Visible = true;
+
+            if ((smuVersionInt <= 2583 && cpuType <= 4)
+                 || (smuVersionInt <= 4316 && cpuType > 4 && cpuType <= 6))
+            {
+                MessageBox.Show("Newer SMU version required. The application will most probably not work correctly. Please use version older than 0.8.0.");
+            }
 
             MinimizeFootprint();
 
@@ -271,7 +280,7 @@ namespace ZenStates
                         {
                             Process process = Process.Start(info);
                             process.WaitForExit(10000);
-                            svc.WaitForStatus(ServiceControllerStatus.Running, System.TimeSpan.FromSeconds(5));
+                            svc.WaitForStatus(ServiceControllerStatus.Running, TimeSpan.FromSeconds(5));
                             if (svc.Status != ServiceControllerStatus.Running) throw new Exception("ZenStatesSrv couldn't start.");
                         }
                         catch (Exception ex2)
@@ -350,6 +359,16 @@ namespace ZenStates
             return String.Join(".", versionString);
         }
 
+        static int checkSmuVersion(UInt64 version)
+        {
+            // UInt64 version = di.MemRead(DataInterface.REG_SMU_VERSION);
+            int smuMajor = (int)((version & 0x00FF0000) >> 16);
+            int smuMinor = (int)((version & 0x0000FF00) >> 8);
+            int smu = smuMajor * 100 + smuMinor;
+
+            return smu;
+        }
+
         void tempTimerHandler(object sender, ElapsedEventArgs e)
         {
             try
@@ -395,17 +414,6 @@ namespace ZenStates
                 }
 
                 ServiceVersion = di.MemRead(DataInterface.REG_SERVER_VERSION);
-
-                NotificationIcon.smuVersion = getSmuVersionString(di.MemRead(DataInterface.REG_SMU_VERSION));
-
-                NotificationIcon.cpuType = di.MemRead(DataInterface.REG_CPU_TYPE);
-                NotificationIcon.smuVersionInt = checkSmuVersion();
-
-                if ((smuVersionInt <= 2583 && cpuType <= 4)
-                     || (smuVersionInt <= 4316 && cpuType > 4 && cpuType <= 6))
-                {
-                    MessageBox.Show("Newer SMU version required. The application will most probably not work correctly. Please use version older than 0.8.0.");
-                }
 
                 if ((di.MemRead(DataInterface.REG_SERVER_FLAGS) & DataInterface.FLAG_IS_AVAILABLE) == 0) isAvailable = false;
                 else isAvailable = true;
@@ -554,40 +562,30 @@ namespace ZenStates
             }
         }
 
-        static int checkSmuVersion()
-        {
-            UInt64 version = di.MemRead(DataInterface.REG_SMU_VERSION);
-            int smuMajor = (int)((version & 0x00FF0000) >> 16);
-            int smuMinor = (int)((version & 0x0000FF00) >> 8);
-            int smu = smuMajor * 100 + smuMinor;
-
-            return smu;
-        }
-
         static void initVendorInfo()
         {
             ManagementObjectSearcher searcher = new ManagementObjectSearcher("SELECT * FROM Win32_BaseBoard");
             foreach (ManagementObject obj in searcher.Get())
             {
-                NotificationIcon.mbVendor = (string)obj["Manufacturer"];
-                NotificationIcon.mbName = (string)obj["Product"];
+                mbVendor = (string)obj["Manufacturer"];
+                mbName = (string)obj["Product"];
             }
             if (searcher != null) searcher.Dispose();
 
             searcher = new ManagementObjectSearcher("SELECT * FROM Win32_Processor");
             foreach (ManagementObject obj in searcher.Get())
             {
-                NotificationIcon.cpuName = (string)obj["Name"];
-                NotificationIcon.cpuName = NotificationIcon.cpuName.Replace("(R)", "");
-                NotificationIcon.cpuName = NotificationIcon.cpuName.Replace("(TM)", "");
+                cpuName = (string)obj["Name"];
+                cpuName = cpuName.Replace("(R)", "");
+                cpuName = cpuName.Replace("(TM)", "");
             }
             if (searcher != null) searcher.Dispose();
 
             searcher = new ManagementObjectSearcher("SELECT * FROM Win32_BIOS");
             foreach (ManagementObject obj in searcher.Get())
             {
-                NotificationIcon.biosVersion = (string)obj["SMBIOSBIOSVersion"];
-                NotificationIcon.biosVersion = NotificationIcon.biosVersion.Trim();
+                biosVersion = (string)obj["SMBIOSBIOSVersion"];
+                biosVersion = biosVersion.Trim();
             }
             if (searcher != null) searcher.Dispose();
         }

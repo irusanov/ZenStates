@@ -132,7 +132,7 @@ namespace ZenStatesSrv
         public bool ApplyAtStart = false;
         public bool P80Temp = false;
 
-        public UInt64[] Pstate = new UInt64[CPUHandler.NumPstates];
+        public UInt64[] Pstate = new UInt64[NumPstates];
         public UInt64[] BoostFreq = new UInt64[3];
         public UInt64 PstateOc = 0x0;
 
@@ -218,6 +218,8 @@ namespace ZenStatesSrv
 #endif
                     break;
             }
+
+            //this.cpuType = CPUType.Matisse;
 
             // Get number of threads
             this.Threads = Environment.ProcessorCount;

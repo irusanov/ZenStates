@@ -135,7 +135,7 @@ namespace ZenStates
 
             ResetValues();
 
-            MessageBox.Show(Convert.ToString(NotificationIcon.smuVersionInt));
+            //MessageBox.Show(Convert.ToString(NotificationIcon.smuVersionInt));
 
             // if (isZen2)
             if ((NotificationIcon.smuVersionInt > 2583 && NotificationIcon.cpuType <= 4)
@@ -173,6 +173,8 @@ namespace ZenStates
                 toolTip.SetToolTip(comboBoxPerfenh, "It's currently not working with Zen2 and new AGESA");
                 toolTip.SetToolTip(checkBoxSmuPL, "It's currently not working with Zen2 and new AGESA");
             }
+
+            //MessageBox.Show("Cpu Type: " + NotificationIcon.cpuType);
         }
 
         public void PopulateAutoControls()
@@ -650,13 +652,11 @@ namespace ZenStates
                 NotificationIcon.di.MemWrite(DataInterface.REG_TDC, (UInt64)tdc);
                 NotificationIcon.di.MemWrite(DataInterface.REG_EDC, (UInt64)edc);
                 NotificationIcon.di.MemWrite(DataInterface.REG_SCALAR, (UInt64)scalar);
-
                 NotificationIcon.di.MemWrite(DataInterface.REG_PERF_BIAS, (UInt64)comboBoxPerfbias.SelectedIndex);
-
                 NotificationIcon.di.MemWrite(DataInterface.REG_CLIENT_FLAGS, flags);
 
                 // Send update flag command
-                NotificationIcon.Execute(DataInterface.NOTIFY_CLIENT_FLAGS, false);
+                NotificationIcon.Execute(DataInterface.NOTIFY_CLIENT_FLAGS, true);
             }
             catch (Exception ex)
             {
