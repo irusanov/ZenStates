@@ -1,9 +1,5 @@
 # ZenStates
 
-This project was originally created to enable simple P-state overclocking on ASUS AM4 motherboards from the OS.
-The original owner of the project, Jon Sandström (a.k.a. [elmor/eelmor](https://github.com/eelmor)) is no longer maintaining it.
-Starting from Zen2 release (Matisse), I'm taking over and will try to provide as much functionality as possible.
-
 
 ## Prerequisites
 * [WinRing driver](https://1drv.ms/u/s!Atmpv-6qHr_6r-YV1-C0ht0nCQiHKA)
