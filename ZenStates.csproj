@@ -21,7 +21,6 @@
     <DelaySign>False</DelaySign>
     <RunPostBuildEvent>OnBuildSuccess</RunPostBuildEvent>
     <RunCodeAnalysis>False</RunCodeAnalysis>
-    <SourceAnalysisOverrideSettingsFile>C:\Users\Jon\AppData\Roaming\ICSharpCode/SharpDevelop4\Settings.SourceAnalysis</SourceAnalysisOverrideSettingsFile>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <ApplicationIcon>Resources\ZenStates.ico</ApplicationIcon>
   </PropertyGroup>
