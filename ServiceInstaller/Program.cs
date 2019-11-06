@@ -1,8 +1,4 @@
-﻿/*
- * Created by SharpDevelop.
- * User: Jon
- * Date: 2016-05-12
- * Time: 10:32
+/*
  * 
  * To change this template use Tools | Options | Coding | Edit Standard Headers.
  */
