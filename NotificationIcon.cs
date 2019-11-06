@@ -1,6 +1,5 @@
 ﻿/*
  * NotificationIcon.cs
- * Created by Jon Sandström
  */
 
 using System;
