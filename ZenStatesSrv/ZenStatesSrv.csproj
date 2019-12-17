@@ -113,6 +113,7 @@
     <Compile Include="..\DataInterface.cs">
       <Link>DataInterface.cs</Link>
     </Compile>
+    <Compile Include="CPUSettings.cs" />
     <Compile Include="ZenStatesSrv.cs">
       <SubType>Component</SubType>
     </Compile>
