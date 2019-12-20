@@ -11,7 +11,7 @@ namespace ZenStatesSrv
     /// </summary>
     public class CPUHandler
     {
-        public enum CPUType { Unsupported = 0, DEBUG = 1, Summit_Ridge = 2, Threadripper = 3, Raven_Ridge = 4, Pinnacle_Ridge = 5, Picasso = 6, Matisse = 7, Rome = 8 };
+        public enum CPUType { Unsupported = 0, DEBUG = 1, SummitRidge = 2, Threadripper = 3, RavenRidge = 4, PinnacleRidge = 5, Picasso = 6, Matisse = 7, Rome = 8, Renoir = 9 };
         public enum PerfBias { Auto = 0, None, Cinebench_R11p5, Cinebench_R15, Geekbench_3 };
         //public enum PerfEnh { None = 0, Level1, Level2, Level3_OC, Level4_OC };
 /*
@@ -191,10 +191,10 @@ namespace ZenStatesSrv
             {
                 case 0x00800F10: // CPU \ Zen \ Summit Ridge \ ZP - B0 \ 14nm
                 case 0x00800F00: // CPU \ Zen \ Summit Ridge \ ZP - A0 \ 14nm
-                    this.cpuType = CPUType.Summit_Ridge;
+                    this.cpuType = CPUType.SummitRidge;
                     break;
                 case 0x00800F80: // CPU \ Zen + \ Pinnacle Ridge \ 12nm
-                    this.cpuType = CPUType.Pinnacle_Ridge;
+                    this.cpuType = CPUType.PinnacleRidge;
                     break;
                 case 0x00810F80: // APU \ Zen + \ Picasso \ 12nm
                     this.cpuType = CPUType.Picasso;
@@ -202,15 +202,19 @@ namespace ZenStatesSrv
                 case 0x00810F00: // APU \ Zen \ Raven Ridge \ RV - A0 \ 14nm
                 case 0x00810F10: // APU \ Zen \ Raven Ridge \ 14nm
                 case 0x00820F00: // APU \ Zen \ Raven Ridge 2 \ RV2 - A0 \ 14nm
-                    this.cpuType = CPUType.Raven_Ridge;
+                    this.cpuType = CPUType.RavenRidge;
                     break;
                 case 0x00870F10: // CPU \ Zen2 \ Matisse \ MTS - B0 \ 7nm + 14nm I/ O Die
                 case 0x00870F00: // CPU \ Zen2 \ Matisse \ MTS - A0 \ 7nm + 14nm I/ O Die
                     this.cpuType = CPUType.Matisse;
                     break;
                 case 0x00830F00:
-                case 0x00830F10: // CPU \ Epyc 2 \ Rome \ 7nm
+                case 0x00830F10: // CPU \ Epyc 2 \ Rome \ Treadripper 2 \ Castle Peak 7nm
                     this.cpuType = CPUType.Rome;
+                    break;
+                case 0x00850F00:
+                case 0x00850F10: // APU \ Renoir \ Fenghuang
+                    this.cpuType = CPUType.Renoir;
                     break;
                 default:
                     this.cpuType = CPUType.Unsupported;
@@ -868,9 +872,16 @@ namespace ZenStatesSrv
             return res;
         }
 
+        public uint ReadDword(uint value)
+        {
+            ols.WritePciConfigDword(cpuSettings.SMU_PCI_ADDR, (byte)cpuSettings.SMU_OFFSET_ADDR, value);
+            Thread.Sleep(5000);
+            return ols.ReadPciConfigDword(cpuSettings.SMU_PCI_ADDR, (byte)cpuSettings.SMU_OFFSET_DATA);
+        }
+
         public bool GetTctlOffset(ref UInt32 offset)
         {
-            return SmuRead(cpuSettings.SMC_MSG_TCTL_OFFSET, ref offset);
+            return SmuRead(cpuSettings.SMC_MSG_GetTctlOffset, ref offset);
         }
 
         public bool GetThermTrip(ref double ThermTrip)
