@@ -33,7 +33,7 @@ namespace ZenStatesSrv
 
             SMU_ADDR_MSG = 0x03B10528;
             SMU_ADDR_RSP = 0x03B10564;
-            SMU_ADDR_ARG0 = 0x03B10998;
+            SMU_ADDR_ARG0 = 0x03B10598;
             SMU_ADDR_ARG1 = SMU_ADDR_ARG0 + 0x4;
 
             // SMU Messages
@@ -49,7 +49,7 @@ namespace ZenStatesSrv
             SMC_MSG_SetBoostLimitFrequency = 0x29;
             SMC_MSG_SetBoostLimitFrequencyAllCores = 0x2B;
             SMC_MSG_SetPPTLimit = 0x31;
-            SMC_MSG_TCTL_OFFSET = 0x3A;
+            SMC_MSG_GetTctlOffset = 0x3A;
             SMC_MSG_SetTDCLimit = 0x43;
             SMC_MSG_SetEDCLimit = 0x44;
             SMC_MSG_SetFITLimit = 0x45;
@@ -94,7 +94,7 @@ namespace ZenStatesSrv
         public UInt32 SMC_MSG_SetBoostLimitFrequency { get; protected set; }
         public UInt32 SMC_MSG_SetBoostLimitFrequencyAllCores { get; protected set; }
         public UInt32 SMC_MSG_SetPPTLimit { get; protected set; }
-        public UInt32 SMC_MSG_TCTL_OFFSET { get; protected set; }
+        public UInt32 SMC_MSG_GetTctlOffset { get; protected set; }
         public UInt32 SMC_MSG_SetTDCLimit { get; protected set; }
         public UInt32 SMC_MSG_SetEDCLimit { get; protected set; }
         public UInt32 SMC_MSG_SetFITLimit { get; protected set; }
@@ -109,40 +109,49 @@ namespace ZenStatesSrv
         public SummitRidgeCPUSettings(){}
     }
 
-    public class MatisseCPUSettings : BaseCPUSettings
+    public class Zen2CPUSettings : BaseCPUSettings
     {
-        public MatisseCPUSettings()
+        public Zen2CPUSettings()
         {
-            SMU_ADDR_MSG = 0x03B10530;
-            SMU_ADDR_RSP = 0x03B1057C;
-            SMU_ADDR_ARG0 = 0x03B109C4;
+            SMU_ADDR_MSG = 0x03B10524;
+            SMU_ADDR_RSP = 0x03B10570;
+            SMU_ADDR_ARG0 = 0x03B10A40;
             SMU_ADDR_ARG1 = SMU_ADDR_ARG0 + 0x4;
 
             SMC_MSG_EnableSmuFeatures = 0x3;
             SMC_MSG_DisableSmuFeatures = 0x4; // Doesn't work with Matisse;
             SMC_MSG_SetTjMax = 0x23;
-            SMC_MSG_EnableOverclocking = 0x24;
-            SMC_MSG_DisableOverclocking = 0x25;
-            SMC_MSG_SetOverclockFreqAllCores = 0x26;
-            SMC_MSG_SetOverclockFreqPerCore = 0x27;
-            SMC_MSG_SetOverclockVid = 0x28;
+            SMC_MSG_EnableOverclocking = 0x5A;
+            SMC_MSG_DisableOverclocking = 0x5B;
+            SMC_MSG_SetOverclockFreqAllCores = 0x5C;
+            SMC_MSG_SetOverclockFreqPerCore = 0x5D;
+            SMC_MSG_SetOverclockVid = 0x61;
             SMC_MSG_SetBoostLimitFrequency = 0x29;
             SMC_MSG_SetBoostLimitFrequencyAllCores = 0x2B;
             SMC_MSG_GetOverclockCap = 0x2C;
-            SMC_MSG_MessageCount = 0x2D;
-            SMC_MSG_SetFITLimitScalar = 0x2F;
+            // SMC_MSG_MessageCount = 0x2D;
+            SMC_MSG_SetFITLimitScalar = 0x6E;
+
+            SMC_MSG_SetPPTLimit = 0x53;
+            SMC_MSG_GetTctlOffset = 0x70;
+            SMC_MSG_SetTDCLimit = 0x54;
+            SMC_MSG_SetEDCLimit = 0x55;
         }
 
         public UInt32 SMC_MSG_GetOverclockCap { get; protected set; }
-        public UInt32 SMC_MSG_MessageCount { get; protected set; }
+        // public UInt32 SMC_MSG_MessageCount { get; protected set; }
     }
 
+    // Matisse, Renoir, CastlePeak and Rome share the same settings
+    // CastlePeak (Threadripper 3000 series) shares the same CPUID as sthe server counterpart Rome
     public static class GetMaintainedCPUSettings
     {
         static Dictionary<CPUHandler.CPUType, BaseCPUSettings> settings = new Dictionary<CPUHandler.CPUType, BaseCPUSettings>()
         {
-            { CPUHandler.CPUType.Summit_Ridge, new SummitRidgeCPUSettings() },     // Zen/Zen+
-            { CPUHandler.CPUType.Matisse, new MatisseCPUSettings() }               // Matisse
+            { CPUHandler.CPUType.SummitRidge, new SummitRidgeCPUSettings() },
+            { CPUHandler.CPUType.Matisse, new Zen2CPUSettings() },
+            { CPUHandler.CPUType.Rome, new Zen2CPUSettings() },
+            { CPUHandler.CPUType.Renoir, new Zen2CPUSettings() },
         };
 
         public static BaseCPUSettings GetByType(CPUHandler.CPUType type)
