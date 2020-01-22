@@ -767,32 +767,22 @@ namespace ZenStatesSrv
             return res;
         }
 
-        private bool SmuWriteReg(UInt32 addr, UInt32 data)
+        private bool SmuWriteReg(uint addr, uint data)
         {
-            int res = 0;
-
-            // Clear response
-            res = ols.WritePciConfigDwordEx(cpuSettings.SMU_PCI_ADDR, cpuSettings.SMU_OFFSET_ADDR, addr);
-            if (res == 1)
+            if (ols.WritePciConfigDwordEx(cpuSettings.SMU_PCI_ADDR, cpuSettings.SMU_OFFSET_ADDR, addr) == 1)
             {
-                res = ols.WritePciConfigDwordEx(cpuSettings.SMU_PCI_ADDR, cpuSettings.SMU_OFFSET_DATA, data);
+                return ols.WritePciConfigDwordEx(cpuSettings.SMU_PCI_ADDR, cpuSettings.SMU_OFFSET_DATA, data) == 1;
             }
-
-            return (res == 1);
+            return false;
         }
 
-        private bool SmuReadReg(UInt32 addr, ref UInt32 data)
+        private bool SmuReadReg(uint addr, ref uint data)
         {
-            int res = 0;
-
-            // Clear response
-            res = ols.WritePciConfigDwordEx(cpuSettings.SMU_PCI_ADDR, cpuSettings.SMU_OFFSET_ADDR, addr);
-            if (res == 1)
+            if (ols.WritePciConfigDwordEx(cpuSettings.SMU_PCI_ADDR, cpuSettings.SMU_OFFSET_ADDR, addr) == 1)
             {
-                res = ols.ReadPciConfigDwordEx(cpuSettings.SMU_PCI_ADDR, cpuSettings.SMU_OFFSET_DATA, ref data);
+                return ols.ReadPciConfigDwordEx(cpuSettings.SMU_PCI_ADDR, cpuSettings.SMU_OFFSET_DATA, ref data) == 1;
             }
-
-            return (res == 1);
+            return false;
         }
 
         private bool SmuWaitDone()
@@ -810,72 +800,52 @@ namespace ZenStatesSrv
             return res;
         }
 
-        private bool SmuRead(UInt32 msg, ref UInt32 data)
+        private bool SmuRead(uint msg, ref uint data)
         {
-            bool res;
-
-            // Clear response
-            res = SmuWriteReg(cpuSettings.SMU_ADDR_RSP, 0);
-
-            if (res)
+            if (SmuWriteReg(cpuSettings.SMU_ADDR_RSP, 0))
             {
-                // Send message
-                res = SmuWriteReg(cpuSettings.SMU_ADDR_MSG, msg);
-                if (res)
+                if (SmuWriteReg(cpuSettings.SMU_ADDR_MSG, msg))
                 {
-                    // Check completion
-                    res = SmuWaitDone();
-
-                    if (res)
+                    if (SmuWaitDone())
                     {
-                        res = SmuReadReg(cpuSettings.SMU_ADDR_ARG0, ref data);
+                        return SmuReadReg(cpuSettings.SMU_ADDR_ARG0, ref data);
                     }
                 }
             }
 
-            return res;
+            return false;
         }
 
-        private bool SmuWrite(UInt32 msg, UInt32 data)
+        private bool SmuWrite(uint msg, uint value)
         {
-            bool res;
-
+            bool res = false;
             // Mutex
-            res = hMutexPci.WaitOne(5000);
-
-            // Clear response
-            if (res)
+            if (hMutexPci.WaitOne(5000))
             {
-                res = SmuWriteReg(cpuSettings.SMU_ADDR_RSP, 0);
-            }
-
-            if (res)
-            {
-                // Write data
-                res = SmuWriteReg(cpuSettings.SMU_ADDR_ARG0, data);
-
-                if (res)
+                // Clear response
+                if (SmuWriteReg(cpuSettings.SMU_ADDR_RSP, 0))
                 {
-                    SmuWriteReg(cpuSettings.SMU_ADDR_ARG1, 0);
-                }
-                // Send message
-                res = SmuWriteReg(cpuSettings.SMU_ADDR_MSG, msg);
+                    // Write data
+                    if (SmuWriteReg(cpuSettings.SMU_ADDR_ARG0, value))
+                    {
+                        SmuWriteReg(cpuSettings.SMU_ADDR_ARG1, 0);
+                    }
 
-                if (res)
-                {
-                    res = SmuWaitDone();
+                    // Send message
+                    if (SmuWriteReg(cpuSettings.SMU_ADDR_MSG, msg))
+                    {
+                        res = SmuWaitDone();
+                    }
                 }
             }
 
             hMutexPci.ReleaseMutex();
-
             return res;
         }
 
-        public uint ReadDword(uint value)
+        private uint ReadDword(uint value)
         {
             ols.WritePciConfigDword(cpuSettings.SMU_PCI_ADDR, (byte)cpuSettings.SMU_OFFSET_ADDR, value);
-            Thread.Sleep(5000);
             return ols.ReadPciConfigDword(cpuSettings.SMU_PCI_ADDR, (byte)cpuSettings.SMU_OFFSET_DATA);
         }
 
@@ -903,28 +873,28 @@ namespace ZenStatesSrv
             res = SmuReadReg(cpuSettings.THM_TCON_CUR_TMP, ref thmData);
             if (res)
             {
+                // Range sel = 0 to 255C (Temp = Tctl - offset)
+                Temp = (thmData >> 21) * 0.125 - TctlOffset;
+
                 // THMx000[31:21] = CUR_TEMP, THMx000[19] = CUR_TEMP_RANGE_SEL
-                if ((thmData & (1 << 19)) == 0)
-                {
-                    // Range sel = 0 to 255C (Temp = Tctl - offset)
-                    Temp = (thmData >> 21) * 0.125 - TctlOffset;
-                }
-                else
+                if ((thmData & (1 << 19)) != 0)
                 {
                     // Range sel = -49 to 206C (Temp = Tctl - offset - 49)
-                    Temp = (thmData >> 21) * 0.125 - TctlOffset - 49;
+                    Temp -= 49;
                 }
             }
 
             return res;
         }
 
-        public UInt32 getSmuVersion()
+        public uint GetSmuVersion()
         {
-            UInt32 version = 0;
-
-            SmuRead(cpuSettings.SMC_MSG_GetSmuVersion, ref version);
-            return version;
+            uint version = 0;
+            if (SmuRead(cpuSettings.SMC_MSG_GetSmuVersion, ref version))
+            {
+                return version;
+            }
+            return 0;
         }
 
         public bool WritePort80Temp(double temp)

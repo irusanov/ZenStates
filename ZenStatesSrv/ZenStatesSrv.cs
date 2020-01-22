@@ -129,7 +129,7 @@ namespace ZenStatesSrv
             di.MemWrite(DataInterface.REG_NOTIFY_STATUS, 0x00);
             di.MemWrite(DataInterface.REG_SERVER_VERSION, DataInterface.ServiceVersion);
             di.MemWrite(DataInterface.REG_PING_PONG, 0x01);
-            di.MemWrite(DataInterface.REG_SMU_VERSION, cpuh.getSmuVersion());
+            di.MemWrite(DataInterface.REG_SMU_VERSION, cpuh.GetSmuVersion());
 
             for (int i = 0; i < CPUHandler.NumPstates; i++) di.MemWrite(DataInterface.REG_P0 + i, cpuh.Pstate[i]);
             for (int i = 0; i < 2; i++) di.MemWrite(DataInterface.REG_BOOST_FREQ_0 + i, cpuh.Pstate[0]);
@@ -253,46 +253,6 @@ namespace ZenStatesSrv
                     {
                         cpuh.BoostFreq[i] = di.MemRead(DataInterface.REG_BOOST_FREQ_0 + i);
                     }
-                    /*
-                        // Apply settings
-                        SetStartupService(true);
-                        SetStartupGUI(cpuh.TrayIconAtStart);
-
-                        // Write new P-states
-                        if (cpuh.ZenOc)
-                        {
-                            if (cpuh.SetOcMode(true)) cpuh.setOverclockFrequencyAllCores(di.MemRead(DataInterface.REG_PSTATE_OC));
-                            //cpuh.setCmdTemp(Convert.ToUInt32(cpuh.ZenScalar), Convert.ToUInt32(cpuh.ZenEDC));
-                        }
-                        else
-                        {
-                            cpuh.SetOcMode(false);
-                            for (int i = 0; i < CPUHandler.NumPstates; i++)
-                            {
-                                cpuh.WritePstate(i, di.MemRead(DataInterface.REG_P0 + i));
-                            }
-
-                            if (cpuh.cpuType >= CPUHandler.CPUType.Matisse)
-                            {
-                                cpuh.setBoostFrequencySingleCore(di.MemRead(DataInterface.REG_BOOST_FREQ_0));
-                                cpuh.setBoostFrequencyAllCores(di.MemRead(DataInterface.REG_BOOST_FREQ_1));
-                            }
-                        }
-
-                        cpuh.SetC6Core(cpuh.ZenC6Core);
-                        cpuh.SetC6Package(cpuh.ZenC6Package);
-                        cpuh.SetCpb(cpuh.ZenCorePerfBoost);
-
-                        if (cpuh.cpuType < CPUHandler.CPUType.Matisse)
-                        {
-                            cpuh.SetPPT(cpuh.ZenPPT);
-                            cpuh.SetTDC(cpuh.ZenTDC);
-                            cpuh.SetEDC(cpuh.ZenEDC);
-                        }
-
-                        cpuh.SetScalar(cpuh.ZenScalar);
-                        cpuh.SetPerfBias(cpuh.PerformanceBias);
-                    */
 
                     applySettings();
                     cpuh.SettingsSaved = false;
@@ -474,25 +434,6 @@ namespace ZenStatesSrv
             ServiceController svc = new ServiceController(MyServiceName);
             if (enable) ServiceHelper.ChangeStartMode(svc, ServiceStartMode.Automatic);
             else ServiceHelper.ChangeStartMode(svc, ServiceStartMode.Manual);
-        }
-
-        static bool CheckUpdate()
-        {
-            using (WebClient client = new WebClient())
-            {
-
-                byte[] response =
-                client.UploadValues("http://elmorlabs.com/AsusZsUpdate", new NameValueCollection()
-                {
-                       { "version", Environment.Version.ToString() }
-
-                });
-
-                string result = System.Text.Encoding.UTF8.GetString(response);
-
-                if (result == "Yes") return true;
-                else return false;
-            }
         }
     }
 
