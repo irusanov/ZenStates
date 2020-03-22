@@ -1,6 +1,6 @@
 ﻿namespace ZenStates
 {
-    partial class MainForm
+    partial class AppWindow
     {
         /// <summary>
         /// Required designer variable.
@@ -29,7 +29,7 @@
         private void InitializeComponent()
         {
             this.components = new System.ComponentModel.Container();
-            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(MainForm));
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(AppWindow));
             this.tabControl1 = new System.Windows.Forms.TabControl();
             this.cpuTabOC = new System.Windows.Forms.TabPage();
             this.tableLayoutPanel2 = new System.Windows.Forms.TableLayoutPanel();
@@ -227,7 +227,7 @@
             this.tabGPU.Location = new System.Drawing.Point(4, 22);
             this.tabGPU.Name = "tabGPU";
             this.tabGPU.Padding = new System.Windows.Forms.Padding(3);
-            this.tabGPU.Size = new System.Drawing.Size(295, 228);
+            this.tabGPU.Size = new System.Drawing.Size(295, 202);
             this.tabGPU.TabIndex = 1;
             this.tabGPU.Text = "GPU";
             this.tabGPU.UseVisualStyleBackColor = true;
@@ -237,7 +237,7 @@
             this.tabPBO.Location = new System.Drawing.Point(4, 22);
             this.tabPBO.Name = "tabPBO";
             this.tabPBO.Padding = new System.Windows.Forms.Padding(3);
-            this.tabPBO.Size = new System.Drawing.Size(295, 228);
+            this.tabPBO.Size = new System.Drawing.Size(295, 202);
             this.tabPBO.TabIndex = 2;
             this.tabPBO.Text = "PBO";
             this.tabPBO.UseVisualStyleBackColor = true;
@@ -248,7 +248,7 @@
             this.tabPerfBias.Location = new System.Drawing.Point(4, 22);
             this.tabPerfBias.Name = "tabPerfBias";
             this.tabPerfBias.Padding = new System.Windows.Forms.Padding(4, 8, 4, 8);
-            this.tabPerfBias.Size = new System.Drawing.Size(295, 228);
+            this.tabPerfBias.Size = new System.Drawing.Size(295, 202);
             this.tabPerfBias.TabIndex = 3;
             this.tabPerfBias.Text = "Perf. Bias";
             this.tabPerfBias.UseVisualStyleBackColor = true;
@@ -295,7 +295,7 @@
             this.tabInfo.Location = new System.Drawing.Point(4, 22);
             this.tabInfo.Name = "tabInfo";
             this.tabInfo.Padding = new System.Windows.Forms.Padding(3);
-            this.tabInfo.Size = new System.Drawing.Size(295, 228);
+            this.tabInfo.Size = new System.Drawing.Size(295, 202);
             this.tabInfo.TabIndex = 4;
             this.tabInfo.Text = "Info";
             this.tabInfo.UseVisualStyleBackColor = true;
@@ -334,7 +334,7 @@
             this.tableLayoutPanel5.RowStyles.Add(new System.Windows.Forms.RowStyle());
             this.tableLayoutPanel5.RowStyles.Add(new System.Windows.Forms.RowStyle());
             this.tableLayoutPanel5.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 100F));
-            this.tableLayoutPanel5.Size = new System.Drawing.Size(289, 222);
+            this.tableLayoutPanel5.Size = new System.Drawing.Size(289, 196);
             this.tableLayoutPanel5.TabIndex = 1;
             // 
             // microcodeInfoLabel
@@ -530,7 +530,7 @@
             this.tabSettings.Location = new System.Drawing.Point(4, 22);
             this.tabSettings.Name = "tabSettings";
             this.tabSettings.Padding = new System.Windows.Forms.Padding(3);
-            this.tabSettings.Size = new System.Drawing.Size(295, 228);
+            this.tabSettings.Size = new System.Drawing.Size(295, 202);
             this.tabSettings.TabIndex = 5;
             this.tabSettings.Text = "Settings";
             this.tabSettings.UseVisualStyleBackColor = true;
@@ -555,7 +555,7 @@
             this.tableLayoutPanel6.RowStyles.Add(new System.Windows.Forms.RowStyle());
             this.tableLayoutPanel6.RowStyles.Add(new System.Windows.Forms.RowStyle());
             this.tableLayoutPanel6.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 100F));
-            this.tableLayoutPanel6.Size = new System.Drawing.Size(289, 222);
+            this.tableLayoutPanel6.Size = new System.Drawing.Size(289, 196);
             this.tableLayoutPanel6.TabIndex = 0;
             // 
             // checkBoxQcode
@@ -686,7 +686,7 @@
             this.trayMenuItemExit.Text = "Exit";
             this.trayMenuItemExit.Click += new System.EventHandler(this.trayMenuItemExit_Click);
             // 
-            // MainForm
+            // AppWindow
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
@@ -697,7 +697,7 @@
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedSingle;
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.MaximizeBox = false;
-            this.Name = "MainForm";
+            this.Name = "AppWindow";
             this.Padding = new System.Windows.Forms.Padding(4, 4, 2, 2);
             this.SizeGripStyle = System.Windows.Forms.SizeGripStyle.Hide;
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;

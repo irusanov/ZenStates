@@ -9,11 +9,12 @@ using System.Windows.Forms;
 
 namespace ZenStates
 {
-    public partial class MainForm : Form
+    public partial class AppWindow : Form
     {
         // MSR
-        const uint MSR_PStateStat       = 0xC0010063;    // [2:0] CurPstate
-        const uint MSR_PStateDef0       = 0xC0010064;    // [63] PstateEn [21:14] CpuVid [13:8] CpuDfsId [7:0] CpuFid
+        const uint MSR_PStateCurLim     = 0xC0010061; // [6:4] PstateMaxVal
+        const uint MSR_PStateStat       = 0xC0010063; // [2:0] CurPstate
+        const uint MSR_PStateDef0       = 0xC0010064; // [63] PstateEn [21:14] CpuVid [13:8] CpuDfsId [7:0] CpuFid
         const uint MSR_PMGT_MISC        = 0xC0010292; // [32] PC6En
         const uint MSR_PSTATE_BOOST     = 0xC0010293;
         const uint MSR_CSTATE_CONFIG    = 0xC0010296; // [22] CCR2_CC6EN [14] CCR1_CC6EN [6] CCR0_CC6EN
@@ -26,11 +27,12 @@ namespace ZenStates
 
         // Thermal
         const uint THM_TCON_CUR_TMP     = 0x00059800;
+        const uint THM_TCON_PROCHOT     = 0x00059804;
         const uint THM_TCON_THERM_TRIP  = 0x00059808;
 
         private enum PerfBias { Auto = 0, None, Cinebench_R11p5, Cinebench_R15, Geekbench_3, SuperPi };
 
-        private static Dictionary<PerfBias, string> PerfBiasDict = new Dictionary<PerfBias, string>
+        private static readonly Dictionary<PerfBias, string> PerfBiasDict = new Dictionary<PerfBias, string>
         {
             { PerfBias.Auto, "Auto" },
             { PerfBias.None, "None" },
@@ -47,7 +49,8 @@ namespace ZenStates
         private BackgroundWorker backgroundWorker;
         //private BindingSource siBindingSource;
         private readonly Mutex hMutexPci;
-        private Components.PstateItem[] PstateItems = new Components.PstateItem[3];
+        private Components.PstateItem[] PstateItems;
+        private int NUM_PSTATES = 3; // default set to 3, real active states are checked on a later stage
 
         private void HandleError(string message, string title = "Error")
         {
@@ -221,6 +224,18 @@ namespace ZenStates
             return eax;
         }
 
+        private bool GetOcMode()
+        {
+            uint eax = 0;
+            uint edx = 0;
+
+            if (ols.RdmsrTx(MSR_PStateStat, ref eax, ref edx, (UIntPtr)(1)) == 1)
+            {
+                return Convert.ToBoolean((eax >> 1) & 1);
+            }
+            return false;
+        }
+
         private void InitSystemInfo(object sender, DoWorkEventArgs e)
         {
             si.CpuId = GetCpuInfo();
@@ -296,6 +311,15 @@ namespace ZenStates
             }
             if (searcher != null) searcher.Dispose();
 
+            /*
+            searcher = new ManagementObjectSearcher("SELECT * FROM Win32_ComputerSystem");
+            foreach (ManagementObject obj in searcher.Get())
+            {
+                si.FusedCoreCount = int.Parse(obj["NumberOfLogicalProcessors"].ToString());
+            }
+            if (searcher != null) searcher.Dispose();
+            */
+
             searcher = new ManagementObjectSearcher("SELECT * FROM Win32_BIOS");
             foreach (ManagementObject obj in searcher.Get())
             {
@@ -324,12 +348,23 @@ namespace ZenStates
 
         private void InitSystemInfo_Complete(object sender, RunWorkerCompletedEventArgs e)
         {
+            // Resize main form
+            int pstatesHeight = groupBoxPstates.Height;
+            int expectedPstateHeight = 115;
+
+            if (pstatesHeight > expectedPstateHeight)
+            {
+                var formHeight = ActiveForm.Height;
+                ActiveForm.Height = formHeight + pstatesHeight - expectedPstateHeight;
+            }
+
             PopulateFrequencyList(comboBoxCpuFreq.Items);
             PopulateCCDList(comboBoxCore.Items);
 
             comboBoxCore.SelectedIndex = si.PhysicalCoreCount;
 
             int index = (int)((GetCurrentMulti() - 5.50) / 0.25);
+            if (index < 0) index = 0;
             comboBoxCpuFreq.SelectedIndex = index;
 
             comboBoxPerfBias.DataSource = PerfBiasDict.ToList();
@@ -339,13 +374,14 @@ namespace ZenStates
             PopulateInfoTab();
 
             this.Enabled = true;
-
+            /*
             MessageBox.Show($"Fused: {si.FusedCoreCount}\n" +
                 $"Thread: {si.Threads}\n" +
                 $"SMT: {si.SMT}\n" +
                 $"CCD: {si.CCDCount}\n" +
                 $"CCX: {si.CCXCount}\n" +
                 $"Active cores in CCX : {si.NumCoresInCCX}");
+            */
         }
 
         // TODO: Detect OC Mode and return PState multi if on auto
@@ -394,7 +430,22 @@ namespace ZenStates
 
 
 
-        // UI functions
+        #region UI Functions
+
+        // P0 fix C001_0015 HWCR[21]=1
+        // Fixes timer issues when not using HPET
+        public bool ApplyTscWorkaround()
+        {
+            uint eax = 0, edx = 0;
+
+            if (ols.Rdmsr(MSR_HWCR, ref eax, ref edx) != -1)
+            {
+                eax |= 0x200000;
+                return ols.Wrmsr(MSR_HWCR, eax, edx) != -1;
+            }
+            return false;
+        }
+
         private void ApplyFrequencyAllCoreSetting(int frequency)
         {
             if (!SmuWrite(smu.SMU_MSG_SetOverclockFrequencyAllCores, Convert.ToUInt32(frequency)))
@@ -415,16 +466,40 @@ namespace ZenStates
                 HandleError("Error setting frequency!");
         }
 
+        private void ApplyPstates()
+        {
+            for (int i = 0; i < NUM_PSTATES; i++)
+            {
+                var item = PstateItems[i];
+                if (item.Changed)
+                {
+                    if (!ApplyTscWorkaround()) return;
+
+                    uint eax = Convert.ToUInt32(item.Pstate & 0xFFFFFFFF);
+                    uint edx = Convert.ToUInt32(item.Pstate >> 32);
+
+                    if (ols.Wrmsr(MSR_PStateDef0 + Convert.ToUInt32(i), eax, edx) != 1)
+                    {
+                        Console.WriteLine($"Could not update Pstate{i}");
+                        item.Reset();
+                        return;
+                    }
+
+                    item.UpdateState();
+                }
+            }
+        }
+
         private bool ApplyPerfBias(PerfBias pb)
         {
             uint pb1_eax = 0, pb1_edx = 0, pb2_eax = 0, pb2_edx = 0, pb3_eax = 0, pb3_edx = 0, pb4_eax = 0, pb4_edx = 0, pb5_eax = 0, pb5_edx = 0;
 
             // Read current settings
-            if (ols.RdmsrTx(MSR_PERFBIAS1, ref pb1_eax, ref pb1_edx, (UIntPtr)1) != 1) return false;
-            if (ols.RdmsrTx(MSR_PERFBIAS2, ref pb2_eax, ref pb2_edx, (UIntPtr)1) != 1) return false;
-            if (ols.RdmsrTx(MSR_PERFBIAS3, ref pb3_eax, ref pb3_edx, (UIntPtr)1) != 1) return false;
-            if (ols.RdmsrTx(MSR_PERFBIAS4, ref pb4_eax, ref pb4_edx, (UIntPtr)1) != 1) return false;
-            if (ols.RdmsrTx(MSR_PERFBIAS5, ref pb5_eax, ref pb5_edx, (UIntPtr)1) != 1) return false;
+            if (ols.Rdmsr(MSR_PERFBIAS1, ref pb1_eax, ref pb1_edx) != 1) return false;
+            if (ols.Rdmsr(MSR_PERFBIAS2, ref pb2_eax, ref pb2_edx) != 1) return false;
+            if (ols.Rdmsr(MSR_PERFBIAS3, ref pb3_eax, ref pb3_edx) != 1) return false;
+            if (ols.Rdmsr(MSR_PERFBIAS4, ref pb4_eax, ref pb4_edx) != 1) return false;
+            if (ols.Rdmsr(MSR_PERFBIAS5, ref pb5_eax, ref pb5_edx) != 1) return false;
 
             // Clear by default
             pb1_eax &= 0xFFFFFFEF;
@@ -483,20 +558,20 @@ namespace ZenStates
             // Rewrite
             for (int i = 0; i < si.Threads; i++)
             {
-                if (ols.WrmsrTx(MSR_PERFBIAS1, pb1_eax, pb1_edx, (UIntPtr)(((ulong)1) << i)) != 1) return false;
-                if (ols.WrmsrTx(MSR_PERFBIAS2, pb2_eax, pb2_edx, (UIntPtr)(((ulong)1) << i)) != 1) return false;
-                if (ols.WrmsrTx(MSR_PERFBIAS3, pb3_eax, pb3_edx, (UIntPtr)(((ulong)1) << i)) != 1) return false;
-                if (ols.WrmsrTx(MSR_PERFBIAS4, pb4_eax, pb4_edx, (UIntPtr)(((ulong)1) << i)) != 1) return false;
-                if (ols.WrmsrTx(MSR_PERFBIAS5, pb5_eax, pb5_edx, (UIntPtr)(((ulong)1) << i)) != 1) return false;
+                if (ols.Wrmsr(MSR_PERFBIAS1, pb1_eax, pb1_edx) != 1) return false;
+                if (ols.Wrmsr(MSR_PERFBIAS2, pb2_eax, pb2_edx) != 1) return false;
+                if (ols.Wrmsr(MSR_PERFBIAS3, pb3_eax, pb3_edx) != 1) return false;
+                if (ols.Wrmsr(MSR_PERFBIAS4, pb4_eax, pb4_edx) != 1) return false;
+                if (ols.Wrmsr(MSR_PERFBIAS5, pb5_eax, pb5_edx) != 1) return false;
             }
 
             return true;
         }
+        #endregion
 
 
 
-
-        public MainForm()
+        public AppWindow()
         {
             InitializeComponent();
 
@@ -513,14 +588,18 @@ namespace ZenStates
 
             // P-States initialization temp
             uint eax = default, edx = default;
-            for (int i = 0; i < 3; i++)
+
+            ols.Rdmsr(MSR_PStateCurLim, ref eax, ref edx);
+            NUM_PSTATES = Convert.ToInt32((eax >> 4) & 0x7) + 1;
+            PstateItems = new Components.PstateItem[NUM_PSTATES];
+
+            for (int i = 0; i < NUM_PSTATES; i++)
             {
-                ols.RdmsrTx(MSR_PStateDef0 + Convert.ToUInt32(i), ref eax, ref edx, (UIntPtr)(1));
+                ols.Rdmsr(MSR_PStateDef0 + Convert.ToUInt32(i), ref eax, ref edx);
                 PstateItems[i] = new Components.PstateItem
                 {
                     Label = $"P{i}",
-                    Checked = Convert.ToBoolean((edx >> 63) & 0x1),
-                    EAX = eax
+                    Pstate = (ulong)edx << 32 | eax
                 };
                 tableLayoutPanel3.Controls.Add(PstateItems[i], 0, i);
             }
@@ -559,7 +638,11 @@ namespace ZenStates
             var selectedTab = tabControl1.SelectedTab;
 
             if (selectedTab == cpuTabOC)
+            {
                 ApplyCpuTabSettings();
+                ApplyPstates();
+            }
+
             if (selectedTab == tabPerfBias)
                 ApplyPerfBias((PerfBias)comboBoxPerfBias.SelectedIndex);
         }

@@ -17,7 +17,7 @@ namespace ZenStates
 
             try
             {
-                Form MainForm = new MainForm();
+                Form MainForm = new AppWindow();
                 string appString = $@"{Application.ProductName} {Application.ProductVersion.Substring(0, Application.ProductVersion.LastIndexOf('.'))}";
 #if DEBUG
                 appString += " (debug)";

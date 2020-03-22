@@ -90,6 +90,19 @@ namespace ZenStates
         }
     }
 
+    public class RomeSettings : SMU
+    {
+        public RomeSettings()
+        {
+            SMU_ADDR_MSG = 0x03B10524;
+            SMU_ADDR_RSP = 0x03B10570;
+            SMU_ADDR_ARG = 0x03B10A40;
+
+            SMU_MSG_SetOverclockFrequencyAllCores = 0x18;
+            // SMU_MSG_SetOverclockFrequencyPerCore = 0x19;
+        }
+    }
+
     // Zen+ (Pinnacle Ridge), TR2 (Colfax) 
     public class ZenPSettings : SMU
     {
@@ -139,7 +152,7 @@ namespace ZenStates
             { SMU.CPUType.Picasso, new RavenRidge2Settings() },
             { SMU.CPUType.PinnacleRidge, new ZenPSettings() },
             { SMU.CPUType.Matisse, new Zen2Settings() },
-            { SMU.CPUType.Rome, new Zen2Settings() },
+            { SMU.CPUType.Rome, new RomeSettings() },
             { SMU.CPUType.Renoir, new Zen2Settings() },
         };
 

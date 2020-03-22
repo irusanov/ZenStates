@@ -67,6 +67,7 @@
             this.comboBoxFID.Name = "comboBoxFID";
             this.comboBoxFID.Size = new System.Drawing.Size(90, 21);
             this.comboBoxFID.TabIndex = 4;
+            this.comboBoxFID.SelectedIndexChanged += new System.EventHandler(this.comboBoxFID_SelectedIndexChanged);
             // 
             // comboBoxDID
             // 
@@ -90,6 +91,7 @@
             this.comboBoxVID.Name = "comboBoxVID";
             this.comboBoxVID.Size = new System.Drawing.Size(92, 21);
             this.comboBoxVID.TabIndex = 3;
+            this.comboBoxVID.SelectedIndexChanged += new System.EventHandler(this.comboBoxVID_SelectedIndexChanged);
             // 
             // checkBoxPstateEnabled
             // 
