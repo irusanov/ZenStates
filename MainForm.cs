@@ -1,4 +1,4 @@
-﻿using OpenLibSys;
+using OpenLibSys;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -231,6 +231,7 @@ namespace ZenStates
 
             if (ols.RdmsrTx(MSR_PStateStat, ref eax, ref edx, (UIntPtr)(1)) == 1)
             {
+                // Summit Ridge, Raven Ridge
                 return Convert.ToBoolean((eax >> 1) & 1);
             }
             return false;
@@ -358,15 +359,6 @@ namespace ZenStates
                 ActiveForm.Height = formHeight + pstatesHeight - expectedPstateHeight;
             }
 
-            PopulateFrequencyList(comboBoxCpuFreq.Items);
-            PopulateCCDList(comboBoxCore.Items);
-
-            comboBoxCore.SelectedIndex = si.PhysicalCoreCount;
-
-            int index = (int)((GetCurrentMulti() - 5.50) / 0.25);
-            if (index < 0) index = 0;
-            comboBoxCpuFreq.SelectedIndex = index;
-
             comboBoxPerfBias.DataSource = PerfBiasDict.ToList();
             comboBoxPerfBias.ValueMember = "Key";
             comboBoxPerfBias.DisplayMember = "Value";
@@ -374,6 +366,8 @@ namespace ZenStates
             PopulateInfoTab();
 
             this.Enabled = true;
+
+            MessageBox.Show($"OC Mode: {GetOcMode()}");
             /*
             MessageBox.Show($"Fused: {si.FusedCoreCount}\n" +
                 $"Thread: {si.Threads}\n" +
@@ -384,11 +378,13 @@ namespace ZenStates
             */
         }
 
-        // TODO: Detect OC Mode and return PState multi if on auto
+        // TODO: Detect OC Mode and return PState0 multi if on auto
         private double GetCurrentMulti()
         {
+            var msr = MSR_PSTATE_BOOST;
             uint eax = default, edx = default;
-            if (ols.RdmsrTx(MSR_PSTATE_BOOST, ref eax, ref edx, (UIntPtr)(1)) != 1)
+
+            if (ols.RdmsrTx(msr, ref eax, ref edx, (UIntPtr)(1)) != 1)
             {
                 HandleError("Error getting current multiplier!");
                 return 0;
@@ -397,44 +393,54 @@ namespace ZenStates
             return 25 * (eax & 0xFF) / (12.5 * (eax >> 8 & 0x3F));
         }
 
-        private void PopulateFrequencyList(ComboBox.ObjectCollection l)
+        // TODO: Detect OC Mode and return PState0 vid if on auto
+        private byte GetCurrentVid()
         {
-            for (double multi = 5.5; multi <= 70; multi += 0.25)
+            var msr = MSR_PSTATE_BOOST;
+            uint eax = default, edx = default;
+
+            if (ols.RdmsrTx(msr, ref eax, ref edx, (UIntPtr)(1)) != 1)
             {
-                l.Add(new FrequencyListItem(multi, string.Format("x{0:0.00}", multi)));
+                HandleError("Error getting current VID!");
+                return 0;
             }
+
+            return (byte)(eax >> 14 & 0xFF);
         }
-
-        /*private void PopulateCCDList(ComboBox.ObjectCollection l)
-        {
-            for (int core = 0; core < si.FusedCoreCount; ++core)
-            {
-                Console.WriteLine($"ccd: {core / (si.NumCoresInCCX * 2)}, ccx: {core / si.NumCoresInCCX}, core: {core}");
-                l.Add(new CoreListItem(core / si.NumCoresInCCX / 2, core / si.NumCoresInCCX, core));
-            }
-
-            l.Add("All Cores");
-        }*/
-
-        private void PopulateCCDList(ComboBox.ObjectCollection l)
-        {
-            for (int core = 0; core < si.PhysicalCoreCount; ++core)
-            {
-                Console.WriteLine($"ccd: {core / 8}, ccx: {core / 4}, core: {core}");
-                l.Add(new CoreListItem(core / 8, core / 4, core));
-            }
-
-            l.Add("All Cores");
-        }
-
-
 
 
         #region UI Functions
 
+        private void PopulatePstates()
+        {
+            uint eax = default, edx = default;
+
+            ols.Rdmsr(MSR_PStateCurLim, ref eax, ref edx);
+            NUM_PSTATES = Convert.ToInt32((eax >> 4) & 0x7) + 1;
+            PstateItems = new Components.PstateItem[NUM_PSTATES];
+
+            for (int i = 0; i < NUM_PSTATES; i++)
+            {
+                ols.Rdmsr(MSR_PStateDef0 + Convert.ToUInt32(i), ref eax, ref edx);
+                PstateItems[i] = new Components.PstateItem
+                {
+                    Label = $"P{i}",
+                    Pstate = (ulong)edx << 32 | eax
+                };
+                tableLayoutPanel3.Controls.Add(PstateItems[i], 0, i);
+            }
+        }
+
+        private void InitManualOc()
+        {
+            manualOverclockItem.Vid = GetCurrentVid();
+            manualOverclockItem.Multi = GetCurrentMulti();
+            manualOverclockItem.Cores = si.PhysicalCoreCount;
+        }
+
         // P0 fix C001_0015 HWCR[21]=1
         // Fixes timer issues when not using HPET
-        public bool ApplyTscWorkaround()
+        private bool ApplyTscWorkaround()
         {
             uint eax = 0, edx = 0;
 
@@ -446,24 +452,45 @@ namespace ZenStates
             return false;
         }
 
-        private void ApplyFrequencyAllCoreSetting(int frequency)
+        private bool ApplyFrequencyAllCoreSetting(int frequency)
         {
             if (!SmuWrite(smu.SMU_MSG_SetOverclockFrequencyAllCores, Convert.ToUInt32(frequency)))
+            {
                 HandleError("Error setting frequency!");
+                return false;
+            }
+            return true;
         }
 
-        /*private void ApplyFrequencySingleCoreSetting(CoreListItem i, int frequency)
+        private bool ApplyFrequencySingleCoreSetting(int mask, int frequency)
         {
-            Console.WriteLine($"SET - ccd: {i.CCD}, ccx: {i.CCX }, core: {i.CORE % si.NumCoresInCCX }");
-            if (!SmuWrite(smu.SMU_MSG_SetOverclockFrequencyPerCore, Convert.ToUInt32(((i.CCD << 4 | i.CCX % 2 & 0xF) << 4 | i.CORE % si.NumCoresInCCX & 0xF) << 20 | frequency & 0xFFFFF)))
+            if (!SmuWrite(smu.SMU_MSG_SetOverclockFrequencyPerCore, Convert.ToUInt32(mask | frequency & 0xFFFFF)))
+            {
                 HandleError("Error setting frequency!");
-        }*/
+                return false;
+            }
+            return true;
+        }
 
-        private void ApplyFrequencySingleCoreSetting(CoreListItem i, int frequency)
+        private void ApplyManualOcSettings()
         {
-            Console.WriteLine($"SET - ccd: {i.CCD}, ccx: {i.CCX }, core: {i.CORE % 4 }");
-            if (!SmuWrite(smu.SMU_MSG_SetOverclockFrequencyPerCore, Convert.ToUInt32(((i.CCD << 4 | i.CCX % 2 & 0xF) << 4 | i.CORE % 4 & 0xF) << 20 | frequency & 0xFFFFF)))
-                HandleError("Error setting frequency!");
+            var item = manualOverclockItem;
+
+            if (!item.Changed) return;
+
+            bool ret = false;
+            int frequency = (int)(item.Multi * 100.00);
+
+            // All cores
+            if (item.AllCores)
+                ret = ApplyFrequencyAllCoreSetting(frequency);
+            else if (ApplyFrequencyAllCoreSetting(550))
+                ret = ApplyFrequencySingleCoreSetting(item.CoreMask, frequency);
+
+            if (ret)
+                item.UpdateState();
+            else
+                item.Reset();
         }
 
         private void ApplyPstates()
@@ -584,29 +611,12 @@ namespace ZenStates
             this.Enabled = false;
 
             trayMenuItemApp.Text = Application.ProductName + " " + Application.ProductVersion.Substring(0, Application.ProductVersion.LastIndexOf('.'));
-            toolTip.SetToolTip(comboBoxCore, "All physical cores are listed. The app can't enumerate active cores only.");
-
-            // P-States initialization temp
-            uint eax = default, edx = default;
-
-            ols.Rdmsr(MSR_PStateCurLim, ref eax, ref edx);
-            NUM_PSTATES = Convert.ToInt32((eax >> 4) & 0x7) + 1;
-            PstateItems = new Components.PstateItem[NUM_PSTATES];
-
-            for (int i = 0; i < NUM_PSTATES; i++)
-            {
-                ols.Rdmsr(MSR_PStateDef0 + Convert.ToUInt32(i), ref eax, ref edx);
-                PstateItems[i] = new Components.PstateItem
-                {
-                    Label = $"P{i}",
-                    Pstate = (ulong)edx << 32 | eax
-                };
-                tableLayoutPanel3.Controls.Add(PstateItems[i], 0, i);
-            }
 
             try
             {
                 CheckOlsStatus();
+                PopulatePstates();
+                InitManualOc();
                 RunBackgroundTask(InitSystemInfo, InitSystemInfo_Complete);
             }
             catch (ApplicationException ex)
@@ -617,29 +627,13 @@ namespace ZenStates
             }
         }
 
-        private void ApplyCpuTabSettings()
-        {
-            int frequency = (int)(((FrequencyListItem)comboBoxCpuFreq.SelectedItem).Multi * 100.00);
-
-            // All cores
-            if (comboBoxCore.SelectedIndex == si.PhysicalCoreCount)
-            {
-                ApplyFrequencyAllCoreSetting(frequency);
-            }
-            else
-            {
-                ApplyFrequencyAllCoreSetting(550);
-                ApplyFrequencySingleCoreSetting((CoreListItem)comboBoxCore.SelectedItem, frequency);
-            }
-        }
-
         private void buttonApply_Click(object sender, EventArgs e)
         {
             var selectedTab = tabControl1.SelectedTab;
 
             if (selectedTab == cpuTabOC)
             {
-                ApplyCpuTabSettings();
+                ApplyManualOcSettings();
                 ApplyPstates();
             }
 

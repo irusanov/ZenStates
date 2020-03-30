@@ -70,6 +70,12 @@
     <Compile Include="Components\CoreListItem.cs" />
     <Compile Include="Components\CustomListItem.cs" />
     <Compile Include="Components\FrequencyListItem.cs" />
+    <Compile Include="Components\ManualOverclockItem.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Components\ManualOverclockItem.Designer.cs">
+      <DependentUpon>ManualOverclockItem.cs</DependentUpon>
+    </Compile>
     <Compile Include="Components\PstateItem.cs">
       <SubType>UserControl</SubType>
     </Compile>
@@ -82,6 +88,7 @@
     <Compile Include="Components\VoltageSlider.Designer.cs">
       <DependentUpon>VoltageSlider.cs</DependentUpon>
     </Compile>
+    <Compile Include="Constants.cs" />
     <Compile Include="MainForm.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -93,6 +100,9 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="SMU\SMU.cs" />
     <Compile Include="SystemInfo\SystemInfo.cs" />
+    <EmbeddedResource Include="Components\ManualOverclockItem.resx">
+      <DependentUpon>ManualOverclockItem.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="Components\PstateItem.resx">
       <DependentUpon>PstateItem.cs</DependentUpon>
     </EmbeddedResource>

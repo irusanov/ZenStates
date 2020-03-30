@@ -37,8 +37,6 @@
             this.tableLayoutPanel3 = new System.Windows.Forms.TableLayoutPanel();
             this.groupBoxCpuFreq = new System.Windows.Forms.GroupBox();
             this.tableLayoutPanel1 = new System.Windows.Forms.TableLayoutPanel();
-            this.comboBoxCpuFreq = new System.Windows.Forms.ComboBox();
-            this.comboBoxCore = new System.Windows.Forms.ComboBox();
             this.tabGPU = new System.Windows.Forms.TabPage();
             this.tabPBO = new System.Windows.Forms.TabPage();
             this.tabPerfBias = new System.Windows.Forms.TabPage();
@@ -75,6 +73,7 @@
             this.trayIconMenu = new System.Windows.Forms.ContextMenuStrip(this.components);
             this.trayMenuItemApp = new System.Windows.Forms.ToolStripMenuItem();
             this.trayMenuItemExit = new System.Windows.Forms.ToolStripMenuItem();
+            this.manualOverclockItem = new ZenStates.Components.ManualOverclockItem();
             this.tabControl1.SuspendLayout();
             this.cpuTabOC.SuspendLayout();
             this.tableLayoutPanel2.SuspendLayout();
@@ -142,7 +141,7 @@
             this.groupBoxPstates.Controls.Add(this.tableLayoutPanel3);
             this.groupBoxPstates.Dock = System.Windows.Forms.DockStyle.Top;
             this.groupBoxPstates.FlatStyle = System.Windows.Forms.FlatStyle.Popup;
-            this.groupBoxPstates.Location = new System.Drawing.Point(3, 67);
+            this.groupBoxPstates.Location = new System.Drawing.Point(3, 73);
             this.groupBoxPstates.Margin = new System.Windows.Forms.Padding(3, 12, 3, 3);
             this.groupBoxPstates.Name = "groupBoxPstates";
             this.groupBoxPstates.Padding = new System.Windows.Forms.Padding(4);
@@ -177,50 +176,26 @@
             this.groupBoxCpuFreq.Location = new System.Drawing.Point(3, 3);
             this.groupBoxCpuFreq.Name = "groupBoxCpuFreq";
             this.groupBoxCpuFreq.Padding = new System.Windows.Forms.Padding(4);
-            this.groupBoxCpuFreq.Size = new System.Drawing.Size(281, 49);
+            this.groupBoxCpuFreq.Size = new System.Drawing.Size(281, 55);
             this.groupBoxCpuFreq.TabIndex = 1;
             this.groupBoxCpuFreq.TabStop = false;
-            this.groupBoxCpuFreq.Text = "OC Multiplier";
+            this.groupBoxCpuFreq.Text = "Manual Overclock";
             // 
             // tableLayoutPanel1
             // 
             this.tableLayoutPanel1.AutoSize = true;
             this.tableLayoutPanel1.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
-            this.tableLayoutPanel1.ColumnCount = 3;
-            this.tableLayoutPanel1.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 50F));
-            this.tableLayoutPanel1.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 50F));
-            this.tableLayoutPanel1.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Absolute, 101F));
-            this.tableLayoutPanel1.Controls.Add(this.comboBoxCpuFreq, 0, 0);
-            this.tableLayoutPanel1.Controls.Add(this.comboBoxCore, 1, 0);
+            this.tableLayoutPanel1.ColumnCount = 1;
+            this.tableLayoutPanel1.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100F));
+            this.tableLayoutPanel1.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Absolute, 20F));
+            this.tableLayoutPanel1.Controls.Add(this.manualOverclockItem, 0, 0);
             this.tableLayoutPanel1.Dock = System.Windows.Forms.DockStyle.Fill;
             this.tableLayoutPanel1.Location = new System.Drawing.Point(4, 17);
             this.tableLayoutPanel1.Name = "tableLayoutPanel1";
             this.tableLayoutPanel1.RowCount = 1;
             this.tableLayoutPanel1.RowStyles.Add(new System.Windows.Forms.RowStyle());
-            this.tableLayoutPanel1.Size = new System.Drawing.Size(273, 28);
+            this.tableLayoutPanel1.Size = new System.Drawing.Size(273, 34);
             this.tableLayoutPanel1.TabIndex = 0;
-            // 
-            // comboBoxCpuFreq
-            // 
-            this.comboBoxCpuFreq.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.comboBoxCpuFreq.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
-            this.comboBoxCpuFreq.FormattingEnabled = true;
-            this.comboBoxCpuFreq.Location = new System.Drawing.Point(3, 4);
-            this.comboBoxCpuFreq.Margin = new System.Windows.Forms.Padding(3, 4, 3, 3);
-            this.comboBoxCpuFreq.Name = "comboBoxCpuFreq";
-            this.comboBoxCpuFreq.Size = new System.Drawing.Size(80, 21);
-            this.comboBoxCpuFreq.TabIndex = 2;
-            // 
-            // comboBoxCore
-            // 
-            this.comboBoxCore.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.comboBoxCore.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
-            this.comboBoxCore.FormattingEnabled = true;
-            this.comboBoxCore.Location = new System.Drawing.Point(89, 4);
-            this.comboBoxCore.Margin = new System.Windows.Forms.Padding(3, 4, 3, 3);
-            this.comboBoxCore.Name = "comboBoxCore";
-            this.comboBoxCore.Size = new System.Drawing.Size(80, 21);
-            this.comboBoxCore.TabIndex = 3;
             // 
             // tabGPU
             // 
@@ -686,6 +661,15 @@
             this.trayMenuItemExit.Text = "Exit";
             this.trayMenuItemExit.Click += new System.EventHandler(this.trayMenuItemExit_Click);
             // 
+            // manualOverclockItem
+            // 
+            this.manualOverclockItem.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
+            this.manualOverclockItem.Cores = 0;
+            this.manualOverclockItem.Location = new System.Drawing.Point(3, 3);
+            this.manualOverclockItem.Name = "manualOverclockItem";
+            this.manualOverclockItem.Size = new System.Drawing.Size(267, 28);
+            this.manualOverclockItem.TabIndex = 1;
+            // 
             // AppWindow
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -738,8 +722,6 @@
         private System.Windows.Forms.TabPage cpuTabOC;
         private System.Windows.Forms.TabPage tabGPU;
         private System.Windows.Forms.TableLayoutPanel tableLayoutPanel1;
-        private System.Windows.Forms.ComboBox comboBoxCpuFreq;
-        private System.Windows.Forms.ComboBox comboBoxCore;
         private System.Windows.Forms.GroupBox groupBoxCpuFreq;
         private System.Windows.Forms.TableLayoutPanel tableLayoutPanel2;
         private System.Windows.Forms.GroupBox groupBoxPstates;
@@ -781,6 +763,7 @@
         private System.Windows.Forms.Label label8;
         private System.Windows.Forms.ComboBox comboBoxPerfBias;
         private System.Windows.Forms.TableLayoutPanel tableLayoutPanel3;
+        private Components.ManualOverclockItem manualOverclockItem;
     }
 }
 

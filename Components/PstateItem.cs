@@ -5,11 +5,6 @@ namespace ZenStates.Components
 {
     public partial class PstateItem : UserControl
     {
-        private const byte FID_MAX = 0xFF;
-        private const byte FID_MIN = 0x10;
-        private const byte VID_MAX = 0xE8;
-        private const byte VID_MIN = 0x00;
-
         private ulong IddDiv = 0;
         private ulong IddVal = 0;
         private ulong CpuVid = 0;
@@ -22,30 +17,31 @@ namespace ZenStates.Components
         private ulong InitialCpuFid = 0;
 
         #region Private Methods
-        private uint calculateFidFromMultiDid(double targetMulti = 5.5, ulong did = 0)
+        private uint CalculateFidFromMultiDid(double targetMulti = 5.5, ulong did = 0)
         {
             uint targetFid = Convert.ToUInt32(Math.Floor(targetMulti * did * 12.5 / 25));
 
-            if (targetFid < FID_MIN) targetFid = FID_MIN;
-            if (targetFid > FID_MAX) targetFid = FID_MAX;
+            if (targetFid < Constants.FID_MIN) targetFid = Constants.FID_MIN;
+            if (targetFid > Constants.FID_MAX) targetFid = Constants.FID_MAX;
 
             return targetFid;
+        }
+
+        private double CalculateMulti(ulong did = 0, ulong fid = 1)
+        {
+            return 25 * did / (fid * 12.5);
         }
 
         private void PopulateVidItems()
         {
             comboBoxVID.Items.Clear();
 
-            for (uint i = VID_MIN; i <= VID_MAX; i++)
+            for (uint i = Constants.VID_MIN; i <= Constants.VID_MAX; i++)
             {
                 double voltage = 1.55 - i * 0.00625;
-                comboBoxVID.Items.Add(new CustomListItem(i, string.Format("{0:0.000}V", voltage)));
-            }
-
-            foreach (CustomListItem item in comboBoxVID.Items)
-            {
-                if (item.Value == CpuVid)
-                    comboBoxVID.SelectedItem = item;
+                CustomListItem item = new CustomListItem(i, string.Format("{0:0.000}V", voltage));
+                comboBoxVID.Items.Add(item);
+                if (i == CpuVid) comboBoxVID.SelectedItem = item;
             }
         }
 
@@ -76,17 +72,24 @@ namespace ZenStates.Components
         {
             comboBoxFID.Items.Clear();
 
-            for (uint i = FID_MAX; i >= FID_MIN; i--)
+            for (uint i = Constants.FID_MAX; i >= Constants.FID_MIN; i--)
             {
-                double multi = (25 * i) / (CpuDid * 12.5);
-                CustomListItem item = new CustomListItem(i, string.Format("x{0:0.00}", multi));
-                comboBoxFID.Items.Add(item);
+                double maxMulti = Constants.MULTI_MAX;
+                double multi = CalculateMulti(i, CpuDid);
+                if (multi <= maxMulti)
+                {
+                    CustomListItem item = new CustomListItem(i, string.Format("x{0:0.00}", multi));
+                    comboBoxFID.Items.Add(item);
+                    if (i == CpuFid) comboBoxFID.SelectedItem = item;
+                }
             }
+        }
 
-            foreach (CustomListItem item in comboBoxFID.Items)
-            {
-                if (item.Value == CpuFid) comboBoxFID.SelectedItem = item;
-            }
+        private uint GetSelectedItemValue(ComboBox comboBox)
+        {
+            if (comboBox != null)
+                return (comboBox.SelectedItem as CustomListItem).Value;
+            return 0;
         }
         #endregion
 
@@ -118,21 +121,16 @@ namespace ZenStates.Components
                 ulong edx = InitialPstate & 0xFFFFFFFF00000000;
                 ulong eax = (IddDiv & 0xFF) << 30 | (IddVal & 0xFF) << 22 | (CpuVid & 0xFF) << 14 | (CpuDid & 0x3F) << 8 | CpuFid & 0xFF;
 
-                return (edx & ~(1UL << 63) | Convert.ToUInt64(Checked) << 63) | eax;
+                return edx & ~(1UL << 63) | Convert.ToUInt64(Checked) << 63 | eax;
             }
             set {
                 IddDiv = value >> 30 & 0xFF;
                 IddVal = value >> 22 & 0xFF;
                 CpuVid = value >> 14 & 0xFF;
-                CpuDid = value >> 8 & 0x3F;
-                CpuFid = value & 0xFF;
-
+                CpuDid = InitialCpuDid = value >> 8 & 0x3F;
+                CpuFid = InitialCpuFid = value & 0xFF;
                 Checked = Convert.ToBoolean((value >> 63) & 0x1);
-
                 InitialPstate = value;
-                //InitialCpuVid = CpuVid;
-                InitialCpuDid = CpuDid;
-                InitialCpuFid = CpuFid;
 
                 PopulateVidItems();
                 PopulateDidItems();
@@ -154,6 +152,14 @@ namespace ZenStates.Components
         #endregion
 
         #region Event Handlers
+
+        public EventHandler ValueChanged;
+
+        private void NotifyValueChanged()
+        {
+            ValueChanged?.Invoke(new object(), new EventArgs());
+        }
+
         private void checkBoxPstateEnabled_CheckedChanged(object sender, EventArgs e)
         {
             Checked = checkBoxPstateEnabled.Checked;
@@ -164,22 +170,21 @@ namespace ZenStates.Components
 
         private void comboBoxDID_SelectedIndexChanged(object sender, EventArgs e)
         {
-            double targetMulti = (25 * InitialCpuFid) / (InitialCpuDid * 12.5);
-            CpuDid = (comboBoxDID.SelectedItem as CustomListItem).Value;
-            CpuFid = calculateFidFromMultiDid(targetMulti, CpuDid);
+            double targetMulti = CalculateMulti(InitialCpuFid, InitialCpuDid);
+            CpuDid = GetSelectedItemValue(comboBoxDID);
+            CpuFid = CalculateFidFromMultiDid(targetMulti, CpuDid);
             
             PopulateFidItems();
         }
 
         private void comboBoxFID_SelectedIndexChanged(object sender, EventArgs e)
         {
-            CpuFid = (comboBoxFID.SelectedItem as CustomListItem).Value;
-            Console.WriteLine(CpuFid);
+            CpuFid = GetSelectedItemValue(comboBoxFID);
         }
 
         private void comboBoxVID_SelectedIndexChanged(object sender, EventArgs e)
         {
-            CpuVid = (comboBoxVID.SelectedItem as CustomListItem).Value;
+            CpuVid = GetSelectedItemValue(comboBoxVID);
         }
         #endregion
     }
