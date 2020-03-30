@@ -1,10 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Drawing;
-using System.Data;
-using System.Linq;
-using System.Text;
 using System.Windows.Forms;
 
 namespace ZenStates.Components
@@ -16,6 +10,7 @@ namespace ZenStates.Components
         private byte vid;
         private int selectedCoreIndex;
 
+        #region Private Methods
         private void PopulateFrequencyList(ComboBox.ObjectCollection l)
         {
             for (double multi = Constants.MULTI_MAX; multi >= Constants.MULTI_MIN; multi -= Constants.MULTI_STEP)
@@ -46,6 +41,8 @@ namespace ZenStates.Components
             }
         }
 
+        #endregion
+
         public ManualOverclockItem()
         {
             InitializeComponent();
@@ -56,6 +53,7 @@ namespace ZenStates.Components
             toolTip.SetToolTip(comboBoxCore, "All physical cores are listed. The app can't enumerate active cores only.");
         }
 
+        #region Properties
         public double Multi
         {
             get => (comboBoxMulti.SelectedItem as FrequencyListItem).Multi;
@@ -137,5 +135,6 @@ namespace ZenStates.Components
             multi = Multi;
             selectedCoreIndex = comboBoxCore.SelectedIndex;
         }
+        #endregion
     }
 }

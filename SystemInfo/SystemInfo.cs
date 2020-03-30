@@ -50,9 +50,11 @@ namespace ZenStates
         public string CpuName { get; set; }
         public string BiosVersion { get; set; }
         public uint SmuVersion { get; set; }
-        public int FusedCoreCount {
+        public int FusedCoreCount
+        {
             get { return fusedCoreCount; }
-            set {
+            set
+            {
                 fusedCoreCount = value;
                 PhysicalCoreCount = value + value % 8;
                 CCDCount = value / 6;
@@ -63,9 +65,11 @@ namespace ZenStates
             }
         }
 
-        public int Threads {
+        public int Threads
+        {
             get { return threads; }
-            set {
+            set
+            {
                 threads = value;
                 SMT = value > fusedCoreCount;
             }

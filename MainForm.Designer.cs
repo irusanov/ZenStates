@@ -18,6 +18,8 @@
                 components.Dispose();
             }
             base.Dispose(disposing);
+            hMutexPci.Dispose();
+            ols.Dispose();
         }
 
         #region Windows Form Designer generated code
@@ -725,7 +727,6 @@
         private System.Windows.Forms.GroupBox groupBoxCpuFreq;
         private System.Windows.Forms.TableLayoutPanel tableLayoutPanel2;
         private System.Windows.Forms.GroupBox groupBoxPstates;
-        private ZenStates.Components.VoltageSlider trackBar1;
         private System.Windows.Forms.TableLayoutPanel tableLayoutPanel4;
         private System.Windows.Forms.Button buttonApply;
         private System.Windows.Forms.Button buttonUndo;
@@ -747,7 +748,6 @@
         private System.Windows.Forms.Label mbModelInfoLabel;
         private System.Windows.Forms.Label label6;
         private System.Windows.Forms.Label cpuIdLabel;
-        private Components.VoltageSlider voltageSlider1;
         private System.Windows.Forms.Label label7;
         private System.Windows.Forms.Label microcodeInfoLabel;
         private System.Windows.Forms.TableLayoutPanel tableLayoutPanel6;

@@ -1,4 +1,4 @@
-﻿namespace ZenStates.Components
+namespace ZenStates.Components
 {
     partial class ManualOverclockItem
     {

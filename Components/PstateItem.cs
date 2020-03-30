@@ -117,13 +117,15 @@ namespace ZenStates.Components
 
         public ulong Pstate
         {
-            get {
+            get
+            {
                 ulong edx = InitialPstate & 0xFFFFFFFF00000000;
                 ulong eax = (IddDiv & 0xFF) << 30 | (IddVal & 0xFF) << 22 | (CpuVid & 0xFF) << 14 | (CpuDid & 0x3F) << 8 | CpuFid & 0xFF;
 
                 return edx & ~(1UL << 63) | Convert.ToUInt64(Checked) << 63 | eax;
             }
-            set {
+            set
+            {
                 IddDiv = value >> 30 & 0xFF;
                 IddVal = value >> 22 & 0xFF;
                 CpuVid = value >> 14 & 0xFF;
@@ -173,7 +175,7 @@ namespace ZenStates.Components
             double targetMulti = CalculateMulti(InitialCpuFid, InitialCpuDid);
             CpuDid = GetSelectedItemValue(comboBoxDID);
             CpuFid = CalculateFidFromMultiDid(targetMulti, CpuDid);
-            
+
             PopulateFidItems();
         }
 
