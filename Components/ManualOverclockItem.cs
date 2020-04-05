@@ -119,6 +119,8 @@ namespace ZenStates.Components
             get => vid != Vid || multi != Multi || selectedCoreIndex != SelectedCoreIndex;
         }
 
+        public bool VidChanged  { get => vid != Vid; }
+
         public void Reset()
         {
             PopulateFrequencyList(comboBoxMulti.Items);

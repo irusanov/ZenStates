@@ -472,6 +472,16 @@ namespace ZenStates
             return true;
         }
 
+        private bool ApplyOCVid(byte vid)
+        {
+            if (!SmuWrite(smu.SMU_MSG_SetOverclockCpuVid, Convert.ToUInt32(vid)))
+            {
+                HandleError("Error setting CPU Overclock VID!");
+                return false;
+            }
+            return true;
+        }
+
         private void ApplyManualOcSettings()
         {
             var item = manualOverclockItem;
@@ -479,6 +489,11 @@ namespace ZenStates
             if (!item.Changed) return;
 
             bool ret = false;
+
+            if (item.VidChanged)
+                ApplyOCVid(item.Vid);
+
+
             int frequency = (int)(item.Multi * 100.00);
 
             // All cores
