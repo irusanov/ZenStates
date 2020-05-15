@@ -214,6 +214,7 @@ namespace ZenStatesSrv
                     break;
                 case 0x00850F00:
                 case 0x00850F10: // APU \ Renoir \ Fenghuang
+                case 0x00860F00: // APU \ Zen2 \ Renoir \ 4000 mobile \ 7nm
                     this.cpuType = CPUType.Renoir;
                     break;
                 default:
