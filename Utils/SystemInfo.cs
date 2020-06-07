@@ -21,6 +21,8 @@ namespace ZenStates
         public SystemInfo()
         {
             CpuId = 0;
+            ExtendedModel = 0;
+            PackageType = 0;
             MbVendor = "";
             MbName = "";
             CpuName = "";
@@ -31,9 +33,12 @@ namespace ZenStates
             PatchLevel = 0;
         }
 
-        public SystemInfo(uint cpuId, string mbVendor, string mbName, string cpuName, string biosVersion, uint smuVersion, int fusedCoreCount, int threads, uint patchLevel)
+        public SystemInfo(uint cpuId, uint eModel, uint pkgType, string mbVendor, string mbName, string cpuName, string biosVersion,
+            uint smuVersion, int fusedCoreCount, int threads, uint patchLevel)
         {
             CpuId = cpuId;
+            ExtendedModel = eModel;
+            PackageType = pkgType;
             MbVendor = mbVendor ?? throw new ArgumentNullException(nameof(mbVendor));
             MbName = mbName ?? throw new ArgumentNullException(nameof(mbName));
             CpuName = cpuName ?? throw new ArgumentNullException(nameof(cpuName));
@@ -45,6 +50,8 @@ namespace ZenStates
         }
 
         public uint CpuId { get; set; }
+        public uint ExtendedModel { get; set; }
+        public uint PackageType { get; set; }
         public string MbVendor { get; set; }
         public string MbName { get; set; }
         public string CpuName { get; set; }

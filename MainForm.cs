@@ -6,6 +6,7 @@ using System.Linq;
 using System.Management;
 using System.Threading;
 using System.Windows.Forms;
+using ZenStates.Utils;
 
 namespace ZenStates
 {
@@ -193,13 +194,24 @@ namespace ZenStates
             }
         }
 
-        private uint GetCpuInfo()
+        private uint GetCpuId()
         {
             uint eax = 0, ebx = 0, ecx = 0, edx = 0;
             ols.CpuidPx(0x00000000, ref eax, ref ebx, ref ecx, ref edx, (UIntPtr)1);
             if (ols.CpuidPx(0x00000001, ref eax, ref ebx, ref ecx, ref edx, (UIntPtr)1) == 1)
             {
                 return eax;
+            }
+            return 0;
+        }
+
+        private uint GetPkgType()
+        {
+            uint eax = 0, ebx = 0, ecx = 0, edx = 0;
+            ols.CpuidPx(0x00000000, ref eax, ref ebx, ref ecx, ref edx, (UIntPtr)1);
+            if (ols.CpuidPx(0x80000001, ref eax, ref ebx, ref ecx, ref edx, (UIntPtr)1) == 1)
+            {
+                return ebx >> 28;
             }
             return 0;
         }
@@ -239,20 +251,31 @@ namespace ZenStates
 
         private void InitSystemInfo(object sender, DoWorkEventArgs e)
         {
-            si.CpuId = GetCpuInfo();
+            si.CpuId = GetCpuId();
+            si.ExtendedModel = ((si.CpuId & 0xff) >> 4) + ((si.CpuId >> 12) & 0xf0);
+            si.PackageType = GetPkgType();
             si.PatchLevel = GetPatchLevel();
 
             // CPU Check. Compare family, model, ext family, ext model. Ignore stepping/revision
-            switch (si.CpuId & 0xFFFFFFF0)
+            switch (si.CpuId/* & 0xFFFFFFF0*/)
             {
-                case 0x00800F10: // CPU \ Zen \ Summit Ridge \ ZP - B0 \ 14nm
+                case 0x00800F11: // CPU \ Zen \ Summit Ridge \ ZP - B0 \ 14nm
                 case 0x00800F00: // CPU \ Zen \ Summit Ridge \ ZP - A0 \ 14nm
-                    cpuType = SMU.CPUType.SummitRidge;
+                    if (si.PackageType == 7)
+                        cpuType = SMU.CPUType.Threadripper;
+                    else
+                        cpuType = SMU.CPUType.SummitRidge;
                     break;
-                case 0x00800F80: // CPU \ Zen + \ Pinnacle Ridge \ Colfax 12nm
-                    cpuType = SMU.CPUType.PinnacleRidge;
+                case 0x00800F12:
+                    cpuType = SMU.CPUType.Naples;
                     break;
-                case 0x00810F80: // APU \ Zen + \ Picasso \ 12nm
+                case 0x00800F82: // CPU \ Zen + \ Pinnacle Ridge \ 12nm
+                    if (si.PackageType == 7)
+                        cpuType = SMU.CPUType.Colfax;
+                    else
+                        cpuType = SMU.CPUType.PinnacleRidge;
+                    break;
+                case 0x00810F81: // APU \ Zen + \ Picasso \ 12nm
                     cpuType = SMU.CPUType.Picasso;
                     break;
                 case 0x00810F00: // APU \ Zen \ Raven Ridge \ RV - A0 \ 14nm
@@ -266,20 +289,29 @@ namespace ZenStates
                     break;
                 case 0x00830F00:
                 case 0x00830F10: // CPU \ Epyc 2 \ Rome \ Treadripper 2 \ Castle Peak 7nm
-                    cpuType = SMU.CPUType.Rome;
+                    if (si.PackageType == 7)
+                        cpuType = SMU.CPUType.Rome;
+                    else
+                        cpuType = SMU.CPUType.CastlePeak;
                     break;
-                case 0x00850F00:
+                case 0x00850F00: // Subor Z+
                     cpuType = SMU.CPUType.Fenghuang;
                     break;
-                case 0x00850F10: // APU \ Renoir
+                case 0x00860F01: // APU \ Renoir
                     cpuType = SMU.CPUType.Renoir;
                     break;
                 default:
                     cpuType = SMU.CPUType.Unsupported;
-#if DEBUG
+/*#if DEBUG
                     cpuType = SMU.CPUType.DEBUG;
-#endif
+#endif*/
                     break;
+            }
+
+            if (cpuType == SMU.CPUType.Unsupported)
+            {
+                HandleError("CPU is not supported");
+                Application.Exit();
             }
 
             // SMU Init
@@ -349,6 +381,9 @@ namespace ZenStates
 
         private void InitSystemInfo_Complete(object sender, RunWorkerCompletedEventArgs e)
         {
+            // PopulatePstates();
+            InitManualOc();
+
             // Resize main form
             int pstatesHeight = groupBoxPstates.Height;
             int expectedPstateHeight = 115;
@@ -631,7 +666,6 @@ namespace ZenStates
             {
                 CheckOlsStatus();
                 PopulatePstates();
-                InitManualOc();
                 RunBackgroundTask(InitSystemInfo, InitSystemInfo_Complete);
             }
             catch (ApplicationException ex)

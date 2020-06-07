@@ -12,12 +12,14 @@ namespace ZenStates
             DEBUG,
             SummitRidge,
             Threadripper,
+            Naples,
             RavenRidge,
             PinnacleRidge,
             Colfax,
             Picasso,
             Fenghuang,
             Matisse,
+            CastlePeak,
             Rome,
             Renoir
         };
@@ -185,6 +187,22 @@ namespace ZenStates
         }
     }
 
+    public class RenoirSettings : SMU
+    {
+        public RenoirSettings()
+        {
+            SMU_ADDR_MSG = 0x03B10A20;
+            SMU_ADDR_RSP = 0x03B10A80;
+            SMU_ADDR_ARG = 0x03B10A88;
+
+            //SMU_MSG_EnableOcMode = 0x69;
+            //SMU_MSG_DisableOcMode = 0x6A;
+            SMU_MSG_SetOverclockFrequencyAllCores = 0x19;
+            SMU_MSG_SetOverclockFrequencyPerCore = 0x1A;
+            SMU_MSG_SetOverclockCpuVid = 0x1B;
+        }
+    }
+
     // Matisse, Renoir, CastlePeak and Rome share the same settings
     // CastlePeak (Threadripper 3000 series) shares the same CPUID as the server counterpart Rome
     public static class GetMaintainedSettings
@@ -192,14 +210,17 @@ namespace ZenStates
         private static readonly Dictionary<SMU.CPUType, SMU> settings = new Dictionary<SMU.CPUType, SMU>()
         {
             { SMU.CPUType.SummitRidge, new SummitRidgeSettings() },
+            { SMU.CPUType.Naples, new SummitRidgeSettings() },
             { SMU.CPUType.Threadripper, new SummitRidgeSettings() },
             { SMU.CPUType.RavenRidge, new RavenRidgeSettings() },
+            { SMU.CPUType.Fenghuang, new RavenRidge2Settings() },
             { SMU.CPUType.Picasso, new RavenRidge2Settings() },
             { SMU.CPUType.PinnacleRidge, new ZenPSettings() },
             { SMU.CPUType.Colfax, new ColfaxSettings() },
             { SMU.CPUType.Matisse, new Zen2Settings() },
+            { SMU.CPUType.CastlePeak, new Zen2Settings() },
             { SMU.CPUType.Rome, new RomeSettings() },
-            //{ SMU.CPUType.Renoir, new Zen2Settings() },
+            { SMU.CPUType.Renoir, new RenoirSettings() },
         };
 
         public static SMU GetByType(SMU.CPUType type)
