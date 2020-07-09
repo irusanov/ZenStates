@@ -9,6 +9,7 @@ namespace ZenStates.Components
         private int cores;
         private byte vid;
         private int selectedCoreIndex;
+        private bool ocmode;
 
         #region Private Methods
         private void PopulateFrequencyList(ComboBox.ObjectCollection l)
@@ -48,6 +49,10 @@ namespace ZenStates.Components
             InitializeComponent();
             PopulateFrequencyList(comboBoxMulti.Items);
             PopulateVidItems();
+
+            comboBoxCore.Enabled = OCmode;
+            comboBoxMulti.Enabled = OCmode;
+            comboBoxVid.Enabled = OCmode;
 
             ToolTip toolTip = new ToolTip();
             toolTip.SetToolTip(comboBoxCore, "All physical cores are listed. The app can't enumerate active cores only.");
@@ -114,12 +119,21 @@ namespace ZenStates.Components
             }
         }
 
-        public bool Changed
+        public bool OCmode
         {
-            get => vid != Vid || multi != Multi || selectedCoreIndex != SelectedCoreIndex;
+            get => checkBoxOCModeEnabled.Checked;
+            set
+            {
+                checkBoxOCModeEnabled.Checked = value;
+                ocmode = value;
+            }
         }
 
-        public bool VidChanged  { get => vid != Vid; }
+        public bool Changed => vid != Vid || multi != Multi || selectedCoreIndex != SelectedCoreIndex;
+
+        public bool ModeChanged => ocmode != OCmode;
+
+        public bool VidChanged => vid != Vid;
 
         public void Reset()
         {
@@ -128,6 +142,7 @@ namespace ZenStates.Components
 
             Vid = vid;
             Multi = multi;
+            OCmode = ocmode;
             comboBoxCore.SelectedIndex = selectedCoreIndex;
         }
 
@@ -135,8 +150,16 @@ namespace ZenStates.Components
         {
             vid = Vid;
             multi = Multi;
+            ocmode = OCmode;
             selectedCoreIndex = comboBoxCore.SelectedIndex;
         }
         #endregion
+
+        private void CheckBoxOCModeEnabled_CheckedChanged(object sender, EventArgs e)
+        {
+            comboBoxCore.Enabled = OCmode;
+            comboBoxMulti.Enabled = OCmode;
+            comboBoxVid.Enabled = OCmode;
+        }
     }
 }

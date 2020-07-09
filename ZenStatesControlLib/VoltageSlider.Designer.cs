@@ -28,7 +28,6 @@
         /// </summary>
         private void InitializeComponent()
         {
-            this.components = new System.ComponentModel.Container();
             this.tableLayoutPanel1 = new System.Windows.Forms.TableLayoutPanel();
             this.buttonDec = new System.Windows.Forms.Button();
             this.buttonInc = new System.Windows.Forms.Button();
@@ -118,6 +117,7 @@
             this.AutoSize = true;
             this.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
             this.Controls.Add(this.tableLayoutPanel1);
+            this.DoubleBuffered = true;
             this.Name = "VoltageSlider";
             this.Size = new System.Drawing.Size(464, 30);
             this.tableLayoutPanel1.ResumeLayout(false);

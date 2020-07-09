@@ -1,0 +1,83 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{7E4DF921-CD4A-4511-9EB9-67BE955D603C}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <RootNamespace>ZenStatesControls</RootNamespace>
+    <AssemblyName>ZenStatesControls</AssemblyName>
+    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+    <Deterministic>true</Deterministic>
+    <TargetFrameworkProfile />
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="System" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Xml.Linq" />
+    <Reference Include="System.Data.DataSetExtensions" />
+    <Reference Include="Microsoft.CSharp" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Drawing" />
+    <Reference Include="System.Windows.Forms" />
+    <Reference Include="System.Xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Constants.cs" />
+    <Compile Include="CoreListItem.cs" />
+    <Compile Include="CustomListItem.cs" />
+    <Compile Include="FrequencyListItem.cs" />
+    <Compile Include="ManualOverclockItem.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="ManualOverclockItem.Designer.cs">
+      <DependentUpon>ManualOverclockItem.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="PstateItem.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="PstateItem.Designer.cs">
+      <DependentUpon>PstateItem.cs</DependentUpon>
+    </Compile>
+    <Compile Include="VoltageSlider.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="VoltageSlider.Designer.cs">
+      <DependentUpon>VoltageSlider.cs</DependentUpon>
+    </Compile>
+    <Service Include="{94E38DFF-614B-4cbd-B67C-F211BB35CE8B}" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="ManualOverclockItem.resx">
+      <DependentUpon>ManualOverclockItem.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="PstateItem.resx">
+      <DependentUpon>PstateItem.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="VoltageSlider.resx">
+      <DependentUpon>VoltageSlider.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+</Project>

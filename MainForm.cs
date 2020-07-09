@@ -1,35 +1,36 @@
-using OpenLibSys;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Linq;
 using System.Management;
-using System.Threading;
 using System.Windows.Forms;
+using ZenStates.Components;
 using ZenStates.Utils;
 
 namespace ZenStates
 {
     public partial class AppWindow : Form
     {
+        //TODO: TlbCacheDis, MSRC001_1004
         // MSR
-        const uint MSR_PStateCurLim     = 0xC0010061; // [6:4] PstateMaxVal
-        const uint MSR_PStateStat       = 0xC0010063; // [2:0] CurPstate
-        const uint MSR_PStateDef0       = 0xC0010064; // [63] PstateEn [21:14] CpuVid [13:8] CpuDfsId [7:0] CpuFid
-        const uint MSR_PMGT_MISC        = 0xC0010292; // [32] PC6En
-        const uint MSR_PSTATE_BOOST     = 0xC0010293;
-        const uint MSR_CSTATE_CONFIG    = 0xC0010296; // [22] CCR2_CC6EN [14] CCR1_CC6EN [6] CCR0_CC6EN
-        const uint MSR_HWCR             = 0xC0010015;
-        const uint MSR_PERFBIAS1        = 0xC0011020;
-        const uint MSR_PERFBIAS2        = 0xC0011021;
-        const uint MSR_PERFBIAS3        = 0xC001102B;
-        const uint MSR_PERFBIAS4        = 0xC001102D;
-        const uint MSR_PERFBIAS5        = 0xC0011093;
+        private const uint MSR_PStateCurLim     = 0xC0010061; // [6:4] PstateMaxVal
+        private const uint MSR_PStateStat       = 0xC0010063; // [2:0] CurPstate
+        private const uint MSR_PStateDef0       = 0xC0010064; // [63] PstateEn [21:14] CpuVid [13:8] CpuDfsId [7:0] CpuFid
+        private const uint MSR_PMGT_MISC        = 0xC0010292; // [32] PC6En
+        private const uint MSR_PSTATE_BOOST     = 0xC0010293;
+        private const uint MSR_CSTATE_CONFIG    = 0xC0010296; // [22] CCR2_CC6EN [14] CCR1_CC6EN [6] CCR0_CC6EN
+        private const uint MSR_HWCR             = 0xC0010015;
+        private const uint MSR_PERFBIAS1        = 0xC0011020;
+        private const uint MSR_PERFBIAS2        = 0xC0011021;
+        private const uint MSR_PERFBIAS3        = 0xC001102B;
+        private const uint MSR_PERFBIAS4        = 0xC001102D;
+        private const uint MSR_PERFBIAS5        = 0xC0011093;
 
         // Thermal
-        const uint THM_TCON_CUR_TMP     = 0x00059800;
-        const uint THM_TCON_PROCHOT     = 0x00059804;
-        const uint THM_TCON_THERM_TRIP  = 0x00059808;
+        private const uint THM_TCON_CUR_TMP     = 0x00059800;
+        private const uint THM_TCON_PROCHOT     = 0x00059804;
+        private const uint THM_TCON_THERM_TRIP  = 0x00059808;
 
         private enum PerfBias { Auto = 0, None, Cinebench_R11p5, Cinebench_R15, Geekbench_3, SuperPi };
 
@@ -43,19 +44,21 @@ namespace ZenStates
             { PerfBias.SuperPi, "SuperPi" }
         };
 
-        private readonly Ols ols;
-        private SMU.CPUType cpuType = SMU.CPUType.Unsupported;
-        private SMU smu;
-        private SystemInfo si;
+        private readonly SystemInfo si;
+        private readonly Ops ops;
         private BackgroundWorker backgroundWorker;
         //private BindingSource siBindingSource;
-        private readonly Mutex hMutexPci;
-        private Components.PstateItem[] PstateItems;
+        private PstateItem[] PstateItems;
         private int NUM_PSTATES = 3; // default set to 3, real active states are checked on a later stage
 
         private void HandleError(string message, string title = "Error")
         {
             MessageBox.Show(message, title, MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
+
+        private void SetStatus(string status)
+        {
+            statusText.Text = status;
         }
 
         private void RunBackgroundTask(DoWorkEventHandler task, RunWorkerCompletedEventHandler completedHandler)
@@ -73,256 +76,14 @@ namespace ZenStates
             }
         }
 
-
-        private bool SmuWriteReg(uint addr, uint data)
-        {
-            if (ols.WritePciConfigDwordEx(smu.SMU_PCI_ADDR, smu.SMU_OFFSET_ADDR, addr) == 1)
-            {
-                return ols.WritePciConfigDwordEx(smu.SMU_PCI_ADDR, smu.SMU_OFFSET_DATA, data) == 1;
-            }
-            return false;
-        }
-
-        private bool SmuReadReg(uint addr, ref uint data)
-        {
-            if (ols.WritePciConfigDwordEx(smu.SMU_PCI_ADDR, smu.SMU_OFFSET_ADDR, addr) == 1)
-            {
-                return ols.ReadPciConfigDwordEx(smu.SMU_PCI_ADDR, smu.SMU_OFFSET_DATA, ref data) == 1;
-            }
-            return false;
-        }
-
-        private bool SmuWaitDone()
-        {
-            bool res = false;
-            ushort timeout = 1000;
-            uint data = 0;
-            while ((!res || data != 1) && --timeout > 0)
-            {
-                res = SmuReadReg(smu.SMU_ADDR_RSP, ref data);
-            }
-
-            if (timeout == 0 || data != 1) res = false;
-
-            return res;
-        }
-
-        private bool SmuRead(uint msg, ref uint data)
-        {
-            if (SmuWriteReg(smu.SMU_ADDR_RSP, 0))
-            {
-                if (SmuWriteReg(smu.SMU_ADDR_MSG, msg))
-                {
-                    if (SmuWaitDone())
-                    {
-                        return SmuReadReg(smu.SMU_ADDR_ARG, ref data);
-                    }
-                }
-            }
-
-            return false;
-        }
-
-        private bool SmuWrite(uint msg, uint value)
-        {
-            bool res = false;
-            // Mutex
-            if (hMutexPci.WaitOne(5000))
-            {
-                // Clear response
-                if (SmuWriteReg(smu.SMU_ADDR_RSP, 0))
-                {
-                    // Write data
-                    if (SmuWriteReg(smu.SMU_ADDR_ARG, value))
-                    {
-                        SmuWriteReg(smu.SMU_ADDR_ARG + 4, 0);
-                    }
-
-                    // Send message
-                    if (SmuWriteReg(smu.SMU_ADDR_MSG, msg))
-                    {
-                        res = SmuWaitDone();
-                    }
-                }
-            }
-
-            hMutexPci.ReleaseMutex();
-            return res;
-        }
-
-        private uint ReadDword(uint value)
-        {
-            ols.WritePciConfigDword(smu.SMU_PCI_ADDR, (byte)smu.SMU_OFFSET_ADDR, value);
-            return ols.ReadPciConfigDword(smu.SMU_PCI_ADDR, (byte)smu.SMU_OFFSET_DATA);
-        }
-
-
-
-
-        private void CheckOlsStatus()
-        {
-            // Check support library status
-            switch (ols.GetStatus())
-            {
-                case (uint)Ols.Status.NO_ERROR:
-                    break;
-                case (uint)Ols.Status.DLL_NOT_FOUND:
-                    throw new ApplicationException("WinRing DLL_NOT_FOUND");
-                case (uint)Ols.Status.DLL_INCORRECT_VERSION:
-                    throw new ApplicationException("WinRing DLL_INCORRECT_VERSION");
-                case (uint)Ols.Status.DLL_INITIALIZE_ERROR:
-                    throw new ApplicationException("WinRing DLL_INITIALIZE_ERROR");
-            }
-
-            // Check WinRing0 status
-            switch (ols.GetDllStatus())
-            {
-                case (uint)Ols.OlsDllStatus.OLS_DLL_NO_ERROR:
-                    break;
-                case (uint)Ols.OlsDllStatus.OLS_DLL_DRIVER_NOT_LOADED:
-                    throw new ApplicationException("WinRing OLS_DRIVER_NOT_LOADED");
-                case (uint)Ols.OlsDllStatus.OLS_DLL_UNSUPPORTED_PLATFORM:
-                    throw new ApplicationException("WinRing OLS_UNSUPPORTED_PLATFORM");
-                case (uint)Ols.OlsDllStatus.OLS_DLL_DRIVER_NOT_FOUND:
-                    throw new ApplicationException("WinRing OLS_DLL_DRIVER_NOT_FOUND");
-                case (uint)Ols.OlsDllStatus.OLS_DLL_DRIVER_UNLOADED:
-                    throw new ApplicationException("WinRing OLS_DLL_DRIVER_UNLOADED");
-                case (uint)Ols.OlsDllStatus.OLS_DLL_DRIVER_NOT_LOADED_ON_NETWORK:
-                    throw new ApplicationException("WinRing DRIVER_NOT_LOADED_ON_NETWORK");
-                case (uint)Ols.OlsDllStatus.OLS_DLL_UNKNOWN_ERROR:
-                    throw new ApplicationException("WinRing OLS_DLL_UNKNOWN_ERROR");
-            }
-        }
-
-        private uint GetCpuId()
-        {
-            uint eax = 0, ebx = 0, ecx = 0, edx = 0;
-            ols.CpuidPx(0x00000000, ref eax, ref ebx, ref ecx, ref edx, (UIntPtr)1);
-            if (ols.CpuidPx(0x00000001, ref eax, ref ebx, ref ecx, ref edx, (UIntPtr)1) == 1)
-            {
-                return eax;
-            }
-            return 0;
-        }
-
-        private uint GetPkgType()
-        {
-            uint eax = 0, ebx = 0, ecx = 0, edx = 0;
-            ols.CpuidPx(0x00000000, ref eax, ref ebx, ref ecx, ref edx, (UIntPtr)1);
-            if (ols.CpuidPx(0x80000001, ref eax, ref ebx, ref ecx, ref edx, (UIntPtr)1) == 1)
-            {
-                return ebx >> 28;
-            }
-            return 0;
-        }
-
-        private uint GetSmuVersion()
-        {
-            uint version = 0;
-            if (SmuRead(smu.SMU_MSG_GetSmuVersion, ref version))
-            {
-                return version;
-            }
-            return 0;
-        }
-
-        private uint GetPatchLevel()
-        {
-            uint eax = 0, edx = 0;
-            if (ols.RdmsrTx(0x8b, ref eax, ref edx, (UIntPtr)(1)) != 1)
-            {
-                return 0;
-            }
-            return eax;
-        }
-
-        private bool GetOcMode()
-        {
-            uint eax = 0;
-            uint edx = 0;
-
-            if (ols.RdmsrTx(MSR_PStateStat, ref eax, ref edx, (UIntPtr)(1)) == 1)
-            {
-                // Summit Ridge, Raven Ridge
-                return Convert.ToBoolean((eax >> 1) & 1);
-            }
-            return false;
-        }
-
         private void InitSystemInfo(object sender, DoWorkEventArgs e)
         {
-            si.CpuId = GetCpuId();
+            si.CpuId = ops.GetCpuId();
             si.ExtendedModel = ((si.CpuId & 0xff) >> 4) + ((si.CpuId >> 12) & 0xf0);
-            si.PackageType = GetPkgType();
-            si.PatchLevel = GetPatchLevel();
+            si.PackageType = ops.GetPkgType();
+            si.PatchLevel = ops.GetPatchLevel();
+            si.SmuVersion = ops.smu.Version;
 
-            // CPU Check. Compare family, model, ext family, ext model. Ignore stepping/revision
-            switch (si.CpuId/* & 0xFFFFFFF0*/)
-            {
-                case 0x00800F11: // CPU \ Zen \ Summit Ridge \ ZP - B0 \ 14nm
-                case 0x00800F00: // CPU \ Zen \ Summit Ridge \ ZP - A0 \ 14nm
-                    if (si.PackageType == 7)
-                        cpuType = SMU.CPUType.Threadripper;
-                    else
-                        cpuType = SMU.CPUType.SummitRidge;
-                    break;
-                case 0x00800F12:
-                    cpuType = SMU.CPUType.Naples;
-                    break;
-                case 0x00800F82: // CPU \ Zen + \ Pinnacle Ridge \ 12nm
-                    if (si.PackageType == 7)
-                        cpuType = SMU.CPUType.Colfax;
-                    else
-                        cpuType = SMU.CPUType.PinnacleRidge;
-                    break;
-                case 0x00810F81: // APU \ Zen + \ Picasso \ 12nm
-                    cpuType = SMU.CPUType.Picasso;
-                    break;
-                case 0x00810F00: // APU \ Zen \ Raven Ridge \ RV - A0 \ 14nm
-                case 0x00810F10: // APU \ Zen \ Raven Ridge \ 14nm
-                case 0x00820F00: // APU \ Zen \ Raven Ridge 2 \ RV2 - A0 \ 14nm
-                    cpuType = SMU.CPUType.RavenRidge;
-                    break;
-                case 0x00870F10: // CPU \ Zen2 \ Matisse \ MTS - B0 \ 7nm + 14nm I/ O Die
-                case 0x00870F00: // CPU \ Zen2 \ Matisse \ MTS - A0 \ 7nm + 14nm I/ O Die
-                    cpuType = SMU.CPUType.Matisse;
-                    break;
-                case 0x00830F00:
-                case 0x00830F10: // CPU \ Epyc 2 \ Rome \ Treadripper 2 \ Castle Peak 7nm
-                    if (si.PackageType == 7)
-                        cpuType = SMU.CPUType.Rome;
-                    else
-                        cpuType = SMU.CPUType.CastlePeak;
-                    break;
-                case 0x00850F00: // Subor Z+
-                    cpuType = SMU.CPUType.Fenghuang;
-                    break;
-                case 0x00860F01: // APU \ Renoir
-                    cpuType = SMU.CPUType.Renoir;
-                    break;
-                default:
-                    cpuType = SMU.CPUType.Unsupported;
-/*#if DEBUG
-                    cpuType = SMU.CPUType.DEBUG;
-#endif*/
-                    break;
-            }
-
-            if (cpuType == SMU.CPUType.Unsupported)
-            {
-                HandleError("CPU is not supported");
-                Application.Exit();
-            }
-
-            // SMU Init
-            smu = GetMaintainedSettings.GetByType(cpuType);
-            smu.Version = GetSmuVersion();
-            if (smu.Version == 0)
-            {
-                HandleError("Error getting SMU version!\n" +
-                    "Default SMU addresses are not responding to commands.");
-            }
-            si.SmuVersion = smu.Version;
 
             ManagementObjectSearcher searcher = new ManagementObjectSearcher("SELECT * FROM Win32_BaseBoard");
             foreach (ManagementObject obj in searcher.Get())
@@ -361,6 +122,8 @@ namespace ZenStates
             if (searcher != null) searcher.Dispose();
 
             si.Threads = Convert.ToInt32(Environment.GetEnvironmentVariable("NUMBER_OF_PROCESSORS"));
+
+            manualOverclockItem.Cores = si.PhysicalCoreCount;
         }
 
         private void PopulateInfoTab()
@@ -375,14 +138,14 @@ namespace ZenStates
             mbModelInfoLabel.Text = si.MbName;
             biosInfoLabel.Text = si.BiosVersion;
             smuInfoLabel.Text = si.GetSmuVersionString();
-            cpuIdLabel.Text = $"{si.GetCpuIdString()} ({cpuType.ToString()})";
+            cpuIdLabel.Text = $"{si.GetCpuIdString()} ({ops.cpuType})";
             microcodeInfoLabel.Text = Convert.ToString(si.PatchLevel, 16).ToUpper();
         }
 
         private void InitSystemInfo_Complete(object sender, RunWorkerCompletedEventArgs e)
         {
             // PopulatePstates();
-            InitManualOc();
+            // InitManualOc();
 
             // Resize main form
             int pstatesHeight = groupBoxPstates.Height;
@@ -399,48 +162,107 @@ namespace ZenStates
             comboBoxPerfBias.DisplayMember = "Value";
 
             PopulateInfoTab();
+            SetStatus("Ready.");
 
-            this.Enabled = true;
+            //Enabled = true;
 
-            MessageBox.Show($"OC Mode: {GetOcMode()}");
-            /*
+            /*MessageBox.Show($"OC Mode: {ops.GetOcMode()}");
+
             MessageBox.Show($"Fused: {si.FusedCoreCount}\n" +
                 $"Thread: {si.Threads}\n" +
                 $"SMT: {si.SMT}\n" +
                 $"CCD: {si.CCDCount}\n" +
                 $"CCX: {si.CCXCount}\n" +
-                $"Active cores in CCX : {si.NumCoresInCCX}");
-            */
+                $"Active cores in CCX : {si.NumCoresInCCX}");*/
+
         }
 
-        // TODO: Detect OC Mode and return PState0 multi if on auto
-        private double GetCurrentMulti()
+        private double GetCurrentMulti(bool ocmode = false)
         {
-            var msr = MSR_PSTATE_BOOST;
+            uint msr = ocmode ? MSR_PSTATE_BOOST : MSR_PStateDef0;
             uint eax = default, edx = default;
 
-            if (ols.RdmsrTx(msr, ref eax, ref edx, (UIntPtr)(1)) != 1)
+            if (ops.ols.RdmsrTx(msr, ref eax, ref edx, (UIntPtr)(1)) != 1)
             {
                 HandleError("Error getting current multiplier!");
                 return 0;
             }
 
-            return 25 * (eax & 0xFF) / (12.5 * (eax >> 8 & 0x3F));
+            double multi = 25 * (eax & 0xFF) / (12.5 * (eax >> 8 & 0x3F));
+
+            // OC mode only supports multipliers in 0.25 increment
+            return Math.Round(multi * 4, MidpointRounding.ToEven) / 4;
         }
 
-        // TODO: Detect OC Mode and return PState0 vid if on auto
-        private byte GetCurrentVid()
+        private byte GetCurrentVid(bool ocmode = false)
         {
-            var msr = MSR_PSTATE_BOOST;
+            uint msr = ocmode ? MSR_PSTATE_BOOST : MSR_PStateDef0;
             uint eax = default, edx = default;
 
-            if (ols.RdmsrTx(msr, ref eax, ref edx, (UIntPtr)(1)) != 1)
+            if (ops.ols.RdmsrTx(msr, ref eax, ref edx, (UIntPtr)(1)) != 1)
             {
                 HandleError("Error getting current VID!");
                 return 0;
             }
 
             return (byte)(eax >> 14 & 0xFF);
+        }
+
+        private bool GetCPB()
+        {
+            uint eax = 0, edx = 0;
+            if (ops.ols.Rdmsr(MSR_HWCR, ref eax, ref edx) != 1)
+            {
+                HandleError("Error getting CPB MSR!");
+                return false;
+            }
+
+            return ops.GetBits(eax, 25, 1) == 0;
+        }
+
+        private void SetCPB(bool en) 
+        {
+            uint eax = 0, edx = 0;
+            bool res = (ops.ols.Rdmsr(MSR_HWCR, ref eax, ref edx) == 1);
+
+            if (res)
+            {
+                eax = ops.SetBits(eax, 25, 1, en ? 0 : 1U);
+                res = (ops.ols.Wrmsr(MSR_HWCR, eax, edx) == 1);
+            }
+
+            if (!res)
+                HandleError("Error setting CPB!");
+        }
+
+        // Package C6-State
+        private bool GetC6Package()
+        {
+            uint eax = default, edx = default;
+            if (ops.ols.Rdmsr(MSR_PMGT_MISC, ref eax, ref edx) != 1)
+            {
+                HandleError("Error getting Package C6-State MSR!");
+                return false;
+            }
+
+            return ops.GetBits(eax, 25, 1) == 0;
+        }
+
+        // Core C6-State
+        private bool GetC6Core()
+        {
+            uint eax = default, edx = default;
+            if (ops.ols.Rdmsr(MSR_CSTATE_CONFIG, ref eax, ref edx) != 1)
+            {
+                HandleError("Error getting Core C6-State MSR!");
+                return false;
+            }
+
+            bool CCR0_CC6EN = Convert.ToBoolean(ops.GetBits(eax, 6, 1));
+            bool CCR1_CC6EN = Convert.ToBoolean(ops.GetBits(eax, 14, 1));
+            bool CCR2_CC6EN = Convert.ToBoolean(ops.GetBits(eax, 22, 1));
+
+            return CCR0_CC6EN && CCR1_CC6EN && CCR2_CC6EN;
         }
 
 
@@ -450,14 +272,14 @@ namespace ZenStates
         {
             uint eax = default, edx = default;
 
-            ols.Rdmsr(MSR_PStateCurLim, ref eax, ref edx);
+            ops.ols.Rdmsr(MSR_PStateCurLim, ref eax, ref edx);
             NUM_PSTATES = Convert.ToInt32((eax >> 4) & 0x7) + 1;
-            PstateItems = new Components.PstateItem[NUM_PSTATES];
+            PstateItems = new PstateItem[NUM_PSTATES];
 
             for (int i = 0; i < NUM_PSTATES; i++)
             {
-                ols.Rdmsr(MSR_PStateDef0 + Convert.ToUInt32(i), ref eax, ref edx);
-                PstateItems[i] = new Components.PstateItem
+                ops.ols.Rdmsr(MSR_PStateDef0 + Convert.ToUInt32(i), ref eax, ref edx);
+                PstateItems[i] = new PstateItem
                 {
                     Label = $"P{i}",
                     Pstate = (ulong)edx << 32 | eax
@@ -466,11 +288,33 @@ namespace ZenStates
             }
         }
 
+        private void RefreshState()
+        {
+            uint eax = default, edx = default;
+
+            InitManualOc();
+
+            for (int i = 0; i < NUM_PSTATES; i++)
+            {
+                ops.ols.Rdmsr(MSR_PStateDef0 + Convert.ToUInt32(i), ref eax, ref edx);
+                PstateItems[i].Pstate = (ulong)edx << 32 | eax;
+            }
+        }
+
         private void InitManualOc()
         {
-            manualOverclockItem.Vid = GetCurrentVid();
-            manualOverclockItem.Multi = GetCurrentMulti();
-            manualOverclockItem.Cores = si.PhysicalCoreCount;
+            bool ocmode = ops.GetOcMode();
+            manualOverclockItem.OCmode = ocmode;
+            manualOverclockItem.Vid = GetCurrentVid(ocmode);
+            manualOverclockItem.Multi = GetCurrentMulti(ocmode);
+            // manualOverclockItem.Cores = si.PhysicalCoreCount; // si.FusedCoreCount;
+        }
+
+        private void InitPowerTab()
+        {
+            checkBoxCPB.Checked = GetCPB();
+            checkBoxC6Core.Checked = GetC6Core();
+            checkBoxC6Package.Checked = GetC6Package();
         }
 
         // P0 fix C001_0015 HWCR[21]=1
@@ -479,17 +323,18 @@ namespace ZenStates
         {
             uint eax = 0, edx = 0;
 
-            if (ols.Rdmsr(MSR_HWCR, ref eax, ref edx) != -1)
+            if (ops.ols.Rdmsr(MSR_HWCR, ref eax, ref edx) != -1)
             {
                 eax |= 0x200000;
-                return ols.Wrmsr(MSR_HWCR, eax, edx) != -1;
+                return ops.ols.Wrmsr(MSR_HWCR, eax, edx) != -1;
             }
             return false;
         }
 
-        private bool ApplyFrequencyAllCoreSetting(int frequency)
+        private bool SetFrequencyAllCore(int frequency)
         {
-            if (!SmuWrite(smu.SMU_MSG_SetOverclockFrequencyAllCores, Convert.ToUInt32(frequency)))
+            // TODO: Add Manual OC mode
+            if (!ops.SmuWrite(ops.smu.SMU_MSG_SetOverclockFrequencyAllCores, Convert.ToUInt32(frequency)))
             {
                 HandleError("Error setting frequency!");
                 return false;
@@ -497,9 +342,9 @@ namespace ZenStates
             return true;
         }
 
-        private bool ApplyFrequencySingleCoreSetting(int mask, int frequency)
+        private bool SetFrequencySingleCore(int mask, int frequency)
         {
-            if (!SmuWrite(smu.SMU_MSG_SetOverclockFrequencyPerCore, Convert.ToUInt32(mask | frequency & 0xFFFFF)))
+            if (!ops.SmuWrite(ops.smu.SMU_MSG_SetOverclockFrequencyPerCore, Convert.ToUInt32(mask | frequency & 0xFFFFF)))
             {
                 HandleError("Error setting frequency!");
                 return false;
@@ -507,9 +352,9 @@ namespace ZenStates
             return true;
         }
 
-        private bool ApplyOCVid(byte vid)
+        private bool SetOCVid(byte vid)
         {
-            if (!SmuWrite(smu.SMU_MSG_SetOverclockCpuVid, Convert.ToUInt32(vid)))
+            if (!ops.SmuWrite(ops.smu.SMU_MSG_SetOverclockCpuVid, Convert.ToUInt32(vid)))
             {
                 HandleError("Error setting CPU Overclock VID!");
                 return false;
@@ -517,30 +362,41 @@ namespace ZenStates
             return true;
         }
 
+        private bool SetOcMode(bool enabled)
+        {
+            uint cmd = enabled ? ops.smu.SMU_MSG_EnableOcMode : ops.smu.SMU_MSG_DisableOcMode;
+            if (!ops.SmuWrite(cmd, 0U))
+            {
+                HandleError("Error setting OC mode!");
+                return false;
+            }
+            return true;
+        }
+
         private void ApplyManualOcSettings()
         {
-            var item = manualOverclockItem;
-
-            if (!item.Changed) return;
-
             bool ret = false;
-
-            if (item.VidChanged)
-                ApplyOCVid(item.Vid);
-
-
+            var item = manualOverclockItem;
             int frequency = (int)(item.Multi * 100.00);
+
+            SetOCVid(item.Vid);
 
             // All cores
             if (item.AllCores)
-                ret = ApplyFrequencyAllCoreSetting(frequency);
-            else if (ApplyFrequencyAllCoreSetting(550))
-                ret = ApplyFrequencySingleCoreSetting(item.CoreMask, frequency);
+                ret = SetFrequencyAllCore(frequency);
+            else if (SetFrequencyAllCore(550))
+                ret = SetFrequencySingleCore(item.CoreMask, frequency);
 
             if (ret)
+            {
                 item.UpdateState();
+                SetStatus("OK.");
+            }
             else
+            {
                 item.Reset();
+                SetStatus("Error.");
+            }
         }
 
         private void ApplyPstates()
@@ -555,7 +411,7 @@ namespace ZenStates
                     uint eax = Convert.ToUInt32(item.Pstate & 0xFFFFFFFF);
                     uint edx = Convert.ToUInt32(item.Pstate >> 32);
 
-                    if (ols.Wrmsr(MSR_PStateDef0 + Convert.ToUInt32(i), eax, edx) != 1)
+                    if (ops.ols.Wrmsr(MSR_PStateDef0 + Convert.ToUInt32(i), eax, edx) != 1)
                     {
                         Console.WriteLine($"Could not update Pstate{i}");
                         item.Reset();
@@ -572,11 +428,11 @@ namespace ZenStates
             uint pb1_eax = 0, pb1_edx = 0, pb2_eax = 0, pb2_edx = 0, pb3_eax = 0, pb3_edx = 0, pb4_eax = 0, pb4_edx = 0, pb5_eax = 0, pb5_edx = 0;
 
             // Read current settings
-            if (ols.Rdmsr(MSR_PERFBIAS1, ref pb1_eax, ref pb1_edx) != 1) return false;
-            if (ols.Rdmsr(MSR_PERFBIAS2, ref pb2_eax, ref pb2_edx) != 1) return false;
-            if (ols.Rdmsr(MSR_PERFBIAS3, ref pb3_eax, ref pb3_edx) != 1) return false;
-            if (ols.Rdmsr(MSR_PERFBIAS4, ref pb4_eax, ref pb4_edx) != 1) return false;
-            if (ols.Rdmsr(MSR_PERFBIAS5, ref pb5_eax, ref pb5_edx) != 1) return false;
+            if (ops.ols.Rdmsr(MSR_PERFBIAS1, ref pb1_eax, ref pb1_edx) != 1) return false;
+            if (ops.ols.Rdmsr(MSR_PERFBIAS2, ref pb2_eax, ref pb2_edx) != 1) return false;
+            if (ops.ols.Rdmsr(MSR_PERFBIAS3, ref pb3_eax, ref pb3_edx) != 1) return false;
+            if (ops.ols.Rdmsr(MSR_PERFBIAS4, ref pb4_eax, ref pb4_edx) != 1) return false;
+            if (ops.ols.Rdmsr(MSR_PERFBIAS5, ref pb5_eax, ref pb5_edx) != 1) return false;
 
             // Clear by default
             pb1_eax &= 0xFFFFFFEF;
@@ -635,11 +491,11 @@ namespace ZenStates
             // Rewrite
             for (int i = 0; i < si.Threads; i++)
             {
-                if (ols.Wrmsr(MSR_PERFBIAS1, pb1_eax, pb1_edx) != 1) return false;
-                if (ols.Wrmsr(MSR_PERFBIAS2, pb2_eax, pb2_edx) != 1) return false;
-                if (ols.Wrmsr(MSR_PERFBIAS3, pb3_eax, pb3_edx) != 1) return false;
-                if (ols.Wrmsr(MSR_PERFBIAS4, pb4_eax, pb4_edx) != 1) return false;
-                if (ols.Wrmsr(MSR_PERFBIAS5, pb5_eax, pb5_edx) != 1) return false;
+                if (ops.ols.Wrmsr(MSR_PERFBIAS1, pb1_eax, pb1_edx) != 1) return false;
+                if (ops.ols.Wrmsr(MSR_PERFBIAS2, pb2_eax, pb2_edx) != 1) return false;
+                if (ops.ols.Wrmsr(MSR_PERFBIAS3, pb3_eax, pb3_edx) != 1) return false;
+                if (ops.ols.Wrmsr(MSR_PERFBIAS4, pb4_eax, pb4_edx) != 1) return false;
+                if (ops.ols.Wrmsr(MSR_PERFBIAS5, pb5_eax, pb5_edx) != 1) return false;
             }
 
             return true;
@@ -651,22 +507,40 @@ namespace ZenStates
         public AppWindow()
         {
             InitializeComponent();
-
-            ols = new Ols();
-            hMutexPci = new Mutex();
+            ops = new Ops();
             si = new SystemInfo();
+
             //siBindingSource = new BindingSource();
             ToolTip toolTip = new ToolTip();
 
-            this.Enabled = false;
+            //Enabled = false;
 
             trayMenuItemApp.Text = Application.ProductName + " " + Application.ProductVersion.Substring(0, Application.ProductVersion.LastIndexOf('.'));
 
             try
             {
-                CheckOlsStatus();
+                ops.CheckOlsStatus();
+
+                if (ops.cpuType == SMU.CPUType.Unsupported)
+                {
+                    HandleError("CPU is not supported");
+                    Application.Exit();
+                }
+
+                SetStatus("Initializing...");
+
+                if (ops.smu.Version == 0)
+                {
+                    HandleError("Error getting SMU version!\n" +
+                        "Default SMU addresses are not responding to commands.");
+                }
+
                 PopulatePstates();
+                InitManualOc();
+                InitPowerTab();
                 RunBackgroundTask(InitSystemInfo, InitSystemInfo_Complete);
+
+                //Enabled = true;
             }
             catch (ApplicationException ex)
             {
@@ -676,18 +550,37 @@ namespace ZenStates
             }
         }
 
-        private void buttonApply_Click(object sender, EventArgs e)
+        private void ButtonApply_Click(object sender, EventArgs e)
         {
             var selectedTab = tabControl1.SelectedTab;
 
             if (selectedTab == cpuTabOC)
             {
-                ApplyManualOcSettings();
-                ApplyPstates();
+                if (manualOverclockItem.ModeChanged) {
+                    if (SetOcMode(manualOverclockItem.OCmode))
+                    {
+                        manualOverclockItem.UpdateState();
+                    }
+                    else
+                    {
+                        manualOverclockItem.Reset();
+                        return;
+                    }
+                }
+
+                if (manualOverclockItem.OCmode)
+                    ApplyManualOcSettings();
+                else
+                    ApplyPstates();
             }
 
-            if (selectedTab == tabPerfBias)
+            if (selectedTab == tabTweaks)
                 ApplyPerfBias((PerfBias)comboBoxPerfBias.SelectedIndex);
+
+            if (selectedTab == tabPower)
+            {
+                SetCPB(checkBoxCPB.Checked);
+            }
         }
 
         private void MainForm_Resize(object sender, EventArgs e)
@@ -699,17 +592,61 @@ namespace ZenStates
             }
         }
 
-        private void notifyIcon_DoubleClick(object sender, EventArgs e)
+        private void NotifyIcon_DoubleClick(object sender, EventArgs e)
         {
             Show();
             WindowState = FormWindowState.Normal;
             trayIcon.Visible = false;
         }
 
-        private void trayMenuItemExit_Click(object sender, EventArgs e)
+        private void TrayMenuItemExit_Click(object sender, EventArgs e)
         {
             Dispose();
             Application.Exit();
+        }
+
+        static void MinimizeFootprint()
+        {
+            NativeMethods.EmptyWorkingSet(Process.GetCurrentProcess().Handle);
+        }
+
+        // Get rid of flicker on form when painting child user controls
+        int originalExStyle = -1;
+        bool enableFormLevelDoubleBuffering = false;
+
+        protected override CreateParams CreateParams
+        {
+            get
+            {
+                if (originalExStyle == -1)
+                    originalExStyle = base.CreateParams.ExStyle;
+
+                CreateParams cp = base.CreateParams;
+                if (enableFormLevelDoubleBuffering)
+                    cp.ExStyle |= 0x02000000;   // WS_EX_COMPOSITED
+                else
+                    cp.ExStyle = originalExStyle;
+
+                return cp;
+            }
+        }
+
+        private void TurnOffFormLevelDoubleBuffering()
+        {
+            enableFormLevelDoubleBuffering = false;
+            MinimizeBox = true;
+        }
+
+        private void AppWindow_Shown(object sender, EventArgs e)
+        {
+            //Show();
+            MinimizeFootprint();
+        }
+
+        private void ButtonRefresh_Click(object sender, EventArgs e)
+        {
+            RefreshState();
+            SetStatus("Refresh OK.");
         }
     }
 }
