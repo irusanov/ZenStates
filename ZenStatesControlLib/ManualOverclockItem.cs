@@ -5,11 +5,11 @@ namespace ZenStates.Components
 {
     public partial class ManualOverclockItem : UserControl
     {
-        private double multi;
-        private int cores;
-        private byte vid;
-        private int selectedCoreIndex;
-        private bool ocmode;
+        private double multi = Constants.MULTI_MIN;
+        private int cores = 0;
+        private byte vid = Constants.VID_MAX;
+        private int selectedCoreIndex = -1;
+        private bool ocmode = false;
 
         #region Private Methods
         private void PopulateFrequencyList(ComboBox.ObjectCollection l)
@@ -47,12 +47,7 @@ namespace ZenStates.Components
         public ManualOverclockItem()
         {
             InitializeComponent();
-            PopulateFrequencyList(comboBoxMulti.Items);
-            PopulateVidItems();
-
-            comboBoxCore.Enabled = OCmode;
-            comboBoxMulti.Enabled = OCmode;
-            comboBoxVid.Enabled = OCmode;
+            Reset();
 
             ToolTip toolTip = new ToolTip();
             toolTip.SetToolTip(comboBoxCore, "All physical cores are listed. The app can't enumerate active cores only.");
@@ -144,6 +139,10 @@ namespace ZenStates.Components
             Multi = multi;
             OCmode = ocmode;
             comboBoxCore.SelectedIndex = selectedCoreIndex;
+
+            comboBoxCore.Enabled = OCmode;
+            comboBoxMulti.Enabled = OCmode;
+            comboBoxVid.Enabled = OCmode;
         }
 
         public void UpdateState()

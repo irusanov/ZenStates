@@ -33,6 +33,7 @@ namespace ZenStates
         private const uint THM_TCON_THERM_TRIP  = 0x00059808;
 
         private enum PerfBias { Auto = 0, None, Cinebench_R11p5, Cinebench_R15, Geekbench_3, SuperPi };
+        private enum PerfEnh { Auto = 0, Default, Level1, Level2, Level3_OC, Level4_OC };
 
         private static readonly Dictionary<PerfBias, string> PerfBiasDict = new Dictionary<PerfBias, string>
         {
@@ -42,6 +43,16 @@ namespace ZenStates
             { PerfBias.Cinebench_R15, "Cinebench R15 / R20" },
             { PerfBias.Geekbench_3, "Geekbench 3 / AIDA64" },
             { PerfBias.SuperPi, "SuperPi" }
+        };
+
+        private static readonly Dictionary<PerfEnh, string> PerfEnhDict = new Dictionary<PerfEnh, string>
+        {
+            { PerfEnh.Auto, "Auto" },
+            { PerfEnh.Default, "Default" },
+            { PerfEnh.Level1, "Level 1" },
+            { PerfEnh.Level2, "Level 2" },
+            { PerfEnh.Level3_OC, "Level 3 (OC)" },
+            { PerfEnh.Level4_OC, "Level 4 (OC)" }
         };
 
         private readonly SystemInfo si;
@@ -83,7 +94,6 @@ namespace ZenStates
             si.PackageType = ops.GetPkgType();
             si.PatchLevel = ops.GetPatchLevel();
             si.SmuVersion = ops.smu.Version;
-
 
             ManagementObjectSearcher searcher = new ManagementObjectSearcher("SELECT * FROM Win32_BaseBoard");
             foreach (ManagementObject obj in searcher.Get())
@@ -160,6 +170,10 @@ namespace ZenStates
             comboBoxPerfBias.DataSource = PerfBiasDict.ToList();
             comboBoxPerfBias.ValueMember = "Key";
             comboBoxPerfBias.DisplayMember = "Value";
+
+            comboBoxPerfEnh.DataSource = PerfEnhDict.ToList();
+            comboBoxPerfEnh.ValueMember = "Key";
+            comboBoxPerfEnh.DisplayMember = "Value";
 
             PopulateInfoTab();
             SetStatus("Ready.");
@@ -238,14 +252,34 @@ namespace ZenStates
         // Package C6-State
         private bool GetC6Package()
         {
-            uint eax = default, edx = default;
+            uint eax = 0, edx = 0;
             if (ops.ols.Rdmsr(MSR_PMGT_MISC, ref eax, ref edx) != 1)
             {
                 HandleError("Error getting Package C6-State MSR!");
                 return false;
             }
 
-            return ops.GetBits(eax, 25, 1) == 0;
+            return ops.GetBits(edx, 0, 1) == 1;
+        }
+
+        private void SetC6Package(bool en)
+        {
+            uint eax = 0, edx = 0;
+            bool res = ops.ols.Rdmsr(MSR_PMGT_MISC, ref eax, ref edx) == 1;
+
+            if (res)
+            {
+                uint val = en ? 1U : 0;
+
+                edx = ops.SetBits(edx, 0, 1, val);
+                res = (ops.ols.Wrmsr(MSR_PMGT_MISC, eax, edx) == 1);
+            }
+
+            if (!res)
+            {
+                HandleError("Error setting Package C6-State!");
+                return;
+            }
         }
 
         // Core C6-State
@@ -254,7 +288,7 @@ namespace ZenStates
             uint eax = default, edx = default;
             if (ops.ols.Rdmsr(MSR_CSTATE_CONFIG, ref eax, ref edx) != 1)
             {
-                HandleError("Error getting Core C6-State MSR!");
+                HandleError("Error getting Core C6-State!");
                 return false;
             }
 
@@ -263,6 +297,29 @@ namespace ZenStates
             bool CCR2_CC6EN = Convert.ToBoolean(ops.GetBits(eax, 22, 1));
 
             return CCR0_CC6EN && CCR1_CC6EN && CCR2_CC6EN;
+        }
+
+        private void SetC6Core(bool en)
+        {
+            uint eax = 0, edx = 0;
+            bool res = ops.ols.Rdmsr(MSR_CSTATE_CONFIG, ref eax, ref edx) == 1;
+
+            if (res)
+            {
+                uint val = en ? 1U : 0;
+
+                eax = ops.SetBits(eax, 6, 1, val);
+                eax = ops.SetBits(eax, 14, 1, val);
+                eax = ops.SetBits(eax, 22, 1, val);
+
+                res = (ops.ols.Wrmsr(MSR_CSTATE_CONFIG, eax, edx) == 1);
+            }
+
+            if (!res)
+            {
+                HandleError("Error setting Core C6-State!");
+                return;
+            }
         }
 
 
@@ -524,7 +581,15 @@ namespace ZenStates
                 if (ops.cpuType == SMU.CPUType.Unsupported)
                 {
                     HandleError("CPU is not supported");
-                    Application.Exit();
+
+                    if (Application.MessageLoop)
+                    {
+                        Application.Exit();
+                    }
+                    else
+                    {
+                        Environment.Exit(1);
+                    }
                 }
 
                 SetStatus("Initializing...");
@@ -580,6 +645,8 @@ namespace ZenStates
             if (selectedTab == tabPower)
             {
                 SetCPB(checkBoxCPB.Checked);
+                SetC6Core(checkBoxC6Core.Checked);
+                SetC6Package(checkBoxC6Package.Checked);
             }
         }
 

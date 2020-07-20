@@ -43,6 +43,22 @@ namespace ZenStates
             this.tableLayoutPanel1 = new System.Windows.Forms.TableLayoutPanel();
             this.tabGPU = new System.Windows.Forms.TabPage();
             this.tabPower = new System.Windows.Forms.TabPage();
+            this.tableLayoutPanel9 = new System.Windows.Forms.TableLayoutPanel();
+            this.checkBoxCPB = new System.Windows.Forms.CheckBox();
+            this.checkBoxC6Core = new System.Windows.Forms.CheckBox();
+            this.checkBoxC6Package = new System.Windows.Forms.CheckBox();
+            this.groupBoxPBO = new System.Windows.Forms.GroupBox();
+            this.tableLayoutPanel10 = new System.Windows.Forms.TableLayoutPanel();
+            this.labelPPT = new System.Windows.Forms.Label();
+            this.labelEDC = new System.Windows.Forms.Label();
+            this.labelTDC = new System.Windows.Forms.Label();
+            this.labelScalar = new System.Windows.Forms.Label();
+            this.numericUpDownPPT = new System.Windows.Forms.NumericUpDown();
+            this.numericUpDownTDC = new System.Windows.Forms.NumericUpDown();
+            this.numericUpDownEDC = new System.Windows.Forms.NumericUpDown();
+            this.numericUpDownScalar = new System.Windows.Forms.NumericUpDown();
+            this.comboBoxPerfEnh = new System.Windows.Forms.ComboBox();
+            this.labelPerfEnh = new System.Windows.Forms.Label();
             this.tabTweaks = new System.Windows.Forms.TabPage();
             this.tableLayoutPanel8 = new System.Windows.Forms.TableLayoutPanel();
             this.groupBoxPerfBias = new System.Windows.Forms.GroupBox();
@@ -81,10 +97,6 @@ namespace ZenStates
             this.trayMenuItemExit = new System.Windows.Forms.ToolStripMenuItem();
             this.buttonUndo = new System.Windows.Forms.Button();
             this.manualOverclockItem = new ZenStates.Components.ManualOverclockItem();
-            this.tableLayoutPanel9 = new System.Windows.Forms.TableLayoutPanel();
-            this.checkBoxCPB = new System.Windows.Forms.CheckBox();
-            this.checkBoxC6Core = new System.Windows.Forms.CheckBox();
-            this.checkBoxC6Package = new System.Windows.Forms.CheckBox();
             this.tabControl1.SuspendLayout();
             this.cpuTabOC.SuspendLayout();
             this.tableLayoutPanel2.SuspendLayout();
@@ -92,6 +104,13 @@ namespace ZenStates
             this.groupBoxCpuFreq.SuspendLayout();
             this.tableLayoutPanel1.SuspendLayout();
             this.tabPower.SuspendLayout();
+            this.tableLayoutPanel9.SuspendLayout();
+            this.groupBoxPBO.SuspendLayout();
+            this.tableLayoutPanel10.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.numericUpDownPPT)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.numericUpDownTDC)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.numericUpDownEDC)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.numericUpDownScalar)).BeginInit();
             this.tabTweaks.SuspendLayout();
             this.tableLayoutPanel8.SuspendLayout();
             this.groupBoxPerfBias.SuspendLayout();
@@ -102,7 +121,6 @@ namespace ZenStates
             this.tableLayoutPanel6.SuspendLayout();
             this.tableLayoutPanel4.SuspendLayout();
             this.trayIconMenu.SuspendLayout();
-            this.tableLayoutPanel9.SuspendLayout();
             this.SuspendLayout();
             // 
             // tabControl1
@@ -195,16 +213,6 @@ namespace ZenStates
             this.groupBoxCpuFreq.TabIndex = 1;
             this.groupBoxCpuFreq.TabStop = false;
             this.groupBoxCpuFreq.Text = "Manual Overclock";
-            //
-            // manualOverclockItem
-            // 
-            this.manualOverclockItem.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
-            this.manualOverclockItem.Cores = 0;
-            this.manualOverclockItem.Location = new System.Drawing.Point(3, 3);
-            this.manualOverclockItem.Name = "manualOverclockItem";
-            this.manualOverclockItem.OCmode = false;
-            this.manualOverclockItem.Size = new System.Drawing.Size(267, 28);
-            this.manualOverclockItem.TabIndex = 1;
             // 
             // tableLayoutPanel1
             // 
@@ -242,6 +250,263 @@ namespace ZenStates
             this.tabPower.TabIndex = 2;
             this.tabPower.Text = "Power";
             this.tabPower.UseVisualStyleBackColor = true;
+            // 
+            // tableLayoutPanel9
+            // 
+            this.tableLayoutPanel9.ColumnCount = 1;
+            this.tableLayoutPanel9.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100F));
+            this.tableLayoutPanel9.Controls.Add(this.checkBoxCPB, 0, 1);
+            this.tableLayoutPanel9.Controls.Add(this.checkBoxC6Core, 0, 2);
+            this.tableLayoutPanel9.Controls.Add(this.checkBoxC6Package, 0, 3);
+            this.tableLayoutPanel9.Controls.Add(this.groupBoxPBO, 0, 4);
+            this.tableLayoutPanel9.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.tableLayoutPanel9.Location = new System.Drawing.Point(3, 3);
+            this.tableLayoutPanel9.Name = "tableLayoutPanel9";
+            this.tableLayoutPanel9.Padding = new System.Windows.Forms.Padding(4);
+            this.tableLayoutPanel9.RowCount = 6;
+            this.tableLayoutPanel9.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 8F));
+            this.tableLayoutPanel9.RowStyles.Add(new System.Windows.Forms.RowStyle());
+            this.tableLayoutPanel9.RowStyles.Add(new System.Windows.Forms.RowStyle());
+            this.tableLayoutPanel9.RowStyles.Add(new System.Windows.Forms.RowStyle());
+            this.tableLayoutPanel9.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 110F));
+            this.tableLayoutPanel9.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 100F));
+            this.tableLayoutPanel9.Size = new System.Drawing.Size(289, 196);
+            this.tableLayoutPanel9.TabIndex = 1;
+            // 
+            // checkBoxCPB
+            // 
+            this.checkBoxCPB.AutoSize = true;
+            this.checkBoxCPB.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.checkBoxCPB.Location = new System.Drawing.Point(7, 15);
+            this.checkBoxCPB.Name = "checkBoxCPB";
+            this.checkBoxCPB.Size = new System.Drawing.Size(275, 17);
+            this.checkBoxCPB.TabIndex = 0;
+            this.checkBoxCPB.Text = "Core Performance Boost";
+            this.checkBoxCPB.UseVisualStyleBackColor = true;
+            // 
+            // checkBoxC6Core
+            // 
+            this.checkBoxC6Core.AutoSize = true;
+            this.checkBoxC6Core.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.checkBoxC6Core.Location = new System.Drawing.Point(7, 38);
+            this.checkBoxC6Core.Name = "checkBoxC6Core";
+            this.checkBoxC6Core.Size = new System.Drawing.Size(275, 17);
+            this.checkBoxC6Core.TabIndex = 2;
+            this.checkBoxC6Core.Text = "Core C6-State";
+            this.checkBoxC6Core.UseVisualStyleBackColor = true;
+            // 
+            // checkBoxC6Package
+            // 
+            this.checkBoxC6Package.AutoSize = true;
+            this.checkBoxC6Package.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.checkBoxC6Package.Location = new System.Drawing.Point(7, 61);
+            this.checkBoxC6Package.Name = "checkBoxC6Package";
+            this.checkBoxC6Package.Size = new System.Drawing.Size(275, 17);
+            this.checkBoxC6Package.TabIndex = 3;
+            this.checkBoxC6Package.Text = "Package C6-State";
+            this.checkBoxC6Package.UseVisualStyleBackColor = true;
+            // 
+            // groupBoxPBO
+            // 
+            this.groupBoxPBO.Controls.Add(this.tableLayoutPanel10);
+            this.groupBoxPBO.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.groupBoxPBO.Location = new System.Drawing.Point(7, 84);
+            this.groupBoxPBO.Name = "groupBoxPBO";
+            this.groupBoxPBO.Size = new System.Drawing.Size(275, 104);
+            this.groupBoxPBO.TabIndex = 4;
+            this.groupBoxPBO.TabStop = false;
+            this.groupBoxPBO.Text = "PBO";
+            // 
+            // tableLayoutPanel10
+            // 
+            this.tableLayoutPanel10.ColumnCount = 5;
+            this.tableLayoutPanel10.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Absolute, 60F));
+            this.tableLayoutPanel10.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Absolute, 55F));
+            this.tableLayoutPanel10.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Absolute, 60F));
+            this.tableLayoutPanel10.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Absolute, 55F));
+            this.tableLayoutPanel10.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle());
+            this.tableLayoutPanel10.Controls.Add(this.labelPPT, 0, 1);
+            this.tableLayoutPanel10.Controls.Add(this.labelEDC, 0, 2);
+            this.tableLayoutPanel10.Controls.Add(this.labelTDC, 2, 1);
+            this.tableLayoutPanel10.Controls.Add(this.labelScalar, 2, 2);
+            this.tableLayoutPanel10.Controls.Add(this.numericUpDownPPT, 1, 1);
+            this.tableLayoutPanel10.Controls.Add(this.numericUpDownTDC, 3, 1);
+            this.tableLayoutPanel10.Controls.Add(this.numericUpDownEDC, 1, 2);
+            this.tableLayoutPanel10.Controls.Add(this.numericUpDownScalar, 3, 2);
+            this.tableLayoutPanel10.Controls.Add(this.comboBoxPerfEnh, 1, 0);
+            this.tableLayoutPanel10.Controls.Add(this.labelPerfEnh, 0, 0);
+            this.tableLayoutPanel10.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.tableLayoutPanel10.Location = new System.Drawing.Point(3, 16);
+            this.tableLayoutPanel10.Name = "tableLayoutPanel10";
+            this.tableLayoutPanel10.RowCount = 4;
+            this.tableLayoutPanel10.RowStyles.Add(new System.Windows.Forms.RowStyle());
+            this.tableLayoutPanel10.RowStyles.Add(new System.Windows.Forms.RowStyle());
+            this.tableLayoutPanel10.RowStyles.Add(new System.Windows.Forms.RowStyle());
+            this.tableLayoutPanel10.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 100F));
+            this.tableLayoutPanel10.Size = new System.Drawing.Size(269, 85);
+            this.tableLayoutPanel10.TabIndex = 0;
+            // 
+            // labelPPT
+            // 
+            this.labelPPT.AutoSize = true;
+            this.labelPPT.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.labelPPT.Location = new System.Drawing.Point(3, 27);
+            this.labelPPT.Name = "labelPPT";
+            this.labelPPT.Size = new System.Drawing.Size(54, 26);
+            this.labelPPT.TabIndex = 0;
+            this.labelPPT.Text = "PPT";
+            this.labelPPT.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
+            // 
+            // labelEDC
+            // 
+            this.labelEDC.AutoSize = true;
+            this.labelEDC.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.labelEDC.Location = new System.Drawing.Point(3, 53);
+            this.labelEDC.Name = "labelEDC";
+            this.labelEDC.Size = new System.Drawing.Size(54, 26);
+            this.labelEDC.TabIndex = 1;
+            this.labelEDC.Text = "EDC";
+            this.labelEDC.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
+            // 
+            // labelTDC
+            // 
+            this.labelTDC.AutoSize = true;
+            this.labelTDC.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.labelTDC.Location = new System.Drawing.Point(118, 27);
+            this.labelTDC.Name = "labelTDC";
+            this.labelTDC.Size = new System.Drawing.Size(54, 26);
+            this.labelTDC.TabIndex = 2;
+            this.labelTDC.Text = "TDC";
+            this.labelTDC.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
+            // 
+            // labelScalar
+            // 
+            this.labelScalar.AutoSize = true;
+            this.labelScalar.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.labelScalar.Location = new System.Drawing.Point(118, 53);
+            this.labelScalar.Name = "labelScalar";
+            this.labelScalar.Size = new System.Drawing.Size(54, 26);
+            this.labelScalar.TabIndex = 3;
+            this.labelScalar.Text = "Scalar";
+            this.labelScalar.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
+            // 
+            // numericUpDownPPT
+            // 
+            this.numericUpDownPPT.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            this.numericUpDownPPT.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.numericUpDownPPT.Location = new System.Drawing.Point(63, 30);
+            this.numericUpDownPPT.Maximum = new decimal(new int[] {
+            1000,
+            0,
+            0,
+            0});
+            this.numericUpDownPPT.Minimum = new decimal(new int[] {
+            1,
+            0,
+            0,
+            -2147483648});
+            this.numericUpDownPPT.Name = "numericUpDownPPT";
+            this.numericUpDownPPT.Size = new System.Drawing.Size(49, 20);
+            this.numericUpDownPPT.TabIndex = 4;
+            this.numericUpDownPPT.Value = new decimal(new int[] {
+            1,
+            0,
+            0,
+            -2147483648});
+            // 
+            // numericUpDownTDC
+            // 
+            this.numericUpDownTDC.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            this.numericUpDownTDC.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.numericUpDownTDC.Location = new System.Drawing.Point(178, 30);
+            this.numericUpDownTDC.Maximum = new decimal(new int[] {
+            1000,
+            0,
+            0,
+            0});
+            this.numericUpDownTDC.Minimum = new decimal(new int[] {
+            1,
+            0,
+            0,
+            -2147483648});
+            this.numericUpDownTDC.Name = "numericUpDownTDC";
+            this.numericUpDownTDC.Size = new System.Drawing.Size(49, 20);
+            this.numericUpDownTDC.TabIndex = 5;
+            this.numericUpDownTDC.Value = new decimal(new int[] {
+            1,
+            0,
+            0,
+            -2147483648});
+            // 
+            // numericUpDownEDC
+            // 
+            this.numericUpDownEDC.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            this.numericUpDownEDC.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.numericUpDownEDC.Location = new System.Drawing.Point(63, 56);
+            this.numericUpDownEDC.Maximum = new decimal(new int[] {
+            1000,
+            0,
+            0,
+            0});
+            this.numericUpDownEDC.Minimum = new decimal(new int[] {
+            1,
+            0,
+            0,
+            -2147483648});
+            this.numericUpDownEDC.Name = "numericUpDownEDC";
+            this.numericUpDownEDC.Size = new System.Drawing.Size(49, 20);
+            this.numericUpDownEDC.TabIndex = 6;
+            this.numericUpDownEDC.Value = new decimal(new int[] {
+            1,
+            0,
+            0,
+            -2147483648});
+            // 
+            // numericUpDownScalar
+            // 
+            this.numericUpDownScalar.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            this.numericUpDownScalar.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.numericUpDownScalar.Location = new System.Drawing.Point(178, 56);
+            this.numericUpDownScalar.Maximum = new decimal(new int[] {
+            10,
+            0,
+            0,
+            0});
+            this.numericUpDownScalar.Minimum = new decimal(new int[] {
+            1,
+            0,
+            0,
+            -2147483648});
+            this.numericUpDownScalar.Name = "numericUpDownScalar";
+            this.numericUpDownScalar.Size = new System.Drawing.Size(49, 20);
+            this.numericUpDownScalar.TabIndex = 7;
+            this.numericUpDownScalar.Value = new decimal(new int[] {
+            1,
+            0,
+            0,
+            -2147483648});
+            // 
+            // comboBoxPerfEnh
+            // 
+            this.tableLayoutPanel10.SetColumnSpan(this.comboBoxPerfEnh, 3);
+            this.comboBoxPerfEnh.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.comboBoxPerfEnh.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
+            this.comboBoxPerfEnh.FormattingEnabled = true;
+            this.comboBoxPerfEnh.Location = new System.Drawing.Point(63, 3);
+            this.comboBoxPerfEnh.Name = "comboBoxPerfEnh";
+            this.comboBoxPerfEnh.Size = new System.Drawing.Size(164, 21);
+            this.comboBoxPerfEnh.TabIndex = 8;
+            // 
+            // labelPerfEnh
+            // 
+            this.labelPerfEnh.AutoSize = true;
+            this.labelPerfEnh.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.labelPerfEnh.Location = new System.Drawing.Point(3, 0);
+            this.labelPerfEnh.Name = "labelPerfEnh";
+            this.labelPerfEnh.Size = new System.Drawing.Size(54, 27);
+            this.labelPerfEnh.TabIndex = 9;
+            this.labelPerfEnh.Text = "PE Preset";
+            this.labelPerfEnh.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
             // 
             // tabTweaks
             // 
@@ -718,59 +983,17 @@ namespace ZenStates
             this.buttonUndo.Size = new System.Drawing.Size(75, 23);
             this.buttonUndo.TabIndex = 0;
             // 
-            // tableLayoutPanel9
+            // manualOverclockItem
             // 
-            this.tableLayoutPanel9.ColumnCount = 1;
-            this.tableLayoutPanel9.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100F));
-            this.tableLayoutPanel9.Controls.Add(this.checkBoxCPB, 0, 1);
-            this.tableLayoutPanel9.Controls.Add(this.checkBoxC6Core, 0, 2);
-            this.tableLayoutPanel9.Controls.Add(this.checkBoxC6Package, 0, 3);
-            this.tableLayoutPanel9.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.tableLayoutPanel9.Location = new System.Drawing.Point(3, 3);
-            this.tableLayoutPanel9.Name = "tableLayoutPanel9";
-            this.tableLayoutPanel9.Padding = new System.Windows.Forms.Padding(4);
-            this.tableLayoutPanel9.RowCount = 5;
-            this.tableLayoutPanel9.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 8F));
-            this.tableLayoutPanel9.RowStyles.Add(new System.Windows.Forms.RowStyle());
-            this.tableLayoutPanel9.RowStyles.Add(new System.Windows.Forms.RowStyle());
-            this.tableLayoutPanel9.RowStyles.Add(new System.Windows.Forms.RowStyle());
-            this.tableLayoutPanel9.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 100F));
-            this.tableLayoutPanel9.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 20F));
-            this.tableLayoutPanel9.Size = new System.Drawing.Size(289, 196);
-            this.tableLayoutPanel9.TabIndex = 1;
-            // 
-            // checkBoxCPB
-            // 
-            this.checkBoxCPB.AutoSize = true;
-            this.checkBoxCPB.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.checkBoxCPB.Location = new System.Drawing.Point(7, 15);
-            this.checkBoxCPB.Name = "checkBoxCPB";
-            this.checkBoxCPB.Size = new System.Drawing.Size(275, 17);
-            this.checkBoxCPB.TabIndex = 0;
-            this.checkBoxCPB.Text = "Core Performance Boost";
-            this.checkBoxCPB.UseVisualStyleBackColor = true;
-            // 
-            // checkBoxC6Core
-            // 
-            this.checkBoxC6Core.AutoSize = true;
-            this.checkBoxC6Core.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.checkBoxC6Core.Location = new System.Drawing.Point(7, 38);
-            this.checkBoxC6Core.Name = "checkBoxC6Core";
-            this.checkBoxC6Core.Size = new System.Drawing.Size(275, 17);
-            this.checkBoxC6Core.TabIndex = 2;
-            this.checkBoxC6Core.Text = "Core C6-State";
-            this.checkBoxC6Core.UseVisualStyleBackColor = true;
-            // 
-            // checkBoxC6Package
-            // 
-            this.checkBoxC6Package.AutoSize = true;
-            this.checkBoxC6Package.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.checkBoxC6Package.Location = new System.Drawing.Point(7, 61);
-            this.checkBoxC6Package.Name = "checkBoxC6Package";
-            this.checkBoxC6Package.Size = new System.Drawing.Size(275, 17);
-            this.checkBoxC6Package.TabIndex = 3;
-            this.checkBoxC6Package.Text = "Package C6-State";
-            this.checkBoxC6Package.UseVisualStyleBackColor = true;
+            this.manualOverclockItem.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
+            this.manualOverclockItem.Cores = 0;
+            this.manualOverclockItem.Location = new System.Drawing.Point(3, 3);
+            this.manualOverclockItem.Multi = 4D;
+            this.manualOverclockItem.Name = "manualOverclockItem";
+            this.manualOverclockItem.OCmode = false;
+            this.manualOverclockItem.Size = new System.Drawing.Size(267, 28);
+            this.manualOverclockItem.TabIndex = 1;
+            this.manualOverclockItem.Vid = ((byte)(232));
             // 
             // AppWindow
             // 
@@ -801,6 +1024,15 @@ namespace ZenStates
             this.groupBoxCpuFreq.PerformLayout();
             this.tableLayoutPanel1.ResumeLayout(false);
             this.tabPower.ResumeLayout(false);
+            this.tableLayoutPanel9.ResumeLayout(false);
+            this.tableLayoutPanel9.PerformLayout();
+            this.groupBoxPBO.ResumeLayout(false);
+            this.tableLayoutPanel10.ResumeLayout(false);
+            this.tableLayoutPanel10.PerformLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.numericUpDownPPT)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.numericUpDownTDC)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.numericUpDownEDC)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.numericUpDownScalar)).EndInit();
             this.tabTweaks.ResumeLayout(false);
             this.tableLayoutPanel8.ResumeLayout(false);
             this.tableLayoutPanel8.PerformLayout();
@@ -818,8 +1050,6 @@ namespace ZenStates
             this.tableLayoutPanel4.ResumeLayout(false);
             this.tableLayoutPanel4.PerformLayout();
             this.trayIconMenu.ResumeLayout(false);
-            this.tableLayoutPanel9.ResumeLayout(false);
-            this.tableLayoutPanel9.PerformLayout();
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -878,6 +1108,18 @@ namespace ZenStates
         private System.Windows.Forms.CheckBox checkBoxCPB;
         private System.Windows.Forms.CheckBox checkBoxC6Core;
         private System.Windows.Forms.CheckBox checkBoxC6Package;
+        private System.Windows.Forms.GroupBox groupBoxPBO;
+        private System.Windows.Forms.TableLayoutPanel tableLayoutPanel10;
+        private System.Windows.Forms.Label labelPPT;
+        private System.Windows.Forms.Label labelEDC;
+        private System.Windows.Forms.Label labelTDC;
+        private System.Windows.Forms.Label labelScalar;
+        private System.Windows.Forms.NumericUpDown numericUpDownPPT;
+        private System.Windows.Forms.NumericUpDown numericUpDownTDC;
+        private System.Windows.Forms.NumericUpDown numericUpDownEDC;
+        private System.Windows.Forms.NumericUpDown numericUpDownScalar;
+        private System.Windows.Forms.ComboBox comboBoxPerfEnh;
+        private System.Windows.Forms.Label labelPerfEnh;
     }
 }
 
