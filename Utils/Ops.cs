@@ -1,4 +1,4 @@
-﻿using OpenLibSys;
+using OpenLibSys;
 using System;
 using System.Threading;
 
@@ -210,7 +210,7 @@ namespace ZenStates.Utils
         public uint GetCpuId()
         {
             uint eax = 0, ebx = 0, ecx = 0, edx = 0;
-            if (ols.CpuidPx(0x00000001, ref eax, ref ebx, ref ecx, ref edx, (UIntPtr)1) == 1)
+            if (ols.Cpuid(0x00000001, ref eax, ref ebx, ref ecx, ref edx) == 1)
             {
                 return eax;
             }
@@ -220,11 +220,65 @@ namespace ZenStates.Utils
         public uint GetPkgType()
         {
             uint eax = 0, ebx = 0, ecx = 0, edx = 0;
-            if (ols.CpuidPx(0x80000001, ref eax, ref ebx, ref ecx, ref edx, (UIntPtr)1) == 1)
+            if (ols.Cpuid(0x80000001, ref eax, ref ebx, ref ecx, ref edx) == 1)
             {
                 return ebx >> 28;
             }
             return 0;
+        }
+
+        public int[] GetCoreCount()
+        {
+            uint eax = 0, ebx = 0, ecx = 0, edx = 0;
+            uint logicalCores = 0;
+            uint threadsPerCore = 1;
+            int[] count = { 0, 1 };
+
+            if (ols.Cpuid(0x00000001, ref eax, ref ebx, ref ecx, ref edx) == 1)
+            {
+                logicalCores = (ebx >> 16) & 0xFF;
+
+                if (ols.Cpuid(0x8000001E, ref eax, ref ebx, ref ecx, ref edx) == 1)
+                    threadsPerCore = ((ebx >> 8) & 0xF) + 1;
+            }
+            if (threadsPerCore != 0)
+                count[0] = (int)(logicalCores / threadsPerCore);
+
+            count[1] = (int)logicalCores;
+
+            return count;
+        }
+
+        private string GetStringPart(uint val)
+        {
+            return val != 0 ? Convert.ToChar(val).ToString() : "";
+        }
+
+        private string IntToStr(uint val)
+        {
+            uint part1 = val & 0xff;
+            uint part2 = val >> 8 & 0xff;
+            uint part3 = val >> 16 & 0xff;
+            uint part4 = val >> 24 & 0xff;
+
+            return string.Format("{0}{1}{2}{3}", GetStringPart(part1), GetStringPart(part2), GetStringPart(part3), GetStringPart(part4));
+        }
+
+        public string GetCpuName()
+        {
+            string model = "";
+            uint eax = 0, ebx = 0, ecx = 0, edx = 0;
+
+            if (ols.Cpuid(0x80000002, ref eax, ref ebx, ref ecx, ref edx) == 1)
+                model = model + IntToStr(eax) + IntToStr(ebx) + IntToStr(ecx) + IntToStr(edx);
+
+            if (ols.Cpuid(0x80000003, ref eax, ref ebx, ref ecx, ref edx) == 1)
+                model = model + IntToStr(eax) + IntToStr(ebx) + IntToStr(ecx) + IntToStr(edx);
+
+            if (ols.Cpuid(0x80000004, ref eax, ref ebx, ref ecx, ref edx) == 1)
+                model = model + IntToStr(eax) + IntToStr(ebx) + IntToStr(ecx) + IntToStr(edx);
+
+            return model.Trim();
         }
 
         public uint GetSmuVersion()
@@ -266,6 +320,12 @@ namespace ZenStates.Utils
                 return false;
             }
             return scalar == 0;
+        }
+
+        public bool IsProchotEnabled()
+        {
+            uint data = ReadDword(0x59804);
+            return (data & 1) == 1;
         }
 
         public void Dispose()

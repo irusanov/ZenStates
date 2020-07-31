@@ -10,6 +10,7 @@ namespace ZenStates.Components
         private byte vid = Constants.VID_MAX;
         private int selectedCoreIndex = -1;
         private bool ocmode = false;
+        private bool prochot = false;
 
         #region Private Methods
         private void PopulateFrequencyList(ComboBox.ObjectCollection l)
@@ -22,13 +23,27 @@ namespace ZenStates.Components
 
         private void PopulateCCDList(ComboBox.ObjectCollection l)
         {
+            l.Clear();
+
             for (int core = 0; core < Cores; ++core)
             {
                 Console.WriteLine($"ccd: {core / 8}, ccx: {core / 4}, core: {core}");
-                l.Add(new CoreListItem(core / 8, core / 4, core));
+                l.Add(new CoreListItem(core / 8, core / 4, core, string.Format("Core {0}", core)));
             }
 
             l.Add("All Cores");
+        }
+
+        private void PopulateCCXList(ComboBox.ObjectCollection l)
+        {
+            l.Clear();
+
+            for (int core = 0; core < Cores; core += 4)
+            {
+                l.Add(new CoreListItem(core / 8, core / 4, 0, string.Format("CCX {0}", core / 4)));
+            }
+
+            l.Add("All CCX");
         }
 
         private void PopulateVidItems()
@@ -53,6 +68,9 @@ namespace ZenStates.Components
             toolTip.SetToolTip(comboBoxCore, "All physical cores are listed. The app can't enumerate active cores only.");
         }
 
+        public event EventHandler SlowModeClicked;
+        public event EventHandler ProchotClicked;
+
         #region Properties
         public double Multi
         {
@@ -74,7 +92,6 @@ namespace ZenStates.Components
             set
             {
                 cores = value;
-                comboBoxCore.Items.Clear();
                 PopulateCCDList(comboBoxCore.Items);
                 comboBoxCore.SelectedIndex = value;
 
@@ -103,13 +120,13 @@ namespace ZenStates.Components
             }
         }
 
-        public bool AllCores { get => comboBoxCore.SelectedIndex == cores; }
+        public bool AllCores { get => comboBoxCore.SelectedIndex == comboBoxCore.Items.Count - 1; }
         public int CoreMask
         {
             get
             {
                 CoreListItem i = comboBoxCore.SelectedItem as CoreListItem;
-                Console.WriteLine($"SET - ccd: {i.CCD}, ccx: {i.CCX }, core: {i.CORE % 4 }");
+                // Console.WriteLine($"SET - ccd: {i.CCD}, ccx: {i.CCX }, core: {i.CORE % 4 }");
                 return ((i.CCD << 4 | i.CCX % 2 & 0xF) << 4 | i.CORE % 4 & 0xF) << 20;
             }
         }
@@ -124,11 +141,22 @@ namespace ZenStates.Components
             }
         }
 
+        public bool CCXMode => checkBoxCCX.Checked;
+
         public bool Changed => vid != Vid || multi != Multi || selectedCoreIndex != SelectedCoreIndex;
 
         public bool ModeChanged => ocmode != OCmode;
 
         public bool VidChanged => vid != Vid;
+
+        public bool ProchotEnabled {
+            get => prochot;
+            set
+            {
+                prochot = value; 
+                checkBoxProchot.Checked = value;
+            } 
+        }
 
         public void Reset()
         {
@@ -143,6 +171,12 @@ namespace ZenStates.Components
             comboBoxCore.Enabled = OCmode;
             comboBoxMulti.Enabled = OCmode;
             comboBoxVid.Enabled = OCmode;
+
+            checkBoxCCX.Enabled = OCmode;
+            checkBoxProchot.Enabled = OCmode;
+            checkBoxSlowMode.Enabled = OCmode;
+
+            checkBoxProchot.Checked = ProchotEnabled;
         }
 
         public void UpdateState()
@@ -159,6 +193,34 @@ namespace ZenStates.Components
             comboBoxCore.Enabled = OCmode;
             comboBoxMulti.Enabled = OCmode;
             comboBoxVid.Enabled = OCmode;
+
+            checkBoxCCX.Enabled = OCmode;
+            checkBoxProchot.Enabled = OCmode;
+            checkBoxSlowMode.Enabled = OCmode;
+        }
+
+        private void CheckBoxCCX_Click(object sender, EventArgs e)
+        {
+            if (checkBoxCCX.Checked)
+            {
+                PopulateCCXList(comboBoxCore.Items);
+            }
+            else
+            {
+                PopulateCCDList(comboBoxCore.Items);
+            }
+
+            comboBoxCore.SelectedIndex = comboBoxCore.Items.Count - 1;
+        }
+
+        private void CheckBoxSlowMode_Click(object sender, EventArgs e)
+        {
+            SlowModeClicked?.Invoke(checkBoxSlowMode, e);
+        }
+
+        private void CheckBoxProchot_Click(object sender, EventArgs e)
+        {
+            ProchotClicked?.Invoke(checkBoxProchot, e);
         }
     }
 }

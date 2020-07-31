@@ -8,16 +8,19 @@
 
     public int CORE { get; }
 
-    public CoreListItem(int ccd, int ccx, int core)
+    public string Display { get; }
+
+    public CoreListItem(int ccd, int ccx, int core, string display)
     {
       CCD = ccd;
       CCX = ccx;
       CORE = core;
+      Display = display;
     }
 
     public override string ToString()
     {
-      return string.Format("Core {0}", CORE);
+        return Display;
     }
   }
 }

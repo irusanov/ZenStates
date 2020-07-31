@@ -94,6 +94,10 @@ namespace ZenStates
             si.PackageType = ops.GetPkgType();
             si.PatchLevel = ops.GetPatchLevel();
             si.SmuVersion = ops.smu.Version;
+            int[] coreCount = ops.GetCoreCount();
+            si.FusedCoreCount = coreCount[0];
+            si.Threads = coreCount[1];
+            si.CpuName = ops.GetCpuName();
 
             ManagementObjectSearcher searcher = new ManagementObjectSearcher("SELECT * FROM Win32_BaseBoard");
             foreach (ManagementObject obj in searcher.Get())
@@ -103,35 +107,12 @@ namespace ZenStates
             }
             if (searcher != null) searcher.Dispose();
 
-            searcher = new ManagementObjectSearcher("SELECT * FROM Win32_Processor");
-            foreach (ManagementObject obj in searcher.Get())
-            {
-                var cpuName = (string)obj["Name"];
-                cpuName = cpuName.Replace("(R)", "");
-                cpuName = cpuName.Replace("(TM)", "");
-                cpuName = cpuName.Trim();
-                si.CpuName = cpuName;
-                si.FusedCoreCount = int.Parse(obj["NumberOfCores"].ToString());
-            }
-            if (searcher != null) searcher.Dispose();
-
-            /*
-            searcher = new ManagementObjectSearcher("SELECT * FROM Win32_ComputerSystem");
-            foreach (ManagementObject obj in searcher.Get())
-            {
-                si.FusedCoreCount = int.Parse(obj["NumberOfLogicalProcessors"].ToString());
-            }
-            if (searcher != null) searcher.Dispose();
-            */
-
             searcher = new ManagementObjectSearcher("SELECT * FROM Win32_BIOS");
             foreach (ManagementObject obj in searcher.Get())
             {
                 si.BiosVersion = ((string)obj["SMBIOSBIOSVersion"]).Trim();
             }
             if (searcher != null) searcher.Dispose();
-
-            si.Threads = Convert.ToInt32(Environment.GetEnvironmentVariable("NUMBER_OF_PROCESSORS"));
 
             manualOverclockItem.Cores = si.PhysicalCoreCount;
         }
@@ -196,7 +177,7 @@ namespace ZenStates
             uint msr = ocmode ? MSR_PSTATE_BOOST : MSR_PStateDef0;
             uint eax = default, edx = default;
 
-            if (ops.ols.RdmsrTx(msr, ref eax, ref edx, (UIntPtr)(1)) != 1)
+            if (ops.ols.Rdmsr(msr, ref eax, ref edx) != 1)
             {
                 HandleError("Error getting current multiplier!");
                 return 0;
@@ -213,7 +194,7 @@ namespace ZenStates
             uint msr = ocmode ? MSR_PSTATE_BOOST : MSR_PStateDef0;
             uint eax = default, edx = default;
 
-            if (ops.ols.RdmsrTx(msr, ref eax, ref edx, (UIntPtr)(1)) != 1)
+            if (ops.ols.Rdmsr(msr, ref eax, ref edx) != 1)
             {
                 HandleError("Error getting current VID!");
                 return 0;
@@ -356,6 +337,8 @@ namespace ZenStates
                 ops.ols.Rdmsr(MSR_PStateDef0 + Convert.ToUInt32(i), ref eax, ref edx);
                 PstateItems[i].Pstate = (ulong)edx << 32 | eax;
             }
+
+            SetStatus("Refresh OK.");
         }
 
         private void InitManualOc()
@@ -364,6 +347,7 @@ namespace ZenStates
             manualOverclockItem.OCmode = ocmode;
             manualOverclockItem.Vid = GetCurrentVid(ocmode);
             manualOverclockItem.Multi = GetCurrentMulti(ocmode);
+            manualOverclockItem.ProchotEnabled = ops.IsProchotEnabled();
             // manualOverclockItem.Cores = si.PhysicalCoreCount; // si.FusedCoreCount;
         }
 
@@ -403,10 +387,29 @@ namespace ZenStates
         {
             if (!ops.SmuWrite(ops.smu.SMU_MSG_SetOverclockFrequencyPerCore, Convert.ToUInt32(mask | frequency & 0xFFFFF)))
             {
-                HandleError("Error setting frequency!");
+                HandleError("Error setting core frequency!");
                 return false;
             }
             return true;
+        }
+
+        private bool SetFrequencyCCX(uint mask, int frequency)
+        {
+            // ((i.CCD << 4 | i.CCX % 2 & 0xF) << 4 | i.CORE % 4 & 0xF) << 20;
+            bool ret = true;
+
+            for (uint i = 0; i < 4; i++)
+            {
+                mask = ops.SetBits(mask, 20, 2, i);
+
+                if (!SetFrequencySingleCore((int)mask, frequency))
+                {
+                    HandleError("Error setting CCX frequency!");
+                    ret = false;
+                }
+            }
+
+            return ret;
         }
 
         private bool SetOCVid(byte vid)
@@ -419,15 +422,26 @@ namespace ZenStates
             return true;
         }
 
-        private bool SetOcMode(bool enabled)
+        private bool SetOcMode(bool enabled, uint arg = 0U)
         {
             uint cmd = enabled ? ops.smu.SMU_MSG_EnableOcMode : ops.smu.SMU_MSG_DisableOcMode;
-            if (!ops.SmuWrite(cmd, 0U))
+            if (!ops.SmuWrite(cmd, arg))
             {
                 HandleError("Error setting OC mode!");
                 return false;
             }
             return true;
+        }
+
+        private bool SetProchot(bool enabled = true)
+        {
+            uint arg = enabled ? 0U : 0x1000000;
+            bool res = SetOcMode(!enabled, arg);
+
+            // Re-enable OC mode
+            if (enabled) res = SetOcMode(true);
+
+            return res;
         }
 
         private void ApplyManualOcSettings()
@@ -441,6 +455,8 @@ namespace ZenStates
             // All cores
             if (item.AllCores)
                 ret = SetFrequencyAllCore(frequency);
+            else if (item.CCXMode)
+                ret = SetFrequencyCCX((uint)item.CoreMask, frequency);
             else if (SetFrequencyAllCore(550))
                 ret = SetFrequencySingleCore(item.CoreMask, frequency);
 
@@ -713,7 +729,27 @@ namespace ZenStates
         private void ButtonRefresh_Click(object sender, EventArgs e)
         {
             RefreshState();
-            SetStatus("Refresh OK.");
+        }
+
+        private void ManualOverclockItem_SlowModeClicked(object sender, EventArgs e)
+        {
+            CheckBox cb = sender as CheckBox;
+            if (cb.Checked)
+            {
+                SetFrequencyAllCore(550);
+                SetOCVid(0x98);
+            } 
+            else
+            {
+                ApplyManualOcSettings();
+            }
+        }
+
+        private void ManualOverclockItem_ProchotClicked(object sender, EventArgs e)
+        {
+            CheckBox cb = sender as CheckBox;
+            bool res = SetProchot(cb.Checked);
+            if (res) SetStatus("PROCHOT " + (cb.Checked ? "enabled." : "disabled."));
         }
     }
 }
