@@ -34,8 +34,8 @@ namespace ZenStates.Components
             this.comboBoxCore = new System.Windows.Forms.ComboBox();
             this.comboBoxVid = new System.Windows.Forms.ComboBox();
             this.checkBoxSlowMode = new System.Windows.Forms.CheckBox();
-            this.checkBoxCCX = new System.Windows.Forms.CheckBox();
             this.checkBoxProchot = new System.Windows.Forms.CheckBox();
+            this.comboBoxControlMode = new System.Windows.Forms.ComboBox();
             this.tableLayoutPanel1.SuspendLayout();
             this.SuspendLayout();
             // 
@@ -51,8 +51,8 @@ namespace ZenStates.Components
             this.tableLayoutPanel1.Controls.Add(this.comboBoxCore, 2, 0);
             this.tableLayoutPanel1.Controls.Add(this.comboBoxVid, 3, 0);
             this.tableLayoutPanel1.Controls.Add(this.checkBoxSlowMode, 3, 1);
-            this.tableLayoutPanel1.Controls.Add(this.checkBoxCCX, 2, 1);
             this.tableLayoutPanel1.Controls.Add(this.checkBoxProchot, 1, 1);
+            this.tableLayoutPanel1.Controls.Add(this.comboBoxControlMode, 2, 1);
             this.tableLayoutPanel1.Dock = System.Windows.Forms.DockStyle.Fill;
             this.tableLayoutPanel1.Location = new System.Drawing.Point(0, 0);
             this.tableLayoutPanel1.Name = "tableLayoutPanel1";
@@ -121,22 +121,6 @@ namespace ZenStates.Components
             this.checkBoxSlowMode.UseVisualStyleBackColor = true;
             this.checkBoxSlowMode.Click += new System.EventHandler(this.CheckBoxSlowMode_Click);
             // 
-            // checkBoxCCX
-            // 
-            this.checkBoxCCX.Appearance = System.Windows.Forms.Appearance.Button;
-            this.checkBoxCCX.CheckAlign = System.Drawing.ContentAlignment.MiddleCenter;
-            this.checkBoxCCX.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.checkBoxCCX.FlatStyle = System.Windows.Forms.FlatStyle.System;
-            this.checkBoxCCX.Location = new System.Drawing.Point(143, 29);
-            this.checkBoxCCX.Margin = new System.Windows.Forms.Padding(2, 3, 2, 3);
-            this.checkBoxCCX.Name = "checkBoxCCX";
-            this.checkBoxCCX.Size = new System.Drawing.Size(92, 23);
-            this.checkBoxCCX.TabIndex = 9;
-            this.checkBoxCCX.Text = "CCX";
-            this.checkBoxCCX.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
-            this.checkBoxCCX.UseVisualStyleBackColor = true;
-            this.checkBoxCCX.Click += new System.EventHandler(this.CheckBoxCCX_Click);
-            // 
             // checkBoxProchot
             // 
             this.checkBoxProchot.Appearance = System.Windows.Forms.Appearance.Button;
@@ -154,6 +138,22 @@ namespace ZenStates.Components
             this.checkBoxProchot.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
             this.checkBoxProchot.UseVisualStyleBackColor = true;
             this.checkBoxProchot.Click += new System.EventHandler(this.CheckBoxProchot_Click);
+            // 
+            // comboBoxControlMode
+            // 
+            this.comboBoxControlMode.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.comboBoxControlMode.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
+            this.comboBoxControlMode.FormattingEnabled = true;
+            this.comboBoxControlMode.Items.AddRange(new object[] {
+            "Cores",
+            "CCX",
+            "CCD"});
+            this.comboBoxControlMode.Location = new System.Drawing.Point(144, 30);
+            this.comboBoxControlMode.Margin = new System.Windows.Forms.Padding(3, 4, 3, 2);
+            this.comboBoxControlMode.Name = "comboBoxControlMode";
+            this.comboBoxControlMode.Size = new System.Drawing.Size(90, 21);
+            this.comboBoxControlMode.TabIndex = 9;
+            this.comboBoxControlMode.SelectedIndexChanged += new System.EventHandler(this.ComboBoxControlMode_SelectedIndexChanged);
             // 
             // ManualOverclockItem
             // 
@@ -178,6 +178,6 @@ namespace ZenStates.Components
         private System.Windows.Forms.CheckBox checkBoxOCModeEnabled;
         private System.Windows.Forms.CheckBox checkBoxSlowMode;
         private System.Windows.Forms.CheckBox checkBoxProchot;
-        private System.Windows.Forms.CheckBox checkBoxCCX;
+        private System.Windows.Forms.ComboBox comboBoxControlMode;
     }
 }

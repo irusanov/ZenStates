@@ -393,22 +393,36 @@ namespace ZenStates
             return true;
         }
 
-        private bool SetFrequencyCCX(uint mask, int frequency)
+        private bool SetFrequencyMultipleCores(uint mask, int frequency, int count)
         {
             // ((i.CCD << 4 | i.CCX % 2 & 0xF) << 4 | i.CORE % 4 & 0xF) << 20;
-            bool ret = true;
-
-            for (uint i = 0; i < 4; i++)
+            for (uint i = 0; i <= count; i++)
             {
                 mask = ops.SetBits(mask, 20, 2, i);
-
                 if (!SetFrequencySingleCore((int)mask, frequency))
-                {
-                    HandleError("Error setting CCX frequency!");
-                    ret = false;
-                }
+                    return false;
             }
+            return true;
+        }
 
+        private bool SetFrequencyCCX(uint mask, int frequency)
+        {
+            bool ret = SetFrequencyMultipleCores(mask, frequency, si.NumCoresInCCX);
+            if (!ret)
+                HandleError("Error setting CCX frequency!");
+            return ret;
+        }
+
+        private bool SetFrequencyCCD(uint mask, int frequency)
+        {
+            bool ret = true;
+            for (uint i = 0; i <= si.CCXCount / si.CCDCount; i++)
+            {
+                mask = ops.SetBits(mask, 24, 1, i);
+                ret = SetFrequencyCCX(mask, frequency);
+            }
+            if (!ret)
+                HandleError("Error setting CCD frequency!");
             return ret;
         }
 
@@ -448,17 +462,37 @@ namespace ZenStates
         {
             bool ret = false;
             var item = manualOverclockItem;
-            int frequency = (int)(item.Multi * 100.00);
+            int targetFreq = (int)(item.Multi * 100.00);
+            int currentFreq = (int)(GetCurrentMulti(true) * 100.00);
 
-            SetOCVid(item.Vid);
+            if (targetFreq >= currentFreq)
+                SetOCVid(item.Vid);
 
-            // All cores
             if (item.AllCores)
-                ret = SetFrequencyAllCore(frequency);
-            else if (item.CCXMode)
-                ret = SetFrequencyCCX((uint)item.CoreMask, frequency);
-            else if (SetFrequencyAllCore(550))
-                ret = SetFrequencySingleCore(item.CoreMask, frequency);
+            {
+                ret = SetFrequencyAllCore(targetFreq);
+            } 
+            else
+            {
+                switch (item.ControlMode)
+                {
+                    case 0:
+                        if (SetFrequencyAllCore(550))
+                        ret = SetFrequencySingleCore(item.CoreMask, targetFreq);
+                        break;
+                    case 1:
+                        ret = SetFrequencyCCX((uint)item.CoreMask, targetFreq);
+                        break;
+                    case 2:
+                        ret = SetFrequencyCCD((uint)item.CoreMask, targetFreq);
+                        break;
+                    default:
+                        break;
+                }
+            }
+
+            if (targetFreq < currentFreq)
+                SetOCVid(item.Vid);
 
             if (ret)
             {

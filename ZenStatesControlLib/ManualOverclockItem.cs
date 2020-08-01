@@ -21,14 +21,18 @@ namespace ZenStates.Components
             }
         }
 
-        private void PopulateCCDList(ComboBox.ObjectCollection l)
+        private void PopulateCoreList(ComboBox.ObjectCollection l)
         {
             l.Clear();
 
-            for (int core = 0; core < Cores; ++core)
+            for (int i = 0; i < Cores; ++i)
             {
-                Console.WriteLine($"ccd: {core / 8}, ccx: {core / 4}, core: {core}");
-                l.Add(new CoreListItem(core / 8, core / 4, core, string.Format("Core {0}", core)));
+                int ccd = i / 8;
+                int ccx = i / 4 - 2 * ccd;
+                int core = i % 4;
+
+                Console.WriteLine($"ccd: {ccd}, ccx: {ccx}, core: {core}");
+                l.Add(new CoreListItem(ccd, ccx, core, string.Format("Core {0}", i)));
             }
 
             l.Add("All Cores");
@@ -37,13 +41,32 @@ namespace ZenStates.Components
         private void PopulateCCXList(ComboBox.ObjectCollection l)
         {
             l.Clear();
-
-            for (int core = 0; core < Cores; core += 4)
+            Console.WriteLine("PopulateCCXList");
+            for (int i = 0; i < Cores; i += 4)
             {
-                l.Add(new CoreListItem(core / 8, core / 4, 0, string.Format("CCX {0}", core / 4)));
+                int ccd = i / 8;
+                int ccx = i / 4 - 2 * ccd;
+
+                Console.WriteLine($"ccd: {ccd}, ccx: {ccx}");
+                l.Add(new CoreListItem(ccd, ccx, 0, string.Format("CCX {0}", i / 4)));
             }
 
             l.Add("All CCX");
+        }
+
+        private void PopulateCCDList(ComboBox.ObjectCollection l)
+        {
+            l.Clear();
+            Console.WriteLine("PopulateCCDList");
+            for (int i = 0; i < Cores; i += 8)
+            {
+                int ccd = i / 8;
+
+                Console.WriteLine($"ccd: {ccd}");
+                l.Add(new CoreListItem(ccd, 0, 0, string.Format("CCD {0}", i / 8)));
+            }
+
+            l.Add("All CCD");
         }
 
         private void PopulateVidItems()
@@ -92,7 +115,7 @@ namespace ZenStates.Components
             set
             {
                 cores = value;
-                PopulateCCDList(comboBoxCore.Items);
+                PopulateCoreList(comboBoxCore.Items);
                 comboBoxCore.SelectedIndex = value;
 
                 if (value > 0)
@@ -141,7 +164,7 @@ namespace ZenStates.Components
             }
         }
 
-        public bool CCXMode => checkBoxCCX.Checked;
+        public int ControlMode => comboBoxControlMode.SelectedIndex;
 
         public bool Changed => vid != Vid || multi != Multi || selectedCoreIndex != SelectedCoreIndex;
 
@@ -172,7 +195,8 @@ namespace ZenStates.Components
             comboBoxMulti.Enabled = OCmode;
             comboBoxVid.Enabled = OCmode;
 
-            checkBoxCCX.Enabled = OCmode;
+            comboBoxControlMode.Enabled = OCmode;
+            comboBoxControlMode.SelectedIndex = 0;
             checkBoxProchot.Enabled = OCmode;
             checkBoxSlowMode.Enabled = OCmode;
 
@@ -194,23 +218,9 @@ namespace ZenStates.Components
             comboBoxMulti.Enabled = OCmode;
             comboBoxVid.Enabled = OCmode;
 
-            checkBoxCCX.Enabled = OCmode;
+            comboBoxControlMode.Enabled = OCmode;
             checkBoxProchot.Enabled = OCmode;
             checkBoxSlowMode.Enabled = OCmode;
-        }
-
-        private void CheckBoxCCX_Click(object sender, EventArgs e)
-        {
-            if (checkBoxCCX.Checked)
-            {
-                PopulateCCXList(comboBoxCore.Items);
-            }
-            else
-            {
-                PopulateCCDList(comboBoxCore.Items);
-            }
-
-            comboBoxCore.SelectedIndex = comboBoxCore.Items.Count - 1;
         }
 
         private void CheckBoxSlowMode_Click(object sender, EventArgs e)
@@ -221,6 +231,27 @@ namespace ZenStates.Components
         private void CheckBoxProchot_Click(object sender, EventArgs e)
         {
             ProchotClicked?.Invoke(checkBoxProchot, e);
+        }
+
+        private void ComboBoxControlMode_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            var items = comboBoxCore.Items;
+            switch (comboBoxControlMode.SelectedIndex)
+            {
+                case 0:
+                    PopulateCoreList(items);
+                    break;
+                case 1:
+                    PopulateCCXList(items);
+                    break;
+                case 2:
+                    PopulateCCDList(items);
+                    break;
+                default:
+                    break;
+            }
+
+            comboBoxCore.SelectedIndex = items.Count - 1;
         }
     }
 }
