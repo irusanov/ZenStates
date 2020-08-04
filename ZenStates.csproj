@@ -53,9 +53,6 @@
     <ApplicationIcon>Resources\ZenStates.ico</ApplicationIcon>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="nForce2XTLib">
-      <HintPath>..\nForce2Xtreme\NF2XTControlLibrary\bin\Debug\nForce2XTLib.dll</HintPath>
-    </Reference>
     <Reference Include="System" />
     <Reference Include="System.ComponentModel.DataAnnotations" />
     <Reference Include="System.Core" />
@@ -83,6 +80,7 @@
     <Compile Include="Utils\Ops.cs" />
     <Compile Include="Utils\SMU.cs" />
     <Compile Include="Utils\SystemInfo.cs" />
+    <Compile Include="Utils\Storage.cs" />
     <EmbeddedResource Include="MainForm.resx">
       <DependentUpon>MainForm.cs</DependentUpon>
       <SubType>Designer</SubType>

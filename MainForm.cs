@@ -189,6 +189,19 @@ namespace ZenStates
             return Math.Round(multi * 4, MidpointRounding.ToEven) / 4;
         }
 
+        private double GetCoreMulti(int index)
+        {
+            uint eax = default, edx = default;
+            if (ops.ols.RdmsrTx(MSR_PSTATE_BOOST, ref eax, ref edx, (UIntPtr)(1 << index)) != 1)
+            {
+                //HandleError($"Error getting core{index} frequency");
+                return 0;
+            }
+
+            double multi = 25 * (eax & 0xFF) / (12.5 * (eax >> 8 & 0x3F));
+            return Math.Round(multi * 4, MidpointRounding.ToEven) / 4;
+        }
+
         private byte GetCurrentVid(bool ocmode = false)
         {
             uint msr = ocmode ? MSR_PSTATE_BOOST : MSR_PStateDef0;
@@ -768,14 +781,61 @@ namespace ZenStates
         private void ManualOverclockItem_SlowModeClicked(object sender, EventArgs e)
         {
             CheckBox cb = sender as CheckBox;
+            int cores = si.Threads;
+            int step = si.NumCoresInCCX;
+            int index = 0;
+
+            if (si.SMT)
+                step *= 2;
+
+            double[] ccx_frequencies = new double[si.CCXCount];
+
             if (cb.Checked)
             {
+                for (var i = 0; i < cores; i+=step)
+                {
+                    ccx_frequencies[index] = GetCoreMulti(i);
+                    ++index;
+                }
+                Storage.Add($"ccx_frequencies", ccx_frequencies);
+                Storage.Add("oc_vid", manualOverclockItem.Vid);
+
+                for (var i = 0; i < si.CCXCount; ++i)
+                {
+                    Console.WriteLine($"ccx{i}: " + Storage.Get<double[]>($"ccx_frequencies")[i].ToString());
+                }
+
                 SetFrequencyAllCore(550);
                 SetOCVid(0x98);
             } 
             else
             {
-                ApplyManualOcSettings();
+                // Single core mode
+                if (manualOverclockItem.ControlMode == 0 && !manualOverclockItem.AllCores)
+                {
+                    ApplyManualOcSettings();
+                }
+                else
+                {
+                    int[] masks = new int[si.CCXCount];
+
+                    for (var i = 0; i < si.PhysicalCoreCount; i+= 4)
+                    {
+                        int ccd = i / 8;
+                        int ccx = i / 4 - 2 * ccd;
+                        masks[index] = (ccd << 4 | ccx) << 24;
+                        ++index;
+                    }
+
+                    SetOCVid(Storage.Get<byte>($"oc_vid"));
+
+                    for (var i = 0; i < si.CCXCount; ++i)
+                    {
+                        int targetFreq = (int)(Storage.Get<double[]>($"ccx_frequencies")[i] * 100.00);
+                        SetFrequencyCCX((uint)masks[i], targetFreq);
+                    }
+                    //RestoreManualOcSettings();
+                }
             }
         }
 

@@ -227,24 +227,27 @@ namespace ZenStates.Utils
             return 0;
         }
 
+        // Return [realCores, logicalCores] 
         public int[] GetCoreCount()
         {
             uint eax = 0, ebx = 0, ecx = 0, edx = 0;
-            uint logicalCores = 0;
-            uint threadsPerCore = 1;
+            int logicalCores = 0;
+            int threadsPerCore = 1;
             int[] count = { 0, 1 };
 
             if (ols.Cpuid(0x00000001, ref eax, ref ebx, ref ecx, ref edx) == 1)
             {
-                logicalCores = (ebx >> 16) & 0xFF;
+                logicalCores = Convert.ToInt32((ebx >> 16) & 0xFF);
 
                 if (ols.Cpuid(0x8000001E, ref eax, ref ebx, ref ecx, ref edx) == 1)
-                    threadsPerCore = ((ebx >> 8) & 0xF) + 1;
+                    threadsPerCore = Convert.ToInt32(ebx >> 8 & 0xF) + 1;
             }
-            if (threadsPerCore != 0)
-                count[0] = (int)(logicalCores / threadsPerCore);
+            if (threadsPerCore == 0)
+                count[0] = logicalCores;
+            else
+                count[0] = logicalCores / threadsPerCore;
 
-            count[1] = (int)logicalCores;
+            count[1] = logicalCores;
 
             return count;
         }
