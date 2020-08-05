@@ -297,7 +297,7 @@ namespace ZenStates.Utils
         public uint GetPatchLevel()
         {
             uint eax = 0, edx = 0;
-            if (ols.RdmsrTx(0x8b, ref eax, ref edx, (UIntPtr)(1)) != 1)
+            if (ols.Rdmsr(0x8b, ref eax, ref edx) != 1)
             {
                 return 0;
             }
@@ -317,12 +317,20 @@ namespace ZenStates.Utils
             }
             return false;
             */
-            uint scalar = 0xFF;
-            if (!SmuRead(smu.SMU_MSG_GetPBOScalar, ref scalar))
+
+            return GetPBOScalar() == 0f;
+        }
+
+        public float GetPBOScalar()
+        {
+            uint scalar = 0;
+            if (SmuRead(smu.SMU_MSG_GetPBOScalar, ref scalar))
             {
-                return false;
+                byte[] bytes = BitConverter.GetBytes(scalar);
+
+                return BitConverter.ToSingle(bytes, 0);
             }
-            return scalar == 0;
+            return 0f;
         }
 
         public bool IsProchotEnabled()

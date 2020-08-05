@@ -369,6 +369,8 @@ namespace ZenStates
             checkBoxCPB.Checked = GetCPB();
             checkBoxC6Core.Checked = GetC6Core();
             checkBoxC6Package.Checked = GetC6Package();
+
+            numericUpDownScalar.Value = Convert.ToDecimal(ops.GetPBOScalar());
         }
 
         // P0 fix C001_0015 HWCR[21]=1

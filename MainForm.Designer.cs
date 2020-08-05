@@ -293,6 +293,12 @@ namespace ZenStates
             // numericUpDownScalar
             // 
             this.numericUpDownScalar.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            this.numericUpDownScalar.DecimalPlaces = 2;
+            this.numericUpDownScalar.Increment = new decimal(new int[] {
+            25,
+            0,
+            0,
+            131072});
             this.numericUpDownScalar.Location = new System.Drawing.Point(129, 199);
             this.numericUpDownScalar.Maximum = new decimal(new int[] {
             10,

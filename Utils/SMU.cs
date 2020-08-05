@@ -56,6 +56,7 @@ namespace ZenStates
             SMU_MSG_EnableOcMode = 0x0;
             SMU_MSG_DisableOcMode = 0x0;
             SMU_MSG_GetPBOScalar = 0x0;
+            SMU_MSG_SetPBOScalar = 0x0;
         }
 
         public uint Version { get; set; }
@@ -76,6 +77,7 @@ namespace ZenStates
         public uint SMU_MSG_EnableOcMode { get; protected set; }
         public uint SMU_MSG_DisableOcMode { get; protected set; }
         public uint SMU_MSG_GetPBOScalar { get; protected set; }
+        public uint SMU_MSG_SetPBOScalar { get; protected set; }
     }
 
     // Zen (Summit Ridge), ThreadRipper
@@ -144,6 +146,7 @@ namespace ZenStates
             SMU_MSG_SetOverclockFrequencyPerCore = 0x5D;
             SMU_MSG_SetOverclockCpuVid = 0x61;
             SMU_MSG_GetPBOScalar = 0x6C;
+            SMU_MSG_SetPBOScalar = 0x58;
         }
     }
 
