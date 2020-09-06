@@ -5,7 +5,7 @@ namespace ZenStates
     [Serializable]
     public class SystemInfo
     {
-        private int fusedCoreCount;
+        private int ccdCount;
         private int threads;
 
         private static string SmuVersionToString(uint version)
@@ -21,11 +21,14 @@ namespace ZenStates
         public SystemInfo()
         {
             CpuId = 0;
+            Model = 0;
             ExtendedModel = 0;
+            NodesPerProcessor = 1;
             PackageType = 0;
             MbVendor = "";
             MbName = "";
             CpuName = "";
+            CodeName = "";
             BiosVersion = "";
             SmuVersion = 0;
             FusedCoreCount = 2; // minimum cores
@@ -33,15 +36,19 @@ namespace ZenStates
             PatchLevel = 0;
         }
 
-        public SystemInfo(uint cpuId, uint eModel, uint pkgType, string mbVendor, string mbName, string cpuName, string biosVersion,
+        public SystemInfo(uint cpuId, uint model, uint eModel, int nodes, uint pkgType,
+            string mbVendor, string mbName, string cpuName, string codeName, string biosVersion,
             uint smuVersion, int fusedCoreCount, int threads, uint patchLevel)
         {
             CpuId = cpuId;
+            Model = model;
             ExtendedModel = eModel;
+            NodesPerProcessor = nodes;
             PackageType = pkgType;
             MbVendor = mbVendor ?? throw new ArgumentNullException(nameof(mbVendor));
             MbName = mbName ?? throw new ArgumentNullException(nameof(mbName));
             CpuName = cpuName ?? throw new ArgumentNullException(nameof(cpuName));
+            CodeName = codeName ?? throw new ArgumentNullException(nameof(codeName));
             BiosVersion = biosVersion ?? throw new ArgumentNullException(nameof(biosVersion));
             SmuVersion = smuVersion;
             FusedCoreCount = fusedCoreCount;
@@ -50,27 +57,17 @@ namespace ZenStates
         }
 
         public uint CpuId { get; set; }
+        public uint Model { get; set; }
         public uint ExtendedModel { get; set; }
+        public int NodesPerProcessor { get; set; }
         public uint PackageType { get; set; }
         public string MbVendor { get; set; }
         public string MbName { get; set; }
         public string CpuName { get; set; }
+        public string CodeName { get; set; }
         public string BiosVersion { get; set; }
         public uint SmuVersion { get; set; }
-        public int FusedCoreCount
-        {
-            get { return fusedCoreCount; }
-            set
-            {
-                fusedCoreCount = value;
-                PhysicalCoreCount = value + value % 8;
-                CCDCount = value / 6;
-                CCXCount = CCDCount * 2;
-                if (CCDCount == 0) CCDCount = 1;
-                if (CCXCount == 0) CCXCount = 1;
-                NumCoresInCCX = value / CCXCount;
-            }
-        }
+        public int FusedCoreCount { get; set; }
 
         public int Threads
         {
@@ -78,13 +75,32 @@ namespace ZenStates
             set
             {
                 threads = value;
-                SMT = value > fusedCoreCount;
+                SMT = value > FusedCoreCount;
             }
         }
 
         public uint PatchLevel { get; set; }
         public int PhysicalCoreCount { get; private set; }
-        public int CCDCount { get; private set; }
+        public int CCDCount
+        {
+            get => ccdCount;
+            set
+            {
+                if (value > 0)
+                {
+                ccdCount = value;
+                CCXCount = ccdCount * 2;
+                }
+                else
+                {
+                    ccdCount = 1;
+                    CCXCount = ccdCount;
+                }
+
+                NumCoresInCCX = FusedCoreCount / CCXCount;
+                PhysicalCoreCount = CCXCount * 4;
+            } 
+        }
         public int CCXCount { get; private set; }
         public int NumCoresInCCX { get; private set; }
         public bool SMT { get; private set; }
@@ -96,7 +112,7 @@ namespace ZenStates
 
         public string GetCpuIdString()
         {
-            return CpuId.ToString("X16").TrimStart('0');
+            return CpuId.ToString("X8").TrimStart('0');
         }
     }
 }

@@ -3,7 +3,8 @@ using System.Runtime.InteropServices;
 
 namespace ZenStates.Utils
 {
-    class NativeMethods
+    // this class just wraps some Win32 stuff that we're going to use
+    internal static class NativeMethods
     {
         public const int HWND_BROADCAST = 0xffff;
         public static readonly int WM_SHOWME = RegisterWindowMessage("WM_SHOWME");
