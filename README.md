@@ -45,3 +45,11 @@ The research is based on SMU version 64.40.00.
 | 0x2C | GetOverclockCap | Gets OC capability, which is unclear to me how it could be used and what does it mean exactly. |
 | 0x2F | SetFITLimitScalar | Sets Scalar from 1 to 10 |
 | 0x30 | MessageCount | Get current messages count in the queue |
+
+### Projects used  
+[RTCSharp (github)](https://github.com/tomrus88/RTCSharp)  
+[ryzen_smu (gitlab)](https://gitlab.com/leogx9r/ryzen_smu/)  
+[ryzen_nb_smu (github)](https://github.com/flygoat/ryzen_nb_smu)  
+[zenpower (github)](https://github.com/ocerman/zenpower)  
+[Linux kernel (github)](https://github.com/torvalds/linux)  
+[AMD's public documentation](https://www.amd.com/en/support/tech-docs)  
