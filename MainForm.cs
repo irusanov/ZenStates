@@ -240,7 +240,7 @@ namespace ZenStates
             if (res)
             {
                 eax = ops.SetBits(eax, 25, 1, en ? 0 : 1U);
-                res = (ops.Ols.Wrmsr(MSR_HWCR, eax, edx) == 1);
+                res = ops.WriteMsr(MSR_HWCR, eax, edx);
             }
 
             if (!res)
@@ -270,7 +270,7 @@ namespace ZenStates
                 uint val = en ? 1U : 0;
 
                 edx = ops.SetBits(edx, 0, 1, val);
-                res = (ops.Ols.Wrmsr(MSR_PMGT_MISC, eax, edx) == 1);
+                res = ops.WriteMsr(MSR_PMGT_MISC, eax, edx);
             }
 
             if (!res)
@@ -310,7 +310,7 @@ namespace ZenStates
                 eax = ops.SetBits(eax, 14, 1, val);
                 eax = ops.SetBits(eax, 22, 1, val);
 
-                res = (ops.Ols.Wrmsr(MSR_CSTATE_CONFIG, eax, edx) == 1);
+                res = ops.WriteMsr(MSR_CSTATE_CONFIG, eax, edx);
             }
 
             if (!res)
@@ -467,7 +467,7 @@ namespace ZenStates
             if (ops.Ols.Rdmsr(MSR_HWCR, ref eax, ref edx) != -1)
             {
                 eax |= 0x200000;
-                return ops.Ols.Wrmsr(MSR_HWCR, eax, edx) != -1;
+                return ops.WriteMsr(MSR_HWCR, eax, edx);
             }
             return false;
         }
@@ -622,7 +622,7 @@ namespace ZenStates
                     uint eax = Convert.ToUInt32(item.Pstate & 0xFFFFFFFF);
                     uint edx = Convert.ToUInt32(item.Pstate >> 32);
 
-                    if (ops.Ols.Wrmsr(MSR_PStateDef0 + Convert.ToUInt32(i), eax, edx) != 1)
+                    if (!ops.WriteMsr(MSR_PStateDef0 + Convert.ToUInt32(i), eax, edx))
                     {
                         Console.WriteLine($"Could not update Pstate{i}");
                         item.Reset();
@@ -702,11 +702,11 @@ namespace ZenStates
             // Rewrite
             for (int i = 0; i < si.Threads; i++)
             {
-                if (ops.Ols.Wrmsr(MSR_PERFBIAS1, pb1_eax, pb1_edx) != 1) return false;
-                if (ops.Ols.Wrmsr(MSR_PERFBIAS2, pb2_eax, pb2_edx) != 1) return false;
-                if (ops.Ols.Wrmsr(MSR_PERFBIAS3, pb3_eax, pb3_edx) != 1) return false;
-                if (ops.Ols.Wrmsr(MSR_PERFBIAS4, pb4_eax, pb4_edx) != 1) return false;
-                if (ops.Ols.Wrmsr(MSR_PERFBIAS5, pb5_eax, pb5_edx) != 1) return false;
+                if (!ops.WriteMsr(MSR_PERFBIAS1, pb1_eax, pb1_edx)) return false;
+                if (!ops.WriteMsr(MSR_PERFBIAS2, pb2_eax, pb2_edx)) return false;
+                if (!ops.WriteMsr(MSR_PERFBIAS3, pb3_eax, pb3_edx)) return false;
+                if (!ops.WriteMsr(MSR_PERFBIAS4, pb4_eax, pb4_edx)) return false;
+                if (!ops.WriteMsr(MSR_PERFBIAS5, pb5_eax, pb5_edx)) return false;
             }
 
             return true;
