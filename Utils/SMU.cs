@@ -160,11 +160,13 @@ namespace ZenStates
 
             SMU_MSG_TransferTableToDram = 0xA;
             SMU_MSG_GetDramBaseAddress = 0xC;
-            SMU_MSG_EnableOcMode = 0x63;
-            SMU_MSG_DisableOcMode = 0x64;
+            SMU_MSG_EnableOcMode = 0x6B; //0x63;
+            //SMU_MSG_DisableOcMode = 0x64;
             SMU_MSG_SetOverclockFrequencyAllCores = 0x6C;
             SMU_MSG_SetOverclockFrequencyPerCore = 0x6D;
             SMU_MSG_SetOverclockCpuVid = 0x6E;
+            SMU_MSG_SetPBOScalar = 0x6A;
+            SMU_MSG_GetPBOScalar = 0x6F;
         }
     }
 
