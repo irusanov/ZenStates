@@ -2,6 +2,8 @@
 {
     class Constants
     {
+        public const int CCD_SIZE = 8;
+
         public const double MULTI_MIN = 4.0;
         public const double MULTI_MAX = 70.0;
         public const double MULTI_STEP = 0.25;

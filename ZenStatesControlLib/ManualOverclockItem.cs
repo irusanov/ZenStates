@@ -7,6 +7,7 @@ namespace ZenStates.Components
     {
         private double multi = Constants.MULTI_MIN;
         private int cores = 0;
+        private int coresInCcx = 4;
         private byte vid = Constants.VID_MAX;
         private int selectedCoreIndex = -1;
         private bool ocmode = false;
@@ -22,14 +23,16 @@ namespace ZenStates.Components
         }
 
         private void PopulateCoreList(ComboBox.ObjectCollection l)
-        {
+        {   
             l.Clear();
+
+            
 
             for (int i = 0; i < Cores; ++i)
             {
-                int ccd = i / 8;
-                int ccx = i / 4 - 2 * ccd;
-                int core = i % 4;
+                int ccd = i / Constants.CCD_SIZE;
+                int ccx = i / coresInCcx - CcxInCcd * ccd;
+                int core = i % coresInCcx;
 
                 Console.WriteLine($"ccd: {ccd}, ccx: {ccx}, core: {core}");
                 l.Add(new CoreListItem(ccd, ccx, core, string.Format("Core {0}", i)));
@@ -41,14 +44,14 @@ namespace ZenStates.Components
         private void PopulateCCXList(ComboBox.ObjectCollection l)
         {
             l.Clear();
-            Console.WriteLine("PopulateCCXList");
-            for (int i = 0; i < Cores; i += 4)
+
+            for (int i = 0; i < Cores; i += coresInCcx)
             {
-                int ccd = i / 8;
-                int ccx = i / 4 - 2 * ccd;
+                int ccd = i / Constants.CCD_SIZE;
+                int ccx = i / coresInCcx - CcxInCcd * ccd;
 
                 Console.WriteLine($"ccd: {ccd}, ccx: {ccx}");
-                l.Add(new CoreListItem(ccd, ccx, 0, string.Format("CCX {0}", i / 4)));
+                l.Add(new CoreListItem(ccd, ccx, 0, string.Format("CCX {0}", i / coresInCcx)));
             }
 
             l.Add("All CCX");
@@ -57,13 +60,13 @@ namespace ZenStates.Components
         private void PopulateCCDList(ComboBox.ObjectCollection l)
         {
             l.Clear();
-            Console.WriteLine("PopulateCCDList");
-            for (int i = 0; i < Cores; i += 8)
+
+            for (int i = 0; i < Cores; i += Constants.CCD_SIZE)
             {
-                int ccd = i / 8;
+                int ccd = i / Constants.CCD_SIZE;
 
                 Console.WriteLine($"ccd: {ccd}");
-                l.Add(new CoreListItem(ccd, 0, 0, string.Format("CCD {0}", i / 8)));
+                l.Add(new CoreListItem(ccd, 0, 0, string.Format("CCD {0}", ccd)));
             }
 
             l.Add("All CCD");
@@ -95,6 +98,8 @@ namespace ZenStates.Components
         public event EventHandler ProchotClicked;
 
         #region Properties
+        public int CcxInCcd { get; set; }
+
         public double Multi
         {
             get => (comboBoxMulti.SelectedItem as FrequencyListItem).Multi;
@@ -115,6 +120,10 @@ namespace ZenStates.Components
             set
             {
                 cores = value;
+                if (CcxInCcd > 0)
+                {
+                    coresInCcx = Constants.CCD_SIZE / CcxInCcd;
+                }
                 PopulateCoreList(comboBoxCore.Items);
                 comboBoxCore.SelectedIndex = value;
 
@@ -150,7 +159,7 @@ namespace ZenStates.Components
             {
                 CoreListItem i = comboBoxCore.SelectedItem as CoreListItem;
                 // Console.WriteLine($"SET - ccd: {i.CCD}, ccx: {i.CCX }, core: {i.CORE % 4 }");
-                return ((i.CCD << 4 | i.CCX % 2 & 0xF) << 4 | i.CORE % 4 & 0xF) << 20;
+                return ((i.CCD << 4 | i.CCX % CcxInCcd & 0xF) << 4 | i.CORE % coresInCcx & 0xF) << 20;
             }
         }
 

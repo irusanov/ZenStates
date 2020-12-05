@@ -4,10 +4,9 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.Linq;
 using System.Management;
-using System.Runtime.InteropServices;
-using System.Threading;
 using System.Windows.Forms;
 using ZenStates.Components;
+using ZenStates.Core;
 using ZenStates.Utils;
 
 namespace ZenStates
@@ -25,7 +24,7 @@ namespace ZenStates
         private const uint MSR_HWCR = 0xC0010015;
         private const uint MSR_PERFBIAS1 = 0xC0011020;
         private const uint MSR_PERFBIAS2 = 0xC0011021;
-        private const uint MSR_PERFBIAS3 = 0xC001102B;
+        private const uint MSR_PERFBIAS3 = 0xC001102B; // bit 0 - prefetch?
         private const uint MSR_PERFBIAS4 = 0xC001102D;
         private const uint MSR_PERFBIAS5 = 0xC0011093;
 
@@ -33,6 +32,8 @@ namespace ZenStates
         private const uint THM_TCON_CUR_TMP = 0x00059800;
         private const uint THM_TCON_PROCHOT = 0x00059804;
         private const uint THM_TCON_THERM_TRIP = 0x00059808;
+
+        private readonly uint dramBaseAddress = 0;
 
         private enum PerfBias { Auto = 0, None, Cinebench_R11p5, Cinebench_R15, Geekbench_3, SuperPi };
         private enum PerfEnh { Auto = 0, Default, Level1, Level2, Level3_OC, Level4_OC };
@@ -57,20 +58,24 @@ namespace ZenStates
             { PerfEnh.Level4_OC, "Level 4 (OC)" }
         };
 
-        private SystemInfo si;
-        private readonly Ops ops;
+        private readonly Cpu cpu = new Cpu();
+        private SystemInfo SI;
         private BackgroundWorker backgroundWorker;
         //private BindingSource siBindingSource;
         private PstateItem[] PstateItems;
         private int NUM_PSTATES = 3; // default set to 3, real active states are checked on a later stage
 
-        [DllImport("inpoutx64.dll")]
-        [return: MarshalAs(UnmanagedType.Bool)]
-        private static extern bool GetPhysLong(UIntPtr memAddress, out uint data);
-
         private void HandleError(string message, string title = "Error")
         {
             MessageBox.Show(message, title, MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
+
+        private static void ExitApplication()
+        {
+            if (Application.MessageLoop)
+                Application.Exit();
+            else
+                Environment.Exit(1);
         }
 
         private void SetStatus(string status)
@@ -95,40 +100,13 @@ namespace ZenStates
 
         private void InitSystemInfo(object sender, DoWorkEventArgs e)
         {
-            int[] coreCount = ops.GetCoreCount();
-            si = new SystemInfo
+            if (cpu.info.family != Cpu.Family.FAMILY_17H && cpu.info.family != Cpu.Family.FAMILY_19H)
             {
-                CpuId = ops.GetCpuId(),
-                CpuName = ops.GetCpuName(),
-                NodesPerProcessor = ops.GetCpuNodes(),
-                PackageType = ops.GetPkgType(),
-                PatchLevel = ops.GetPatchLevel(),
-                SmuVersion = ops.Smu.Version,
-                FusedCoreCount = coreCount[0],
-                Threads = coreCount[1],
-                CCDCount = ops.GetCCDCount(),
-                CodeName = $"{ops.CpuType}",
-            };
-
-            si.Model = (si.CpuId & 0xff) >> 4;
-            si.ExtendedModel = si.Model + ((si.CpuId >> 12) & 0xF0);
-
-            ManagementObjectSearcher searcher = new ManagementObjectSearcher("SELECT * FROM Win32_BaseBoard");
-            foreach (ManagementObject obj in searcher.Get())
-            {
-                si.MbVendor = ((string)obj["Manufacturer"]).Trim();
-                si.MbName = ((string)obj["Product"]).Trim();
+                MessageBox.Show("CPU is not supported.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                ExitApplication();
             }
-            if (searcher != null) searcher.Dispose();
 
-            searcher = new ManagementObjectSearcher("SELECT * FROM Win32_BIOS");
-            foreach (ManagementObject obj in searcher.Get())
-            {
-                si.BiosVersion = ((string)obj["SMBIOSBIOSVersion"]).Trim();
-            }
-            if (searcher != null) searcher.Dispose();
-
-            manualOverclockItem.Cores = si.PhysicalCoreCount;
+            SI = new SystemInfo(cpu);
         }
 
         private void PopulateInfoTab()
@@ -138,13 +116,13 @@ namespace ZenStates
             cpuInfoLabel.DataBindings.Add("Text", siBindingSource, "CpuName", true);
             cpuIdLabel.DataBindings.Add("Text", siBindingSource, "CpuId", true);*/
 
-            cpuInfoLabel.Text = si.CpuName;
-            mbVendorInfoLabel.Text = si.MbVendor;
-            mbModelInfoLabel.Text = si.MbName;
-            biosInfoLabel.Text = si.BiosVersion;
-            smuInfoLabel.Text = si.GetSmuVersionString();
-            cpuIdLabel.Text = $"{si.GetCpuIdString()} ({ops.CpuType})";
-            microcodeInfoLabel.Text = Convert.ToString(si.PatchLevel, 16).ToUpper();
+            cpuInfoLabel.Text = SI.CpuName;
+            mbVendorInfoLabel.Text = SI.MbVendor;
+            mbModelInfoLabel.Text = SI.MbName;
+            biosInfoLabel.Text = SI.BiosVersion;
+            smuInfoLabel.Text = SI.GetSmuVersionString();
+            cpuIdLabel.Text = $"{SI.GetCpuIdString()} ({cpu.info.codeName})";
+            microcodeInfoLabel.Text = $"{SI.PatchLevel:X8}";
         }
 
         private void InitSystemInfo_Complete(object sender, RunWorkerCompletedEventArgs e)
@@ -181,7 +159,7 @@ namespace ZenStates
             uint msr = ocmode ? MSR_PSTATE_BOOST : MSR_PStateDef0;
             uint eax = default, edx = default;
 
-            if (ops.Ols.Rdmsr(msr, ref eax, ref edx) != 1)
+            if (cpu.Ols.Rdmsr(msr, ref eax, ref edx) != 1)
             {
                 HandleError("Error getting current multiplier!");
                 return 0;
@@ -196,7 +174,7 @@ namespace ZenStates
         private double GetCoreMulti(int index)
         {
             uint eax = default, edx = default;
-            if (ops.Ols.RdmsrTx(MSR_PSTATE_BOOST, ref eax, ref edx, (UIntPtr)(1 << index)) != 1)
+            if (cpu.Ols.RdmsrTx(MSR_PSTATE_BOOST, ref eax, ref edx, (UIntPtr)(1 << index)) != 1)
             {
                 //HandleError($"Error getting core{index} frequency");
                 return 0;
@@ -211,7 +189,7 @@ namespace ZenStates
             uint msr = ocmode ? MSR_PSTATE_BOOST : MSR_PStateDef0;
             uint eax = default, edx = default;
 
-            if (ops.Ols.Rdmsr(msr, ref eax, ref edx) != 1)
+            if (cpu.Ols.Rdmsr(msr, ref eax, ref edx) != 1)
             {
                 HandleError("Error getting current VID!");
                 return 0;
@@ -223,24 +201,24 @@ namespace ZenStates
         private bool GetCPB()
         {
             uint eax = 0, edx = 0;
-            if (ops.Ols.Rdmsr(MSR_HWCR, ref eax, ref edx) != 1)
+            if (cpu.Ols.Rdmsr(MSR_HWCR, ref eax, ref edx) != 1)
             {
                 HandleError("Error getting CPB MSR!");
                 return false;
             }
 
-            return ops.GetBits(eax, 25, 1) == 0;
+            return cpu.utils.GetBits(eax, 25, 1) == 0;
         }
 
         private void SetCPB(bool en)
         {
             uint eax = 0, edx = 0;
-            bool res = (ops.Ols.Rdmsr(MSR_HWCR, ref eax, ref edx) == 1);
+            bool res = (cpu.Ols.Rdmsr(MSR_HWCR, ref eax, ref edx) == 1);
 
             if (res)
             {
-                eax = ops.SetBits(eax, 25, 1, en ? 0 : 1U);
-                res = ops.WriteMsr(MSR_HWCR, eax, edx);
+                eax = cpu.utils.SetBits(eax, 25, 1, en ? 0 : 1U);
+                res = cpu.WriteMsr(MSR_HWCR, eax, edx);
             }
 
             if (!res)
@@ -251,26 +229,26 @@ namespace ZenStates
         private bool GetC6Package()
         {
             uint eax = 0, edx = 0;
-            if (ops.Ols.Rdmsr(MSR_PMGT_MISC, ref eax, ref edx) != 1)
+            if (cpu.Ols.Rdmsr(MSR_PMGT_MISC, ref eax, ref edx) != 1)
             {
                 HandleError("Error getting Package C6-State MSR!");
                 return false;
             }
 
-            return ops.GetBits(edx, 0, 1) == 1;
+            return cpu.utils.GetBits(edx, 0, 1) == 1;
         }
 
         private void SetC6Package(bool en)
         {
             uint eax = 0, edx = 0;
-            bool res = ops.Ols.Rdmsr(MSR_PMGT_MISC, ref eax, ref edx) == 1;
+            bool res = cpu.Ols.Rdmsr(MSR_PMGT_MISC, ref eax, ref edx) == 1;
 
             if (res)
             {
                 uint val = en ? 1U : 0;
 
-                edx = ops.SetBits(edx, 0, 1, val);
-                res = ops.WriteMsr(MSR_PMGT_MISC, eax, edx);
+                edx = cpu.utils.SetBits(edx, 0, 1, val);
+                res = cpu.WriteMsr(MSR_PMGT_MISC, eax, edx);
             }
 
             if (!res)
@@ -284,15 +262,15 @@ namespace ZenStates
         private bool GetC6Core()
         {
             uint eax = default, edx = default;
-            if (ops.Ols.Rdmsr(MSR_CSTATE_CONFIG, ref eax, ref edx) != 1)
+            if (cpu.Ols.Rdmsr(MSR_CSTATE_CONFIG, ref eax, ref edx) != 1)
             {
                 HandleError("Error getting Core C6-State!");
                 return false;
             }
 
-            bool CCR0_CC6EN = Convert.ToBoolean(ops.GetBits(eax, 6, 1));
-            bool CCR1_CC6EN = Convert.ToBoolean(ops.GetBits(eax, 14, 1));
-            bool CCR2_CC6EN = Convert.ToBoolean(ops.GetBits(eax, 22, 1));
+            bool CCR0_CC6EN = Convert.ToBoolean(cpu.utils.GetBits(eax, 6, 1));
+            bool CCR1_CC6EN = Convert.ToBoolean(cpu.utils.GetBits(eax, 14, 1));
+            bool CCR2_CC6EN = Convert.ToBoolean(cpu.utils.GetBits(eax, 22, 1));
 
             return CCR0_CC6EN && CCR1_CC6EN && CCR2_CC6EN;
         }
@@ -300,17 +278,17 @@ namespace ZenStates
         private void SetC6Core(bool en)
         {
             uint eax = 0, edx = 0;
-            bool res = ops.Ols.Rdmsr(MSR_CSTATE_CONFIG, ref eax, ref edx) == 1;
+            bool res = cpu.Ols.Rdmsr(MSR_CSTATE_CONFIG, ref eax, ref edx) == 1;
 
             if (res)
             {
                 uint val = en ? 1U : 0;
 
-                eax = ops.SetBits(eax, 6, 1, val);
-                eax = ops.SetBits(eax, 14, 1, val);
-                eax = ops.SetBits(eax, 22, 1, val);
+                eax = cpu.utils.SetBits(eax, 6, 1, val);
+                eax = cpu.utils.SetBits(eax, 14, 1, val);
+                eax = cpu.utils.SetBits(eax, 22, 1, val);
 
-                res = ops.WriteMsr(MSR_CSTATE_CONFIG, eax, edx);
+                res = cpu.WriteMsr(MSR_CSTATE_CONFIG, eax, edx);
             }
 
             if (!res)
@@ -327,13 +305,13 @@ namespace ZenStates
         {
             uint eax = default, edx = default;
 
-            ops.Ols.Rdmsr(MSR_PStateCurLim, ref eax, ref edx);
+            cpu.Ols.Rdmsr(MSR_PStateCurLim, ref eax, ref edx);
             NUM_PSTATES = Convert.ToInt32((eax >> 4) & 0x7) + 1;
             PstateItems = new PstateItem[NUM_PSTATES];
 
             for (int i = 0; i < NUM_PSTATES; i++)
             {
-                ops.Ols.Rdmsr(MSR_PStateDef0 + Convert.ToUInt32(i), ref eax, ref edx);
+                cpu.Ols.Rdmsr(MSR_PStateDef0 + Convert.ToUInt32(i), ref eax, ref edx);
                 PstateItems[i] = new PstateItem
                 {
                     Label = $"P{i}",
@@ -351,7 +329,7 @@ namespace ZenStates
 
             for (int i = 0; i < NUM_PSTATES; i++)
             {
-                ops.Ols.Rdmsr(MSR_PStateDef0 + Convert.ToUInt32(i), ref eax, ref edx);
+                cpu.Ols.Rdmsr(MSR_PStateDef0 + Convert.ToUInt32(i), ref eax, ref edx);
                 PstateItems[i].Pstate = (ulong)edx << 32 | eax;
             }
 
@@ -360,12 +338,27 @@ namespace ZenStates
 
         private void InitManualOc()
         {
-            bool ocmode = ops.GetOcMode();
+            bool ocmode = cpu.GetOcMode();
             manualOverclockItem.OCmode = ocmode;
             manualOverclockItem.Vid = GetCurrentVid(ocmode);
             manualOverclockItem.Multi = GetCurrentMulti(ocmode);
-            manualOverclockItem.ProchotEnabled = ops.IsProchotEnabled();
-            // manualOverclockItem.Cores = si.PhysicalCoreCount; // si.FusedCoreCount;
+            manualOverclockItem.ProchotEnabled = cpu.IsProchotEnabled();
+            manualOverclockItem.CcxInCcd = cpu.info.family == Cpu.Family.FAMILY_19H ? 1 : 2;
+            manualOverclockItem.Cores = (int)cpu.info.physicalCores; // SI.FusedCoreCount;
+        }
+
+        private void WaitForPowerTable()
+        {
+            Stopwatch timer = new Stopwatch();
+            timer.Start();
+
+            uint temp;
+            // Refresh until table is transferred to DRAM or timeout
+            do
+                InteropMethods.GetPhysLong((UIntPtr)dramBaseAddress, out temp);
+            while (temp == 0 && timer.Elapsed.TotalMilliseconds < 10000);
+
+            timer.Stop();
         }
 
         private void InitPowerTab()
@@ -374,87 +367,90 @@ namespace ZenStates
             checkBoxC6Core.Checked = GetC6Core();
             checkBoxC6Package.Checked = GetC6Package();
 
-            numericUpDownScalar.Value = Convert.ToDecimal(ops.GetPBOScalar());
+            numericUpDownScalar.Value = Convert.ToDecimal(cpu.GetPBOScalar());
 
-            ulong dram_base = ops.GetDramBaseAddress();
+            WaitForPowerTable();
 
-            if (dram_base > 0 && ops.TransferTableToDram() == SMU.Status.OK)
+            if (dramBaseAddress > 0)
             {
-                UIntPtr dramPtr = new UIntPtr(dram_base);
-                string result = "";
-
-                GetPhysLong(dramPtr, out uint data);
-                byte[] bytes = BitConverter.GetBytes(data);
-                result += $"PPT: {BitConverter.ToSingle(bytes, 0)}W" + Environment.NewLine;
-                numericUpDownPPT.Value = Convert.ToDecimal(BitConverter.ToSingle(bytes, 0));
-
-                /*for (int i = 0; i <= table_size; i += 4)
+                try
                 {
-                    GetPhysLong(dramPtr + i, out uint value);
-                    bytes = BitConverter.GetBytes(value);
-                    Console.WriteLine($"offset {i:X4}: {BitConverter.ToSingle(bytes, 0)}");
-                }*/
+                    if (cpu.TransferTableToDram() != SMU.Status.OK)
+                        cpu.TransferTableToDram(); // retry
 
-                GetPhysLong(dramPtr + 0x008, out data);
-                bytes = BitConverter.GetBytes(data);
-                result += $"TDC: {BitConverter.ToSingle(bytes, 0)}A" + Environment.NewLine;
-                numericUpDownTDC.Value = Convert.ToDecimal(BitConverter.ToSingle(bytes, 0));
+                    UIntPtr dramPtr = new UIntPtr(dramBaseAddress);
+                    string result = "";
 
-                GetPhysLong(dramPtr + 0x020, out data);
-                bytes = BitConverter.GetBytes(data);
-                result += $"EDC: {BitConverter.ToSingle(bytes, 0)}A" + Environment.NewLine;
-                numericUpDownEDC.Value = Convert.ToDecimal(BitConverter.ToSingle(bytes, 0));
+                    InteropMethods.GetPhysLong(dramPtr, out uint data);
+                    byte[] bytes = BitConverter.GetBytes(data);
+                    result += $"PPT: {BitConverter.ToSingle(bytes, 0)}W" + Environment.NewLine;
+                    numericUpDownPPT.Value = Convert.ToDecimal(BitConverter.ToSingle(bytes, 0));
 
-                GetPhysLong(dramPtr + 0x010, out data);
-                bytes = BitConverter.GetBytes(data);
-                result += $"TjMax: {BitConverter.ToSingle(bytes, 0)}" + Environment.NewLine;
+                    /*for (int i = 0; i <= table_size; i += 4)
+                    {
+                        GetPhysLong(dramPtr + i, out uint value);
+                        bytes = BitConverter.GetBytes(value);
+                        Console.WriteLine($"offset {i:X4}: {BitConverter.ToSingle(bytes, 0)}");
+                    }*/
 
-                GetPhysLong(dramPtr + 0x060, out data);
-                bytes = BitConverter.GetBytes(data);
-                result += $"CorePower: {BitConverter.ToSingle(bytes, 0)}W" + Environment.NewLine;
+                    InteropMethods.GetPhysLong(dramPtr + 0x008, out data);
+                    bytes = BitConverter.GetBytes(data);
+                    result += $"TDC: {BitConverter.ToSingle(bytes, 0)}A" + Environment.NewLine;
+                    numericUpDownTDC.Value = Convert.ToDecimal(BitConverter.ToSingle(bytes, 0));
 
-                GetPhysLong(dramPtr + 0x064, out data);
-                bytes = BitConverter.GetBytes(data);
-                result += $"SOCPower: {BitConverter.ToSingle(bytes, 0)}W" + Environment.NewLine;
+                    InteropMethods.GetPhysLong(dramPtr + 0x010, out data);
+                    bytes = BitConverter.GetBytes(data);
+                    result += $"EDC: {BitConverter.ToSingle(bytes, 0)}A" + Environment.NewLine;
+                    numericUpDownEDC.Value = Convert.ToDecimal(BitConverter.ToSingle(bytes, 0));
+                    /*
+                    GetPhysLong(dramPtr + 0x010, out data);
+                    bytes = BitConverter.GetBytes(data);
+                    result += $"TjMax: {BitConverter.ToSingle(bytes, 0)}" + Environment.NewLine;
 
-                GetPhysLong(dramPtr + 0x0C0, out data);
-                bytes = BitConverter.GetBytes(data);
-                result += $"FCLK: {BitConverter.ToSingle(bytes, 0)}MHz" + Environment.NewLine;
+                    GetPhysLong(dramPtr + 0x060, out data);
+                    bytes = BitConverter.GetBytes(data);
+                    result += $"CorePower: {BitConverter.ToSingle(bytes, 0)}W" + Environment.NewLine;
 
-                GetPhysLong(dramPtr + 0x0C4, out data);
-                bytes = BitConverter.GetBytes(data);
-                result += $"SomeCLK: {BitConverter.ToSingle(bytes, 0)}MHz" + Environment.NewLine;
+                    GetPhysLong(dramPtr + 0x064, out data);
+                    bytes = BitConverter.GetBytes(data);
+                    result += $"SOCPower: {BitConverter.ToSingle(bytes, 0)}W" + Environment.NewLine;
 
-                GetPhysLong(dramPtr + 0x0C8, out data);
-                bytes = BitConverter.GetBytes(data);
-                result += $"UCLK: {BitConverter.ToSingle(bytes, 0)}MHz" + Environment.NewLine;
+                    GetPhysLong(dramPtr + 0x0C0, out data);
+                    bytes = BitConverter.GetBytes(data);
+                    result += $"FCLK: {BitConverter.ToSingle(bytes, 0)}MHz" + Environment.NewLine;
 
-                GetPhysLong(dramPtr + 0x0CC, out data);
-                bytes = BitConverter.GetBytes(data);
-                result += $"MCLK: {BitConverter.ToSingle(bytes, 0)}MHz" + Environment.NewLine;
+                    GetPhysLong(dramPtr + 0x0C4, out data);
+                    bytes = BitConverter.GetBytes(data);
+                    result += $"SomeCLK: {BitConverter.ToSingle(bytes, 0)}MHz" + Environment.NewLine;
 
-                GetPhysLong(dramPtr + 0x108, out data);
-                bytes = BitConverter.GetBytes(data);
-                result += $"BCLK: {BitConverter.ToSingle(bytes, 0)}MHz" + Environment.NewLine;
+                    GetPhysLong(dramPtr + 0x0C8, out data);
+                    bytes = BitConverter.GetBytes(data);
+                    result += $"UCLK: {BitConverter.ToSingle(bytes, 0)}MHz" + Environment.NewLine;
 
-                GetPhysLong(dramPtr + 0x0B4, out data);
-                bytes = BitConverter.GetBytes(data);
-                result += $"Vsoc: {BitConverter.ToSingle(bytes, 0)}V" + Environment.NewLine;
+                    GetPhysLong(dramPtr + 0x0CC, out data);
+                    bytes = BitConverter.GetBytes(data);
+                    result += $"MCLK: {BitConverter.ToSingle(bytes, 0)}MHz" + Environment.NewLine;
 
-                GetPhysLong(dramPtr + 0x1F4, out data);
-                bytes = BitConverter.GetBytes(data);
-                result += $"Vddp: {BitConverter.ToSingle(bytes, 0)}V" + Environment.NewLine;
+                    GetPhysLong(dramPtr + 0x108, out data);
+                    bytes = BitConverter.GetBytes(data);
+                    result += $"BCLK: {BitConverter.ToSingle(bytes, 0)}MHz" + Environment.NewLine;
 
-                GetPhysLong(dramPtr + 0x1F8, out data);
-                bytes = BitConverter.GetBytes(data);
-                result += $"Vddg: {BitConverter.ToSingle(bytes, 0)}V" + Environment.NewLine;
-/*
-                GetPhysLong(dramPtr + 0x710);
-                bytes = BitConverter.GetBytes(data);
-                result += $"Vddg_iod: {BitConverter.ToSingle(bytes, 0)}V" + Environment.NewLine;
-*/
-                //Thread t = new Thread(() => MessageBox.Show(result));
-                //t.Start();
+                    GetPhysLong(dramPtr + 0x0B4, out data);
+                    bytes = BitConverter.GetBytes(data);
+                    result += $"Vsoc: {BitConverter.ToSingle(bytes, 0)}V" + Environment.NewLine;
+
+                    GetPhysLong(dramPtr + 0x1F4, out data);
+                    bytes = BitConverter.GetBytes(data);
+                    result += $"Vddp: {BitConverter.ToSingle(bytes, 0)}V" + Environment.NewLine;
+
+                    GetPhysLong(dramPtr + 0x1F8, out data);
+                    bytes = BitConverter.GetBytes(data);
+                    result += $"Vddg: {BitConverter.ToSingle(bytes, 0)}V" + Environment.NewLine;
+                    */
+                    //Thread t = new Thread(() => MessageBox.Show(result));
+                    //t.Start();
+                }
+                catch { }
             }
         }
 
@@ -464,10 +460,10 @@ namespace ZenStates
         {
             uint eax = 0, edx = 0;
 
-            if (ops.Ols.Rdmsr(MSR_HWCR, ref eax, ref edx) != -1)
+            if (cpu.Ols.Rdmsr(MSR_HWCR, ref eax, ref edx) != -1)
             {
                 eax |= 0x200000;
-                return ops.WriteMsr(MSR_HWCR, eax, edx);
+                return cpu.WriteMsr(MSR_HWCR, eax, edx);
             }
             return false;
         }
@@ -476,7 +472,7 @@ namespace ZenStates
         {
             uint[] args = {Convert.ToUInt32(frequency), 0 };
             // TODO: Add Manual OC mode
-            if (ops.SendSmuCommand(ops.Smu.SMU_MSG_SetOverclockFrequencyAllCores, ref args) != SMU.Status.OK)
+            if (cpu.SendSmuCommand(cpu.smu.SMU_MSG_SetOverclockFrequencyAllCores, ref args) != SMU.Status.OK)
             {
                 HandleError("Error setting frequency!");
                 return false;
@@ -487,7 +483,7 @@ namespace ZenStates
         private bool SetFrequencySingleCore(int mask, int frequency)
         {
             uint[] args = { Convert.ToUInt32(mask | frequency & 0xFFFFF), 0 };
-            if (ops.SendSmuCommand(ops.Smu.SMU_MSG_SetOverclockFrequencyPerCore, ref args) != SMU.Status.OK)
+            if (cpu.SendSmuCommand(cpu.smu.SMU_MSG_SetOverclockFrequencyPerCore, ref args) != SMU.Status.OK)
             {
                 HandleError("Error setting core frequency!");
                 return false;
@@ -500,7 +496,7 @@ namespace ZenStates
             // ((i.CCD << 4 | i.CCX % 2 & 0xF) << 4 | i.CORE % 4 & 0xF) << 20;
             for (uint i = 0; i <= count; i++)
             {
-                mask = ops.SetBits(mask, 20, 2, i);
+                mask = cpu.utils.SetBits(mask, 20, 2, i);
                 if (!SetFrequencySingleCore((int)mask, frequency))
                     return false;
             }
@@ -509,7 +505,7 @@ namespace ZenStates
 
         private bool SetFrequencyCCX(uint mask, int frequency)
         {
-            bool ret = SetFrequencyMultipleCores(mask, frequency, si.NumCoresInCCX);
+            bool ret = SetFrequencyMultipleCores(mask, frequency, SI.NumCoresInCCX);
             if (!ret)
                 HandleError("Error setting CCX frequency!");
             return ret;
@@ -518,9 +514,9 @@ namespace ZenStates
         private bool SetFrequencyCCD(uint mask, int frequency)
         {
             bool ret = true;
-            for (uint i = 0; i <= si.CCXCount / si.CCDCount; i++)
+            for (uint i = 0; i <= SI.CCXCount / SI.CCDCount; i++)
             {
-                mask = ops.SetBits(mask, 24, 1, i);
+                mask = cpu.utils.SetBits(mask, 24, 1, i);
                 ret = SetFrequencyCCX(mask, frequency);
             }
             if (!ret)
@@ -531,7 +527,7 @@ namespace ZenStates
         private bool SetOCVid(byte vid)
         {
             uint[] args = { Convert.ToUInt32(vid), 0 };
-            if (ops.SendSmuCommand(ops.Smu.SMU_MSG_SetOverclockCpuVid, ref args) != SMU.Status.OK)
+            if (cpu.SendSmuCommand(cpu.smu.SMU_MSG_SetOverclockCpuVid, ref args) != SMU.Status.OK)
             {
                 HandleError("Error setting CPU Overclock VID!");
                 return false;
@@ -541,9 +537,9 @@ namespace ZenStates
 
         private bool SetOcMode(bool enabled, uint arg = 0U)
         {
-            uint cmd = enabled ? ops.Smu.SMU_MSG_EnableOcMode : ops.Smu.SMU_MSG_DisableOcMode;
-            uint[] args = { 0 };
-            if (ops.SendSmuCommand(cmd, ref args) != SMU.Status.OK)
+            uint cmd = enabled ? cpu.smu.SMU_MSG_EnableOcMode : cpu.smu.SMU_MSG_DisableOcMode;
+            uint[] args = { arg };
+            if (cpu.SendSmuCommand(cmd, ref args) != SMU.Status.OK)
             {
                 HandleError("Error setting OC mode!");
                 return false;
@@ -569,7 +565,7 @@ namespace ZenStates
             int targetFreq = (int)(item.Multi * 100.00);
             int currentFreq = (int)(GetCurrentMulti(true) * 100.00);
 
-            if (targetFreq >= currentFreq)
+            if (targetFreq > currentFreq)
                 SetOCVid(item.Vid);
 
             if (item.AllCores)
@@ -595,7 +591,7 @@ namespace ZenStates
                 }
             }
 
-            if (targetFreq < currentFreq)
+            if (targetFreq <= currentFreq)
                 SetOCVid(item.Vid);
 
             if (ret)
@@ -622,7 +618,7 @@ namespace ZenStates
                     uint eax = Convert.ToUInt32(item.Pstate & 0xFFFFFFFF);
                     uint edx = Convert.ToUInt32(item.Pstate >> 32);
 
-                    if (!ops.WriteMsr(MSR_PStateDef0 + Convert.ToUInt32(i), eax, edx))
+                    if (!cpu.WriteMsr(MSR_PStateDef0 + Convert.ToUInt32(i), eax, edx))
                     {
                         Console.WriteLine($"Could not update Pstate{i}");
                         item.Reset();
@@ -639,11 +635,11 @@ namespace ZenStates
             uint pb1_eax = 0, pb1_edx = 0, pb2_eax = 0, pb2_edx = 0, pb3_eax = 0, pb3_edx = 0, pb4_eax = 0, pb4_edx = 0, pb5_eax = 0, pb5_edx = 0;
 
             // Read current settings
-            if (ops.Ols.Rdmsr(MSR_PERFBIAS1, ref pb1_eax, ref pb1_edx) != 1) return false;
-            if (ops.Ols.Rdmsr(MSR_PERFBIAS2, ref pb2_eax, ref pb2_edx) != 1) return false;
-            if (ops.Ols.Rdmsr(MSR_PERFBIAS3, ref pb3_eax, ref pb3_edx) != 1) return false;
-            if (ops.Ols.Rdmsr(MSR_PERFBIAS4, ref pb4_eax, ref pb4_edx) != 1) return false;
-            if (ops.Ols.Rdmsr(MSR_PERFBIAS5, ref pb5_eax, ref pb5_edx) != 1) return false;
+            if (cpu.Ols.Rdmsr(MSR_PERFBIAS1, ref pb1_eax, ref pb1_edx) != 1) return false;
+            if (cpu.Ols.Rdmsr(MSR_PERFBIAS2, ref pb2_eax, ref pb2_edx) != 1) return false;
+            if (cpu.Ols.Rdmsr(MSR_PERFBIAS3, ref pb3_eax, ref pb3_edx) != 1) return false;
+            if (cpu.Ols.Rdmsr(MSR_PERFBIAS4, ref pb4_eax, ref pb4_edx) != 1) return false;
+            if (cpu.Ols.Rdmsr(MSR_PERFBIAS5, ref pb5_eax, ref pb5_edx) != 1) return false;
 
             // Clear by default
             pb1_eax &= 0xFFFFFFEF;
@@ -700,13 +696,13 @@ namespace ZenStates
             }
 
             // Rewrite
-            for (int i = 0; i < si.Threads; i++)
+            for (int i = 0; i < SI.Threads; i++)
             {
-                if (!ops.WriteMsr(MSR_PERFBIAS1, pb1_eax, pb1_edx)) return false;
-                if (!ops.WriteMsr(MSR_PERFBIAS2, pb2_eax, pb2_edx)) return false;
-                if (!ops.WriteMsr(MSR_PERFBIAS3, pb3_eax, pb3_edx)) return false;
-                if (!ops.WriteMsr(MSR_PERFBIAS4, pb4_eax, pb4_edx)) return false;
-                if (!ops.WriteMsr(MSR_PERFBIAS5, pb5_eax, pb5_edx)) return false;
+                if (!cpu.WriteMsr(MSR_PERFBIAS1, pb1_eax, pb1_edx)) return false;
+                if (!cpu.WriteMsr(MSR_PERFBIAS2, pb2_eax, pb2_edx)) return false;
+                if (!cpu.WriteMsr(MSR_PERFBIAS3, pb3_eax, pb3_edx)) return false;
+                if (!cpu.WriteMsr(MSR_PERFBIAS4, pb4_eax, pb4_edx)) return false;
+                if (!cpu.WriteMsr(MSR_PERFBIAS5, pb5_eax, pb5_edx)) return false;
             }
 
             return true;
@@ -716,8 +712,6 @@ namespace ZenStates
         public AppWindow()
         {
             InitializeComponent();
-            ops = new Ops();
-            si = new SystemInfo();
 
             //siBindingSource = new BindingSource();
             ToolTip toolTip = new ToolTip();
@@ -728,33 +722,25 @@ namespace ZenStates
 
             try
             {
-                ops.CheckOlsStatus();
-
-                if (ops.CpuType == SMU.CPUType.Unsupported)
+                if (cpu.info.codeName == Cpu.CodeName.Unsupported)
                 {
                     HandleError("CPU is not supported");
-
-                    if (Application.MessageLoop)
-                    {
-                        Application.Exit();
-                    }
-                    else
-                    {
-                        Environment.Exit(1);
-                    }
+                    ExitApplication();
                 }
 
                 SetStatus("Initializing...");
 
-                if (ops.Smu.Version == 0)
+                if (cpu.smu.Version == 0)
                 {
                     HandleError("Error getting SMU version!\n" +
                         "Default SMU addresses are not responding to commands.");
                 }
 
+                dramBaseAddress = (uint)(cpu.GetDramBaseAddress() & 0xFFFFFFFF);
+
                 PopulatePstates();
-                InitManualOc();
                 InitPowerTab();
+                InitManualOc();
                 RunBackgroundTask(InitSystemInfo, InitSystemInfo_Complete);
 
                 //Enabled = true;
@@ -827,7 +813,7 @@ namespace ZenStates
 
         static void MinimizeFootprint()
         {
-            NativeMethods.EmptyWorkingSet(Process.GetCurrentProcess().Handle);
+            InteropMethods.EmptyWorkingSet(Process.GetCurrentProcess().Handle);
         }
 
         // Get rid of flicker on form when painting child user controls
@@ -871,14 +857,14 @@ namespace ZenStates
         private void ManualOverclockItem_SlowModeClicked(object sender, EventArgs e)
         {
             CheckBox cb = sender as CheckBox;
-            int cores = si.Threads;
-            int step = si.NumCoresInCCX;
+            int cores = SI.Threads;
+            int step = SI.NumCoresInCCX;
             int index = 0;
 
-            if (si.SMT)
+            if (SI.SMT)
                 step *= 2;
 
-            double[] ccx_frequencies = new double[si.CCXCount];
+            double[] ccx_frequencies = new double[SI.CCXCount];
 
             if (cb.Checked)
             {
@@ -890,7 +876,7 @@ namespace ZenStates
                 Storage.Add($"ccx_frequencies", ccx_frequencies);
                 Storage.Add("oc_vid", manualOverclockItem.Vid);
 
-                for (var i = 0; i < si.CCXCount; ++i)
+                for (var i = 0; i < SI.CCXCount; ++i)
                 {
                     Console.WriteLine($"ccx{i}: " + Storage.Get<double[]>($"ccx_frequencies")[i].ToString());
                 }
@@ -907,9 +893,9 @@ namespace ZenStates
                 }
                 else
                 {
-                    int[] masks = new int[si.CCXCount];
+                    int[] masks = new int[SI.CCXCount];
 
-                    for (var i = 0; i < si.PhysicalCoreCount; i += 4)
+                    for (var i = 0; i < SI.PhysicalCoreCount; i += 4)
                     {
                         int ccd = i / 8;
                         int ccx = i / 4 - 2 * ccd;
@@ -919,7 +905,7 @@ namespace ZenStates
 
                     SetOCVid(Storage.Get<byte>($"oc_vid"));
 
-                    for (var i = 0; i < si.CCXCount; ++i)
+                    for (var i = 0; i < SI.CCXCount; ++i)
                     {
                         int targetFreq = (int)(Storage.Get<double[]>($"ccx_frequencies")[i] * 100.00);
                         SetFrequencyCCX((uint)masks[i], targetFreq);

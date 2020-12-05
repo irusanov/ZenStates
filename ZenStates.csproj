@@ -74,13 +74,9 @@
     <Compile Include="MainForm.Designer.cs">
       <DependentUpon>MainForm.cs</DependentUpon>
     </Compile>
-    <Compile Include="Utils\NativeMethods.cs" />
-    <Compile Include="Utils\Ols.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Utils\Ops.cs" />
-    <Compile Include="Utils\SMU.cs" />
-    <Compile Include="Utils\SystemInfo.cs" />
+    <Compile Include="Utils\InteropMethods.cs" />
     <Compile Include="Utils\Storage.cs" />
     <EmbeddedResource Include="MainForm.resx">
       <DependentUpon>MainForm.cs</DependentUpon>
@@ -119,6 +115,10 @@
     </BootstrapperPackage>
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\ZenStates.Core\ZenStates-Core.csproj">
+      <Project>{d2d449e1-8701-442f-b440-37188f8d2380}</Project>
+      <Name>ZenStates-Core</Name>
+    </ProjectReference>
     <ProjectReference Include="ZenStatesControlLib\Controls.csproj">
       <Project>{7E4DF921-CD4A-4511-9EB9-67BE955D603C}</Project>
       <Name>Controls</Name>
