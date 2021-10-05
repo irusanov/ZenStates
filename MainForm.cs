@@ -4,6 +4,7 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.Linq;
 using System.Management;
+using System.Threading;
 using System.Windows.Forms;
 using ZenStates.Components;
 using ZenStates.Core;
@@ -343,22 +344,69 @@ namespace ZenStates
             manualOverclockItem.Vid = GetCurrentVid(ocmode);
             manualOverclockItem.Multi = GetCurrentMulti(ocmode);
             manualOverclockItem.ProchotEnabled = cpu.IsProchotEnabled();
+            manualOverclockItem.coreDisableMap = cpu.info.coreDisableMap;
             manualOverclockItem.CcxInCcd = cpu.info.family == Cpu.Family.FAMILY_19H ? 1 : 2;
             manualOverclockItem.Cores = (int)cpu.info.physicalCores; // SI.FusedCoreCount;
         }
 
-        private void WaitForPowerTable()
+        private bool WaitForDriverLoad()
         {
             Stopwatch timer = new Stopwatch();
             timer.Start();
 
-            uint temp;
-            // Refresh until table is transferred to DRAM or timeout
+            bool temp;
+            // Refresh until driver is opened
             do
-                InteropMethods.GetPhysLong((UIntPtr)dramBaseAddress, out temp);
-            while (temp == 0 && timer.Elapsed.TotalMilliseconds < 10000);
+                temp = cpu.utils.IsInpOutDriverOpen();
+            while (!temp && timer.Elapsed.TotalMilliseconds < 10000);
 
             timer.Stop();
+
+            return temp;
+        }
+
+        private bool WaitForPowerTable()
+        {
+            if (cpu.powerTable.DramBaseAddress == 0)
+            {
+                HandleError("Could not initialize power table.\nClose the application and try again.");
+                return false;
+            }
+
+            if (WaitForDriverLoad() && cpu.utils.WinIoStatus == Core.Utils.LibStatus.OK)
+            {
+                SMU.Status status = cpu.RefreshPowerTable();
+                uint temp = 0;
+                Stopwatch timer = new Stopwatch();
+                timer.Start();
+                short timeout = 10000;
+
+                // Refresh until table is transferred to DRAM or timeout
+                do
+                {
+                    // if refresh failed, try again
+                    if (status != SMU.Status.OK)
+                        status = cpu.RefreshPowerTable();
+                    else
+                        temp = cpu.powerTable.Table[0];
+                }
+                while ((temp == 0 || status != SMU.Status.OK) && timer.Elapsed.TotalMilliseconds < timeout);
+
+                timer.Stop();
+
+                if (temp == 0 || status != SMU.Status.OK)
+                {
+                    HandleError("Could not get power table.\nSkipping power table.");
+                    return false;
+                }
+
+                return true;
+            }
+            else
+            {
+                HandleError("I/O driver is not responding or not loaded.");
+                return false;
+            }
         }
 
         private void InitPowerTab()
@@ -369,21 +417,13 @@ namespace ZenStates
 
             numericUpDownScalar.Value = Convert.ToDecimal(cpu.GetPBOScalar());
 
-            WaitForPowerTable();
 
-            if (dramBaseAddress > 0)
+            if (WaitForPowerTable())
             {
                 try
                 {
-                    if (cpu.TransferTableToDram() != SMU.Status.OK)
-                        cpu.TransferTableToDram(); // retry
-
-                    UIntPtr dramPtr = new UIntPtr(dramBaseAddress);
-                    string result = "";
-
-                    InteropMethods.GetPhysLong(dramPtr, out uint data);
-                    byte[] bytes = BitConverter.GetBytes(data);
-                    result += $"PPT: {BitConverter.ToSingle(bytes, 0)}W" + Environment.NewLine;
+                    byte[] bytes = BitConverter.GetBytes(cpu.powerTable.Table[0]);
+                    string result = $"PPT: {BitConverter.ToSingle(bytes, 0)}W" + Environment.NewLine;
                     numericUpDownPPT.Value = Convert.ToDecimal(BitConverter.ToSingle(bytes, 0));
 
                     /*for (int i = 0; i <= table_size; i += 4)
@@ -393,14 +433,12 @@ namespace ZenStates
                         Console.WriteLine($"offset {i:X4}: {BitConverter.ToSingle(bytes, 0)}");
                     }*/
 
-                    InteropMethods.GetPhysLong(dramPtr + 0x008, out data);
-                    bytes = BitConverter.GetBytes(data);
+                    bytes = BitConverter.GetBytes(cpu.powerTable.Table[0x2]);
                     result += $"TDC: {BitConverter.ToSingle(bytes, 0)}A" + Environment.NewLine;
                     numericUpDownTDC.Value = Convert.ToDecimal(BitConverter.ToSingle(bytes, 0));
 
-                    InteropMethods.GetPhysLong(dramPtr + 0x010, out data);
-                    bytes = BitConverter.GetBytes(data);
-                    result += $"EDC: {BitConverter.ToSingle(bytes, 0)}A" + Environment.NewLine;
+                    bytes = BitConverter.GetBytes(cpu.powerTable.Table[0x4]);
+                    result += $"EDC: {cpu.powerTable.Table[0x10]}A" + Environment.NewLine;
                     numericUpDownEDC.Value = Convert.ToDecimal(BitConverter.ToSingle(bytes, 0));
                     /*
                     GetPhysLong(dramPtr + 0x010, out data);
@@ -472,7 +510,7 @@ namespace ZenStates
         {
             uint[] args = {Convert.ToUInt32(frequency), 0 };
             // TODO: Add Manual OC mode
-            if (cpu.SendSmuCommand(cpu.smu.SMU_MSG_SetOverclockFrequencyAllCores, ref args) != SMU.Status.OK)
+            if (cpu.SendSmuCommand(cpu.smu.Rsmu, cpu.smu.Rsmu.SMU_MSG_SetOverclockFrequencyAllCores, ref args) != SMU.Status.OK)
             {
                 HandleError("Error setting frequency!");
                 return false;
@@ -482,8 +520,8 @@ namespace ZenStates
 
         private bool SetFrequencySingleCore(int mask, int frequency)
         {
-            uint[] args = { Convert.ToUInt32(mask | frequency & 0xFFFFF), 0 };
-            if (cpu.SendSmuCommand(cpu.smu.SMU_MSG_SetOverclockFrequencyPerCore, ref args) != SMU.Status.OK)
+            uint[] args = { Convert.ToUInt32(mask | (frequency & 0xFFFFF)), 0 };
+            if (cpu.SendSmuCommand(cpu.smu.Rsmu, cpu.smu.Rsmu.SMU_MSG_SetOverclockFrequencyPerCore, ref args) != SMU.Status.OK)
             {
                 HandleError("Error setting core frequency!");
                 return false;
@@ -494,7 +532,7 @@ namespace ZenStates
         private bool SetFrequencyMultipleCores(uint mask, int frequency, int count)
         {
             // ((i.CCD << 4 | i.CCX % 2 & 0xF) << 4 | i.CORE % 4 & 0xF) << 20;
-            for (uint i = 0; i <= count; i++)
+            for (uint i = 0; i < count; i++)
             {
                 mask = cpu.utils.SetBits(mask, 20, 2, i);
                 if (!SetFrequencySingleCore((int)mask, frequency))
@@ -505,7 +543,7 @@ namespace ZenStates
 
         private bool SetFrequencyCCX(uint mask, int frequency)
         {
-            bool ret = SetFrequencyMultipleCores(mask, frequency, SI.NumCoresInCCX);
+            bool ret = SetFrequencyMultipleCores(mask, frequency, 8/*SI.NumCoresInCCX*/);
             if (!ret)
                 HandleError("Error setting CCX frequency!");
             return ret;
@@ -514,7 +552,7 @@ namespace ZenStates
         private bool SetFrequencyCCD(uint mask, int frequency)
         {
             bool ret = true;
-            for (uint i = 0; i <= SI.CCXCount / SI.CCDCount; i++)
+            for (uint i = 0; i < SI.CCXCount / SI.CCDCount; i++)
             {
                 mask = cpu.utils.SetBits(mask, 24, 1, i);
                 ret = SetFrequencyCCX(mask, frequency);
@@ -527,7 +565,7 @@ namespace ZenStates
         private bool SetOCVid(byte vid)
         {
             uint[] args = { Convert.ToUInt32(vid), 0 };
-            if (cpu.SendSmuCommand(cpu.smu.SMU_MSG_SetOverclockCpuVid, ref args) != SMU.Status.OK)
+            if (cpu.SendSmuCommand(cpu.smu.Rsmu, cpu.smu.Rsmu.SMU_MSG_SetOverclockCpuVid, ref args) != SMU.Status.OK)
             {
                 HandleError("Error setting CPU Overclock VID!");
                 return false;
@@ -537,9 +575,9 @@ namespace ZenStates
 
         private bool SetOcMode(bool enabled, uint arg = 0U)
         {
-            uint cmd = enabled ? cpu.smu.SMU_MSG_EnableOcMode : cpu.smu.SMU_MSG_DisableOcMode;
+            uint cmd = enabled ? cpu.smu.Rsmu.SMU_MSG_EnableOcMode : cpu.smu.Rsmu.SMU_MSG_DisableOcMode;
             uint[] args = { arg };
-            if (cpu.SendSmuCommand(cmd, ref args) != SMU.Status.OK)
+            if (cpu.SendSmuCommand(cpu.smu.Rsmu, cmd, ref args) != SMU.Status.OK)
             {
                 HandleError("Error setting OC mode!");
                 return false;
@@ -577,7 +615,7 @@ namespace ZenStates
                 switch (item.ControlMode)
                 {
                     case 0:
-                        if (SetFrequencyAllCore(550))
+                        //if (SetFrequencyAllCore(550))
                             ret = SetFrequencySingleCore(item.CoreMask, targetFreq);
                         break;
                     case 1:
@@ -689,6 +727,7 @@ namespace ZenStates
                 case PerfBias.SuperPi:
                     pb2_eax |= (1 & 0x1F) << 18;
                     pb3_eax |= (9 & 0x7);
+
                     break;
                 case PerfBias.Auto:
                 default:
@@ -696,14 +735,11 @@ namespace ZenStates
             }
 
             // Rewrite
-            for (int i = 0; i < SI.Threads; i++)
-            {
-                if (!cpu.WriteMsr(MSR_PERFBIAS1, pb1_eax, pb1_edx)) return false;
-                if (!cpu.WriteMsr(MSR_PERFBIAS2, pb2_eax, pb2_edx)) return false;
-                if (!cpu.WriteMsr(MSR_PERFBIAS3, pb3_eax, pb3_edx)) return false;
-                if (!cpu.WriteMsr(MSR_PERFBIAS4, pb4_eax, pb4_edx)) return false;
-                if (!cpu.WriteMsr(MSR_PERFBIAS5, pb5_eax, pb5_edx)) return false;
-            }
+            if (!cpu.WriteMsr(MSR_PERFBIAS1, pb1_eax, pb1_edx)) return false;
+            if (!cpu.WriteMsr(MSR_PERFBIAS2, pb2_eax, pb2_edx)) return false;
+            if (!cpu.WriteMsr(MSR_PERFBIAS3, pb3_eax, pb3_edx)) return false;
+            if (!cpu.WriteMsr(MSR_PERFBIAS4, pb4_eax, pb4_edx)) return false;
+            if (!cpu.WriteMsr(MSR_PERFBIAS5, pb5_eax, pb5_edx)) return false;
 
             return true;
         }
@@ -858,11 +894,8 @@ namespace ZenStates
         {
             CheckBox cb = sender as CheckBox;
             int cores = SI.Threads;
-            int step = SI.NumCoresInCCX;
+            int step = SI.SMT ? SI.NumCoresInCCX * 2 : SI.NumCoresInCCX;
             int index = 0;
-
-            if (SI.SMT)
-                step *= 2;
 
             double[] ccx_frequencies = new double[SI.CCXCount];
 

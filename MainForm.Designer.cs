@@ -41,6 +41,7 @@ namespace ZenStates
             this.tableLayoutPanel3 = new System.Windows.Forms.TableLayoutPanel();
             this.groupBoxCpuFreq = new System.Windows.Forms.GroupBox();
             this.tableLayoutPanel1 = new System.Windows.Forms.TableLayoutPanel();
+            this.manualOverclockItem = new ZenStates.Components.ManualOverclockItem();
             this.tabGPU = new System.Windows.Forms.TabPage();
             this.tabPower = new System.Windows.Forms.TabPage();
             this.tableLayoutPanel9 = new System.Windows.Forms.TableLayoutPanel();
@@ -95,7 +96,6 @@ namespace ZenStates
             this.trayMenuItemApp = new System.Windows.Forms.ToolStripMenuItem();
             this.trayMenuItemExit = new System.Windows.Forms.ToolStripMenuItem();
             this.buttonUndo = new System.Windows.Forms.Button();
-            this.manualOverclockItem = new ZenStates.Components.ManualOverclockItem();
             this.tabControl1.SuspendLayout();
             this.cpuTabOC.SuspendLayout();
             this.tableLayoutPanel2.SuspendLayout();
@@ -229,6 +229,23 @@ namespace ZenStates
             this.tableLayoutPanel1.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 61F));
             this.tableLayoutPanel1.Size = new System.Drawing.Size(269, 61);
             this.tableLayoutPanel1.TabIndex = 0;
+            // 
+            // manualOverclockItem
+            // 
+            this.manualOverclockItem.CcxInCcd = 0;
+            this.manualOverclockItem.coreDisableMap = ((uint)(0u));
+            this.manualOverclockItem.Cores = 0;
+            this.manualOverclockItem.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.manualOverclockItem.Location = new System.Drawing.Point(3, 3);
+            this.manualOverclockItem.Multi = 4D;
+            this.manualOverclockItem.Name = "manualOverclockItem";
+            this.manualOverclockItem.OCmode = false;
+            this.manualOverclockItem.ProchotEnabled = false;
+            this.manualOverclockItem.Size = new System.Drawing.Size(263, 55);
+            this.manualOverclockItem.TabIndex = 0;
+            this.manualOverclockItem.Vid = ((byte)(232));
+            this.manualOverclockItem.SlowModeClicked += new System.EventHandler(this.ManualOverclockItem_SlowModeClicked);
+            this.manualOverclockItem.ProchotClicked += new System.EventHandler(this.ManualOverclockItem_ProchotClicked);
             // 
             // tabGPU
             // 
@@ -892,13 +909,14 @@ namespace ZenStates
             this.tableLayoutPanel4.AutoSize = true;
             this.tableLayoutPanel4.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
             this.tableLayoutPanel4.BackColor = System.Drawing.SystemColors.Control;
-            this.tableLayoutPanel4.ColumnCount = 3;
+            this.tableLayoutPanel4.ColumnCount = 4;
             this.tableLayoutPanel4.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100F));
             this.tableLayoutPanel4.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle());
             this.tableLayoutPanel4.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle());
-            this.tableLayoutPanel4.Controls.Add(this.buttonRefresh, 1, 0);
+            this.tableLayoutPanel4.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle());
+            this.tableLayoutPanel4.Controls.Add(this.buttonRefresh, 2, 0);
             this.tableLayoutPanel4.Controls.Add(this.statusText, 0, 0);
-            this.tableLayoutPanel4.Controls.Add(this.buttonApply, 2, 0);
+            this.tableLayoutPanel4.Controls.Add(this.buttonApply, 3, 0);
             this.tableLayoutPanel4.Dock = System.Windows.Forms.DockStyle.Bottom;
             this.tableLayoutPanel4.Location = new System.Drawing.Point(4, 264);
             this.tableLayoutPanel4.Name = "tableLayoutPanel4";
@@ -972,21 +990,6 @@ namespace ZenStates
             this.buttonUndo.Name = "buttonUndo";
             this.buttonUndo.Size = new System.Drawing.Size(75, 23);
             this.buttonUndo.TabIndex = 0;
-            // 
-            // manualOverclockItem
-            // 
-            this.manualOverclockItem.Cores = 0;
-            this.manualOverclockItem.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.manualOverclockItem.Location = new System.Drawing.Point(3, 3);
-            this.manualOverclockItem.Multi = 4D;
-            this.manualOverclockItem.Name = "manualOverclockItem";
-            this.manualOverclockItem.OCmode = false;
-            this.manualOverclockItem.ProchotEnabled = false;
-            this.manualOverclockItem.Size = new System.Drawing.Size(263, 55);
-            this.manualOverclockItem.TabIndex = 0;
-            this.manualOverclockItem.Vid = ((byte)(232));
-            this.manualOverclockItem.SlowModeClicked += new System.EventHandler(this.ManualOverclockItem_SlowModeClicked);
-            this.manualOverclockItem.ProchotClicked += new System.EventHandler(this.ManualOverclockItem_ProchotClicked);
             // 
             // AppWindow
             // 
