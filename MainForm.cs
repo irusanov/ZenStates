@@ -334,6 +334,8 @@ namespace ZenStates
                 PstateItems[i].Pstate = (ulong)edx << 32 | eax;
             }
 
+            InitPowerTab();
+
             SetStatus("Refresh OK.");
         }
 
@@ -822,7 +824,13 @@ namespace ZenStates
                 SetCPB(checkBoxCPB.Checked);
                 SetC6Core(checkBoxC6Core.Checked);
                 SetC6Package(checkBoxC6Package.Checked);
+                cpu.SetPPTLimit(Convert.ToUInt32(numericUpDownPPT.Value));
+                cpu.SetEDCVDDLimit(Convert.ToUInt32(numericUpDownEDC.Value));
+                cpu.SetTDCVDDLimit(Convert.ToUInt32(numericUpDownTDC.Value));
+                cpu.SetPBOScalar(Convert.ToUInt32(numericUpDownScalar.Value));
             }
+
+            RefreshState();
         }
 
         private void MainForm_Resize(object sender, EventArgs e)
