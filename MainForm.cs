@@ -60,7 +60,6 @@ namespace ZenStates
         };
 
         private readonly Cpu cpu = new Cpu();
-        private SystemInfo SI;
         private BackgroundWorker backgroundWorker;
         //private BindingSource siBindingSource;
         private PstateItem[] PstateItems;
@@ -101,13 +100,11 @@ namespace ZenStates
 
         private void InitSystemInfo(object sender, DoWorkEventArgs e)
         {
-            if (cpu.info.family != Cpu.Family.FAMILY_17H && cpu.info.family != Cpu.Family.FAMILY_19H)
+            if (cpu.info.family == Cpu.Family.UNSUPPORTED || cpu.info.codeName == Cpu.CodeName.Unsupported)
             {
                 MessageBox.Show("CPU is not supported.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 ExitApplication();
             }
-
-            SI = new SystemInfo(cpu);
         }
 
         private void PopulateInfoTab()
@@ -117,13 +114,13 @@ namespace ZenStates
             cpuInfoLabel.DataBindings.Add("Text", siBindingSource, "CpuName", true);
             cpuIdLabel.DataBindings.Add("Text", siBindingSource, "CpuId", true);*/
 
-            cpuInfoLabel.Text = SI.CpuName;
-            mbVendorInfoLabel.Text = SI.MbVendor;
-            mbModelInfoLabel.Text = SI.MbName;
-            biosInfoLabel.Text = SI.BiosVersion;
-            smuInfoLabel.Text = SI.GetSmuVersionString();
-            cpuIdLabel.Text = $"{SI.GetCpuIdString()} ({cpu.info.codeName})";
-            microcodeInfoLabel.Text = $"{SI.PatchLevel:X8}";
+            cpuInfoLabel.Text = cpu.systemInfo.CpuName;
+            mbVendorInfoLabel.Text = cpu.systemInfo.MbVendor;
+            mbModelInfoLabel.Text = cpu.systemInfo.MbName;
+            biosInfoLabel.Text = cpu.systemInfo.BiosVersion;
+            smuInfoLabel.Text = cpu.systemInfo.GetSmuVersionString();
+            cpuIdLabel.Text = $"{cpu.systemInfo.GetCpuIdString()} ({cpu.info.codeName})";
+            microcodeInfoLabel.Text = $"{cpu.systemInfo.PatchLevel:X8}";
         }
 
         private void InitSystemInfo_Complete(object sender, RunWorkerCompletedEventArgs e)
@@ -160,7 +157,7 @@ namespace ZenStates
             uint msr = ocmode ? MSR_PSTATE_BOOST : MSR_PStateDef0;
             uint eax = default, edx = default;
 
-            if (cpu.Ols.Rdmsr(msr, ref eax, ref edx) != 1)
+            if (!cpu.ReadMsr(msr, ref eax, ref edx))
             {
                 HandleError("Error getting current multiplier!");
                 return 0;
@@ -172,25 +169,12 @@ namespace ZenStates
             return Math.Round(multi * 4, MidpointRounding.ToEven) / 4;
         }
 
-        private double GetCoreMulti(int index)
-        {
-            uint eax = default, edx = default;
-            if (cpu.Ols.RdmsrTx(MSR_PSTATE_BOOST, ref eax, ref edx, (UIntPtr)(1 << index)) != 1)
-            {
-                //HandleError($"Error getting core{index} frequency");
-                return 0;
-            }
-
-            double multi = 25 * (eax & 0xFF) / (12.5 * (eax >> 8 & 0x3F));
-            return Math.Round(multi * 4, MidpointRounding.ToEven) / 4;
-        }
-
         private byte GetCurrentVid(bool ocmode = false)
         {
             uint msr = ocmode ? MSR_PSTATE_BOOST : MSR_PStateDef0;
             uint eax = default, edx = default;
 
-            if (cpu.Ols.Rdmsr(msr, ref eax, ref edx) != 1)
+            if (!cpu.ReadMsr(msr, ref eax, ref edx))
             {
                 HandleError("Error getting current VID!");
                 return 0;
@@ -202,7 +186,7 @@ namespace ZenStates
         private bool GetCPB()
         {
             uint eax = 0, edx = 0;
-            if (cpu.Ols.Rdmsr(MSR_HWCR, ref eax, ref edx) != 1)
+            if (!cpu.ReadMsr(MSR_HWCR, ref eax, ref edx))
             {
                 HandleError("Error getting CPB MSR!");
                 return false;
@@ -214,7 +198,7 @@ namespace ZenStates
         private void SetCPB(bool en)
         {
             uint eax = 0, edx = 0;
-            bool res = (cpu.Ols.Rdmsr(MSR_HWCR, ref eax, ref edx) == 1);
+            bool res = (cpu.ReadMsr(MSR_HWCR, ref eax, ref edx));
 
             if (res)
             {
@@ -230,7 +214,7 @@ namespace ZenStates
         private bool GetC6Package()
         {
             uint eax = 0, edx = 0;
-            if (cpu.Ols.Rdmsr(MSR_PMGT_MISC, ref eax, ref edx) != 1)
+            if (!cpu.ReadMsr(MSR_PMGT_MISC, ref eax, ref edx))
             {
                 HandleError("Error getting Package C6-State MSR!");
                 return false;
@@ -242,7 +226,7 @@ namespace ZenStates
         private void SetC6Package(bool en)
         {
             uint eax = 0, edx = 0;
-            bool res = cpu.Ols.Rdmsr(MSR_PMGT_MISC, ref eax, ref edx) == 1;
+            bool res = cpu.ReadMsr(MSR_PMGT_MISC, ref eax, ref edx);
 
             if (res)
             {
@@ -263,7 +247,7 @@ namespace ZenStates
         private bool GetC6Core()
         {
             uint eax = default, edx = default;
-            if (cpu.Ols.Rdmsr(MSR_CSTATE_CONFIG, ref eax, ref edx) != 1)
+            if (!cpu.ReadMsr(MSR_CSTATE_CONFIG, ref eax, ref edx))
             {
                 HandleError("Error getting Core C6-State!");
                 return false;
@@ -279,7 +263,7 @@ namespace ZenStates
         private void SetC6Core(bool en)
         {
             uint eax = 0, edx = 0;
-            bool res = cpu.Ols.Rdmsr(MSR_CSTATE_CONFIG, ref eax, ref edx) == 1;
+            bool res = cpu.ReadMsr(MSR_CSTATE_CONFIG, ref eax, ref edx);
 
             if (res)
             {
@@ -306,13 +290,13 @@ namespace ZenStates
         {
             uint eax = default, edx = default;
 
-            cpu.Ols.Rdmsr(MSR_PStateCurLim, ref eax, ref edx);
+            cpu.ReadMsr(MSR_PStateCurLim, ref eax, ref edx);
             NUM_PSTATES = Convert.ToInt32((eax >> 4) & 0x7) + 1;
             PstateItems = new PstateItem[NUM_PSTATES];
 
             for (int i = 0; i < NUM_PSTATES; i++)
             {
-                cpu.Ols.Rdmsr(MSR_PStateDef0 + Convert.ToUInt32(i), ref eax, ref edx);
+                cpu.ReadMsr(MSR_PStateDef0 + Convert.ToUInt32(i), ref eax, ref edx);
                 PstateItems[i] = new PstateItem
                 {
                     Label = $"P{i}",
@@ -330,7 +314,7 @@ namespace ZenStates
 
             for (int i = 0; i < NUM_PSTATES; i++)
             {
-                cpu.Ols.Rdmsr(MSR_PStateDef0 + Convert.ToUInt32(i), ref eax, ref edx);
+                cpu.ReadMsr(MSR_PStateDef0 + Convert.ToUInt32(i), ref eax, ref edx);
                 PstateItems[i].Pstate = (ulong)edx << 32 | eax;
             }
 
@@ -353,14 +337,15 @@ namespace ZenStates
 
         private bool WaitForDriverLoad()
         {
-            Stopwatch timer = new Stopwatch();
+            var timer = new Stopwatch();
             timer.Start();
 
             bool temp;
             // Refresh until driver is opened
             do
+            {
                 temp = cpu.utils.IsInpOutDriverOpen();
-            while (!temp && timer.Elapsed.TotalMilliseconds < 10000);
+            } while (!temp && timer.Elapsed.TotalMilliseconds < 10000);
 
             timer.Stop();
 
@@ -369,36 +354,34 @@ namespace ZenStates
 
         private bool WaitForPowerTable()
         {
-            if (cpu.powerTable.DramBaseAddress == 0)
+            //if (cpu.powerTable.DramBaseAddress == 0)
             {
-                HandleError("Could not initialize power table.\nClose the application and try again.");
-                return false;
+                //HandleError("Could not initialize power table.\nClose the application and try again.");
+                //return false;
             }
 
             if (WaitForDriverLoad() && cpu.utils.WinIoStatus == Core.Utils.LibStatus.OK)
             {
-                SMU.Status status = cpu.RefreshPowerTable();
-                uint temp = 0;
-                Stopwatch timer = new Stopwatch();
-                timer.Start();
-                short timeout = 10000;
+                var timer = new Stopwatch();
+                var timeout = 10000;
 
-                // Refresh until table is transferred to DRAM or timeout
+                timer.Start();
+
+                SMU.Status status;
+                // Refresh each 2 seconds until table is transferred to DRAM or timeout
                 do
                 {
-                    // if refresh failed, try again
+                    status = cpu.RefreshPowerTable();
                     if (status != SMU.Status.OK)
-                        status = cpu.RefreshPowerTable();
-                    else
-                        temp = cpu.powerTable.Table[0];
-                }
-                while ((temp == 0 || status != SMU.Status.OK) && timer.Elapsed.TotalMilliseconds < timeout);
+                        // It's ok to block the current thread
+                        Thread.Sleep(2000);
+                } while (status != SMU.Status.OK && timer.Elapsed.TotalMilliseconds < timeout);
 
                 timer.Stop();
 
-                if (temp == 0 || status != SMU.Status.OK)
+                if (status != SMU.Status.OK)
                 {
-                    HandleError("Could not get power table.\nSkipping power table.");
+                    HandleError("Could not get power table.\nSkipping.");
                     return false;
                 }
 
@@ -500,7 +483,7 @@ namespace ZenStates
         {
             uint eax = 0, edx = 0;
 
-            if (cpu.Ols.Rdmsr(MSR_HWCR, ref eax, ref edx) != -1)
+            if (cpu.ReadMsr(MSR_HWCR, ref eax, ref edx))
             {
                 eax |= 0x200000;
                 return cpu.WriteMsr(MSR_HWCR, eax, edx);
@@ -554,7 +537,7 @@ namespace ZenStates
         private bool SetFrequencyCCD(uint mask, int frequency)
         {
             bool ret = true;
-            for (uint i = 0; i < SI.CCXCount / SI.CCDCount; i++)
+            for (uint i = 0; i < cpu.systemInfo.CCXCount / cpu.systemInfo.CCDCount; i++)
             {
                 mask = cpu.utils.SetBits(mask, 24, 1, i);
                 ret = SetFrequencyCCX(mask, frequency);
@@ -675,11 +658,11 @@ namespace ZenStates
             uint pb1_eax = 0, pb1_edx = 0, pb2_eax = 0, pb2_edx = 0, pb3_eax = 0, pb3_edx = 0, pb4_eax = 0, pb4_edx = 0, pb5_eax = 0, pb5_edx = 0;
 
             // Read current settings
-            if (cpu.Ols.Rdmsr(MSR_PERFBIAS1, ref pb1_eax, ref pb1_edx) != 1) return false;
-            if (cpu.Ols.Rdmsr(MSR_PERFBIAS2, ref pb2_eax, ref pb2_edx) != 1) return false;
-            if (cpu.Ols.Rdmsr(MSR_PERFBIAS3, ref pb3_eax, ref pb3_edx) != 1) return false;
-            if (cpu.Ols.Rdmsr(MSR_PERFBIAS4, ref pb4_eax, ref pb4_edx) != 1) return false;
-            if (cpu.Ols.Rdmsr(MSR_PERFBIAS5, ref pb5_eax, ref pb5_edx) != 1) return false;
+            if (!cpu.ReadMsr(MSR_PERFBIAS1, ref pb1_eax, ref pb1_edx)) return false;
+            if (!cpu.ReadMsr(MSR_PERFBIAS2, ref pb2_eax, ref pb2_edx)) return false;
+            if (!cpu.ReadMsr(MSR_PERFBIAS3, ref pb3_eax, ref pb3_edx)) return false;
+            if (!cpu.ReadMsr(MSR_PERFBIAS4, ref pb4_eax, ref pb4_edx)) return false;
+            if (!cpu.ReadMsr(MSR_PERFBIAS5, ref pb5_eax, ref pb5_edx)) return false;
 
             // Clear by default
             pb1_eax &= 0xFFFFFFEF;
@@ -901,23 +884,23 @@ namespace ZenStates
         private void ManualOverclockItem_SlowModeClicked(object sender, EventArgs e)
         {
             CheckBox cb = sender as CheckBox;
-            int cores = SI.Threads;
-            int step = SI.SMT ? SI.NumCoresInCCX * 2 : SI.NumCoresInCCX;
+            int cores = cpu.systemInfo.Threads;
+            int step = cpu.systemInfo.SMT ? cpu.systemInfo.NumCoresInCCX * 2 : cpu.systemInfo.NumCoresInCCX;
             int index = 0;
 
-            double[] ccx_frequencies = new double[SI.CCXCount];
+            double[] ccx_frequencies = new double[cpu.systemInfo.CCXCount];
 
             if (cb.Checked)
             {
                 for (var i = 0; i < cores; i += step)
                 {
-                    ccx_frequencies[index] = GetCoreMulti(i);
+                    ccx_frequencies[index] = cpu.GetCoreMulti(i);
                     ++index;
                 }
                 Storage.Add($"ccx_frequencies", ccx_frequencies);
                 Storage.Add("oc_vid", manualOverclockItem.Vid);
 
-                for (var i = 0; i < SI.CCXCount; ++i)
+                for (var i = 0; i < cpu.systemInfo.CCXCount; ++i)
                 {
                     Console.WriteLine($"ccx{i}: " + Storage.Get<double[]>($"ccx_frequencies")[i].ToString());
                 }
@@ -934,9 +917,9 @@ namespace ZenStates
                 }
                 else
                 {
-                    int[] masks = new int[SI.CCXCount];
+                    int[] masks = new int[cpu.systemInfo.CCXCount];
 
-                    for (var i = 0; i < SI.PhysicalCoreCount; i += 4)
+                    for (var i = 0; i < cpu.systemInfo.PhysicalCoreCount; i += 4)
                     {
                         int ccd = i / 8;
                         int ccx = i / 4 - 2 * ccd;
@@ -946,7 +929,7 @@ namespace ZenStates
 
                     SetOCVid(Storage.Get<byte>($"oc_vid"));
 
-                    for (var i = 0; i < SI.CCXCount; ++i)
+                    for (var i = 0; i < cpu.systemInfo.CCXCount; ++i)
                     {
                         int targetFreq = (int)(Storage.Get<double[]>($"ccx_frequencies")[i] * 100.00);
                         SetFrequencyCCX((uint)masks[i], targetFreq);
