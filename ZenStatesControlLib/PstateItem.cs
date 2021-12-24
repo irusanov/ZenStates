@@ -27,9 +27,9 @@ namespace ZenStates.Components
             return targetFid;
         }
 
-        private double CalculateMulti(ulong did = 0, ulong fid = 1)
+        private double CalculateMulti(ulong fid = 1, ulong did = 0)
         {
-            return 25 * did / (fid * 12.5);
+            return 25 * fid / (did * 12.5);
         }
 
         private void PopulateVidItems()
