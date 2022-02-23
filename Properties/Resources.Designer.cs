@@ -61,20 +61,21 @@ namespace ZenStates.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Error.
+        ///   Looks up a localized resource of type System.Drawing.Icon similar to (Icon).
         /// </summary>
-        internal static string Error {
+        internal static System.Drawing.Icon ZenStates {
             get {
-                return ResourceManager.GetString("Error", resourceCulture);
+                object obj = ResourceManager.GetObject("ZenStates", resourceCulture);
+                return ((System.Drawing.Icon)(obj));
             }
         }
         
         /// <summary>
         ///   Looks up a localized resource of type System.Drawing.Icon similar to (Icon).
         /// </summary>
-        internal static System.Drawing.Icon ZenStates {
+        internal static System.Drawing.Icon ZenStates_16x16 {
             get {
-                object obj = ResourceManager.GetObject("ZenStates", resourceCulture);
+                object obj = ResourceManager.GetObject("ZenStates_16x16", resourceCulture);
                 return ((System.Drawing.Icon)(obj));
             }
         }

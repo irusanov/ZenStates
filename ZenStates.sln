@@ -1,17 +1,11 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
-VisualStudioVersion = 16.0.30330.147
+VisualStudioVersion = 16.0.31321.278
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ZenStates", "ZenStates.csproj", "{16D7E1FC-58B4-47C7-B87F-38B28CC4BBF3}"
-	ProjectSection(ProjectDependencies) = postProject
-		{7E4DF921-CD4A-4511-9EB9-67BE955D603C} = {7E4DF921-CD4A-4511-9EB9-67BE955D603C}
-		{D2D449E1-8701-442F-B440-37188F8D2380} = {D2D449E1-8701-442F-B440-37188F8D2380}
-	EndProjectSection
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ZenStates", "ZenStates.csproj", "{EC38A2D3-C3F8-44E4-9B94-457D160F06D9}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Controls", "ZenStatesControlLib\Controls.csproj", "{7E4DF921-CD4A-4511-9EB9-67BE955D603C}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ZenStates-Core", "..\ZenStates.Core\ZenStates-Core.csproj", "{D2D449E1-8701-442F-B440-37188F8D2380}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ZenStates-Core", "..\..\ZenStates.Core\ZenStates-Core.csproj", "{D2D449E1-8701-442F-B440-37188F8D2380}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -19,14 +13,10 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{16D7E1FC-58B4-47C7-B87F-38B28CC4BBF3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{16D7E1FC-58B4-47C7-B87F-38B28CC4BBF3}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{16D7E1FC-58B4-47C7-B87F-38B28CC4BBF3}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{16D7E1FC-58B4-47C7-B87F-38B28CC4BBF3}.Release|Any CPU.Build.0 = Release|Any CPU
-		{7E4DF921-CD4A-4511-9EB9-67BE955D603C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{7E4DF921-CD4A-4511-9EB9-67BE955D603C}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{7E4DF921-CD4A-4511-9EB9-67BE955D603C}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{7E4DF921-CD4A-4511-9EB9-67BE955D603C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{EC38A2D3-C3F8-44E4-9B94-457D160F06D9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{EC38A2D3-C3F8-44E4-9B94-457D160F06D9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{EC38A2D3-C3F8-44E4-9B94-457D160F06D9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{EC38A2D3-C3F8-44E4-9B94-457D160F06D9}.Release|Any CPU.Build.0 = Release|Any CPU
 		{D2D449E1-8701-442F-B440-37188F8D2380}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{D2D449E1-8701-442F-B440-37188F8D2380}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D2D449E1-8701-442F-B440-37188F8D2380}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -36,6 +26,6 @@ Global
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
-		SolutionGuid = {05DA2A8A-66D5-400C-B9CC-26CBBC9B2234}
+		SolutionGuid = {5B1EBA40-031B-4747-B8DF-1D60A96EE531}
 	EndGlobalSection
 EndGlobal

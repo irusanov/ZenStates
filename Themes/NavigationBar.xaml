@@ -1,0 +1,57 @@
+﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <Style x:Key="NavButton" TargetType="RadioButton">
+        <Setter Property="Foreground" Value="{DynamicResource TextColor}" />
+        <Setter Property="Background" Value="{DynamicResource NavButtonBackgroundBrush}"/>
+        <Setter Property="Padding" Value="10 5"/>
+        <Setter Property="Margin" Value="0, 0, 2, 0"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="RadioButton">
+                    <Border
+                        x:Name="navButtonContainer"
+                        Background="{TemplateBinding Background}"
+                        Margin="{TemplateBinding Margin}"
+                        Padding="0"
+                        CornerRadius="3">
+                        <TextBlock
+                            x:Name="navButton"
+                            Text="{TemplateBinding Content}"
+                            HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                            VerticalAlignment="Center"
+                            Padding="{TemplateBinding Padding}"
+                            Margin="0"
+                            Foreground="{TemplateBinding Foreground}" />
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsChecked" Value="True">
+                            <Setter Property="Background" Value="{DynamicResource NavButtonHoverBackgroundBrush}" TargetName="navButtonContainer" />
+                            <Setter Property="Foreground" Value="{DynamicResource AccentTextColor}" TargetName="navButton" />
+                        </Trigger>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter Property="Background" Value="{DynamicResource NavButtonHoverBackgroundBrush}" TargetName="navButtonContainer" />
+                            <Setter Property="Foreground" Value="{DynamicResource AccentTextColor}" TargetName="navButton" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+        <!--Style.Triggers>
+            <EventTrigger RoutedEvent="MouseEnter">
+                <BeginStoryboard>
+                    <Storyboard>
+                        <ColorAnimation To="{StaticResource NavButtonHoverBackground}" Duration="0:0:0.1" Storyboard.TargetProperty="Background.Color" />
+                    </Storyboard>
+                </BeginStoryboard>
+            </EventTrigger>
+            <EventTrigger RoutedEvent="MouseLeave">
+                <BeginStoryboard>
+                    <Storyboard>
+                        <ColorAnimation To="{StaticResource NavButtonBackground}" Duration="0:0:0.1" Storyboard.TargetProperty="Background.Color" />
+                    </Storyboard>
+                </BeginStoryboard>
+            </EventTrigger>
+        </Style.Triggers-->
+    </Style>
+</ResourceDictionary>

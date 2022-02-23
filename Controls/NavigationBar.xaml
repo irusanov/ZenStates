@@ -1,0 +1,56 @@
+﻿<UserControl x:Class="ZenStates.Controls.NavigationBar"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:nav="clr-namespace:ZenStates.State.Navigators"
+             xmlns:viewmodels="clr-namespace:ZenStates.ViewModels"
+             xmlns:converters="clr-namespace:ZenStates.Converters"
+             mc:Ignorable="d" 
+             d:DesignHeight="450" d:DesignWidth="800">
+
+    <UserControl.Resources>
+        <converters:EqualValueToParameterConverter x:Key="EqualValueToParameterConverter" />
+    </UserControl.Resources>
+    
+    <Border
+        Padding="3, 5"
+        Background="{DynamicResource WindowBorderColor}">
+        <StackPanel Orientation="Horizontal" Height="auto" MinHeight="25" RenderOptions.EdgeMode="Aliased">
+            <StackPanel.Resources>
+                <Style TargetType="RadioButton" BasedOn="{StaticResource NavButton}" />
+            </StackPanel.Resources>
+
+            <RadioButton
+                Content="Home"
+                IsChecked="{Binding CurrentViewModel, Mode=OneWay, Converter={StaticResource EqualValueToParameterConverter}, ConverterParameter={x:Type viewmodels:HomeViewModel}}"
+                Command="{Binding UpdateCurrentViewModelCommand}"
+                CommandParameter="{x:Static nav:ViewType.HOME}" />
+            <RadioButton
+                Content="CPU"
+                IsChecked="{Binding CurrentViewModel, Mode=OneWay, Converter={StaticResource EqualValueToParameterConverter}, ConverterParameter={x:Type viewmodels:CpuViewModel}}"
+                Command="{Binding UpdateCurrentViewModelCommand}"
+                CommandParameter="{x:Static nav:ViewType.CPU}" />
+            <RadioButton
+                Content="GPU"
+                IsChecked="{Binding CurrentViewModel, Mode=OneWay, Converter={StaticResource EqualValueToParameterConverter}, ConverterParameter={x:Type viewmodels:GpuViewModel}}"
+                Command="{Binding UpdateCurrentViewModelCommand}"
+                CommandParameter="{x:Static nav:ViewType.GPU}" />
+            <RadioButton
+                Content="Power"
+                IsChecked="{Binding CurrentViewModel, Mode=OneWay, Converter={StaticResource EqualValueToParameterConverter}, ConverterParameter={x:Type viewmodels:PowerViewModel}}"
+                Command="{Binding UpdateCurrentViewModelCommand}"
+                CommandParameter="{x:Static nav:ViewType.POWER}" />
+            <RadioButton
+                Content="Tweaks"
+                IsChecked="{Binding CurrentViewModel, Mode=OneWay, Converter={StaticResource EqualValueToParameterConverter}, ConverterParameter={x:Type viewmodels:TweaksViewModel}}"
+                Command="{Binding UpdateCurrentViewModelCommand}"
+                CommandParameter="{x:Static nav:ViewType.TWEAKS}" />
+            <RadioButton
+                Content="Settings"
+                IsChecked="{Binding CurrentViewModel, Mode=OneWay, Converter={StaticResource EqualValueToParameterConverter}, ConverterParameter={x:Type viewmodels:OptionsViewModel}}"
+                Command="{Binding UpdateCurrentViewModelCommand}"
+                CommandParameter="{x:Static nav:ViewType.OPTIONS}" />
+        </StackPanel>
+    </Border>
+</UserControl>

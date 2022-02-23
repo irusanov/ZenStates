@@ -1,0 +1,63 @@
+﻿<UserControl x:Class="ZenStates.Views.OptionsView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:adonisUi="clr-namespace:AdonisUI;assembly=AdonisUI"
+             mc:Ignorable="d" 
+             d:DesignHeight="450" d:DesignWidth="800">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="25" />
+            <RowDefinition Height="25" />
+            <RowDefinition Height="25" />
+            <RowDefinition Height="25" />
+            <RowDefinition Height="25" />
+            <RowDefinition Height="25" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="auto" />
+        </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="auto" />
+            <ColumnDefinition Width="*" />
+        </Grid.ColumnDefinitions>
+
+        <ToggleButton
+            Content="Minimize To Tray"
+            Grid.Row="0" Grid.Column="0"
+            IsChecked="{Binding MinimizeToTray}"
+            Style="{DynamicResource {x:Static adonisUi:Styles.ToggleSwitch}}" />
+        <ToggleButton
+            Content="Start Minimized"
+            Grid.Row="1" Grid.Column="0"
+            IsChecked="{Binding StartMinimized}"
+            Style="{DynamicResource {x:Static adonisUi:Styles.ToggleSwitch}}" />
+        <ToggleButton
+            Content="Start With System"
+            Grid.Row="2" Grid.Column="0"
+            IsChecked="{Binding StartWithWindows}"
+            Style="{DynamicResource {x:Static adonisUi:Styles.ToggleSwitch}}" />
+        <ToggleButton
+            Content="Save Window Position"
+            Grid.Row="3" Grid.Column="0"
+            IsChecked="{Binding SaveWindowPosition}"
+            Style="{DynamicResource {x:Static adonisUi:Styles.ToggleSwitch}}" />
+        <ToggleButton
+            Content="Dark Theme"
+            Grid.Row="4" Grid.Column="0"
+            IsChecked="{Binding DarkMode}"
+            Style="{DynamicResource {x:Static adonisUi:Styles.ToggleSwitch}}" />
+        <ToggleButton
+            Content="Q-Code Temperature Display"
+            Grid.Row="5" Grid.Column="0"
+            IsChecked="{Binding QCodeTemperatureDisplay}"
+            Style="{DynamicResource {x:Static adonisUi:Styles.ToggleSwitch}}" />
+
+        <Button 
+            Content="Reset"
+            Grid.Row="7"
+            Grid.Column="0"
+            HorizontalAlignment="Left"
+            Command="{Binding ResetSettings}"/>
+    </Grid>
+</UserControl>

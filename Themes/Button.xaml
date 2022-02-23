@@ -1,0 +1,22 @@
+﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:adonisUi="clr-namespace:AdonisUI;assembly=AdonisUI"
+                    xmlns:adonisExtensions="clr-namespace:AdonisUI.Extensions;assembly=AdonisUI">
+
+    <Style x:Key="{x:Type Button}" TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
+        <Setter Property="Margin" Value="0, 10, 10, 10" />
+        <Setter Property="MinWidth" Value="70" />
+        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+        <Setter Property="adonisExtensions:CornerRadiusExtension.CornerRadius" Value="2"/>
+    </Style>
+    <Style x:Key="{x:Static adonisUi:Styles.AccentButton}"
+           TargetType="Button"
+           BasedOn="{StaticResource {x:Static adonisUi:Styles.AccentButton}}">
+        <Setter Property="Margin" Value="0, 10, 10, 10" />
+        <Setter Property="MinWidth" Value="70" />
+        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+        <Setter Property="adonisExtensions:CornerRadiusExtension.CornerRadius" Value="2"/>
+    </Style>
+</ResourceDictionary>

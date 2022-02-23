@@ -1,0 +1,8 @@
+﻿<#@ template debug="false" hostspecific="false" language="C#" #>
+using System.Reflection;
+
+[assembly: AssemblyVersion("2.0.0.<#= this.RevisionNumber #>")]
+[assembly: AssemblyFileVersion("2.0.0.<#= this.RevisionNumber #>")]
+<#+
+    int RevisionNumber = (int)(DateTime.UtcNow - new DateTime(2021,1,9)).TotalDays;
+#>
