@@ -159,13 +159,13 @@ namespace ZenStates.Components
         }
 
         public bool AllCores { get => comboBoxCore.SelectedIndex == comboBoxCore.Items.Count - 1; }
-        public int CoreMask
+        public uint CoreMask
         {
             get
             {
                 CoreListItem i = comboBoxCore.SelectedItem as CoreListItem;
                 // Console.WriteLine($"SET - ccd: {i.CCD}, ccx: {i.CCX }, core: {i.CORE % 4 }");
-                return ((i.CCD << 4 | i.CCX % CcxInCcd & 0xF) << 4 | i.CORE % coresInCcx & 0xF) << 20;
+                return Convert.ToUInt32(((i.CCD << 4 | i.CCX % CcxInCcd & 0xF) << 4 | i.CORE % coresInCcx & 0xF) << 20);
             }
         }
 

@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Linq;
-using System.Management;
 using System.Threading;
 using System.Windows.Forms;
 using ZenStates.Components;
@@ -33,8 +32,6 @@ namespace ZenStates
         private const uint THM_TCON_CUR_TMP = 0x00059800;
         private const uint THM_TCON_PROCHOT = 0x00059804;
         private const uint THM_TCON_THERM_TRIP = 0x00059808;
-
-        private readonly uint dramBaseAddress = 0;
 
         private enum PerfBias { Auto = 0, None, Cinebench_R11p5, Cinebench_R15, Geekbench_3, SuperPi };
         private enum PerfEnh { Auto = 0, Default, Level1, Level2, Level3_OC, Level4_OC };
@@ -332,7 +329,7 @@ namespace ZenStates
             manualOverclockItem.ProchotEnabled = cpu.IsProchotEnabled();
             manualOverclockItem.coreDisableMap = cpu.info.coreDisableMap;
             manualOverclockItem.CcxInCcd = cpu.info.family == Cpu.Family.FAMILY_19H ? 1 : 2;
-            manualOverclockItem.Cores = (int)cpu.info.physicalCores; // SI.FusedCoreCount;
+            manualOverclockItem.Cores = (int)cpu.info.physicalCores;
         }
 
         private bool WaitForDriverLoad()
@@ -407,24 +404,10 @@ namespace ZenStates
             {
                 try
                 {
-                    byte[] bytes = BitConverter.GetBytes(cpu.powerTable.Table[0]);
-                    string result = $"PPT: {BitConverter.ToSingle(bytes, 0)}W" + Environment.NewLine;
-                    numericUpDownPPT.Value = Convert.ToDecimal(BitConverter.ToSingle(bytes, 0));
+                    numericUpDownPPT.Value = Convert.ToDecimal(cpu.powerTable.Table[0]);
+                    numericUpDownTDC.Value = Convert.ToDecimal(cpu.powerTable.Table[0x2]);
+                    numericUpDownEDC.Value = Convert.ToDecimal(cpu.powerTable.Table[0x4]);
 
-                    /*for (int i = 0; i <= table_size; i += 4)
-                    {
-                        GetPhysLong(dramPtr + i, out uint value);
-                        bytes = BitConverter.GetBytes(value);
-                        Console.WriteLine($"offset {i:X4}: {BitConverter.ToSingle(bytes, 0)}");
-                    }*/
-
-                    bytes = BitConverter.GetBytes(cpu.powerTable.Table[0x2]);
-                    result += $"TDC: {BitConverter.ToSingle(bytes, 0)}A" + Environment.NewLine;
-                    numericUpDownTDC.Value = Convert.ToDecimal(BitConverter.ToSingle(bytes, 0));
-
-                    bytes = BitConverter.GetBytes(cpu.powerTable.Table[0x4]);
-                    result += $"EDC: {cpu.powerTable.Table[0x10]}A" + Environment.NewLine;
-                    numericUpDownEDC.Value = Convert.ToDecimal(BitConverter.ToSingle(bytes, 0));
                     /*
                     GetPhysLong(dramPtr + 0x010, out data);
                     bytes = BitConverter.GetBytes(data);
@@ -491,7 +474,7 @@ namespace ZenStates
             return false;
         }
 
-        private bool SetFrequencyAllCore(int frequency)
+        private bool SetFrequencyAllCore(uint frequency)
         {
             uint[] args = {Convert.ToUInt32(frequency), 0 };
             // TODO: Add Manual OC mode
@@ -503,9 +486,9 @@ namespace ZenStates
             return true;
         }
 
-        private bool SetFrequencySingleCore(int mask, int frequency)
+        private bool SetFrequencySingleCore(uint mask, uint frequency)
         {
-            uint[] args = { Convert.ToUInt32(mask | (frequency & 0xFFFFF)), 0 };
+            uint[] args = { mask | (frequency & 0xFFFFF) };
             if (cpu.SendSmuCommand(cpu.smu.Rsmu, cpu.smu.Rsmu.SMU_MSG_SetOverclockFrequencyPerCore, ref args) != SMU.Status.OK)
             {
                 HandleError("Error setting core frequency!");
@@ -514,19 +497,19 @@ namespace ZenStates
             return true;
         }
 
-        private bool SetFrequencyMultipleCores(uint mask, int frequency, int count)
+        private bool SetFrequencyMultipleCores(uint mask, uint frequency, int count)
         {
             // ((i.CCD << 4 | i.CCX % 2 & 0xF) << 4 | i.CORE % 4 & 0xF) << 20;
             for (uint i = 0; i < count; i++)
             {
                 mask = cpu.utils.SetBits(mask, 20, 2, i);
-                if (!SetFrequencySingleCore((int)mask, frequency))
+                if (!SetFrequencySingleCore(mask, frequency))
                     return false;
             }
             return true;
         }
 
-        private bool SetFrequencyCCX(uint mask, int frequency)
+        private bool SetFrequencyCCX(uint mask, uint frequency)
         {
             bool ret = SetFrequencyMultipleCores(mask, frequency, 8/*SI.NumCoresInCCX*/);
             if (!ret)
@@ -534,7 +517,7 @@ namespace ZenStates
             return ret;
         }
 
-        private bool SetFrequencyCCD(uint mask, int frequency)
+        private bool SetFrequencyCCD(uint mask, uint frequency)
         {
             bool ret = true;
             for (uint i = 0; i < cpu.systemInfo.CCXCount / cpu.systemInfo.CCDCount; i++)
@@ -585,8 +568,8 @@ namespace ZenStates
         {
             bool ret = false;
             var item = manualOverclockItem;
-            int targetFreq = (int)(item.Multi * 100.00);
-            int currentFreq = (int)(GetCurrentMulti(true) * 100.00);
+            uint targetFreq = Convert.ToUInt32(item.Multi * 100.00);
+            uint currentFreq = Convert.ToUInt32(GetCurrentMulti(true) * 100.00);
 
             if (targetFreq > currentFreq)
                 SetOCVid(item.Vid);
@@ -600,14 +583,14 @@ namespace ZenStates
                 switch (item.ControlMode)
                 {
                     case 0:
-                        //if (SetFrequencyAllCore(550))
+                        if (SetFrequencyAllCore(550))
                             ret = SetFrequencySingleCore(item.CoreMask, targetFreq);
                         break;
                     case 1:
-                        ret = SetFrequencyCCX((uint)item.CoreMask, targetFreq);
+                        ret = SetFrequencyCCX(item.CoreMask, targetFreq);
                         break;
                     case 2:
-                        ret = SetFrequencyCCD((uint)item.CoreMask, targetFreq);
+                        ret = SetFrequencyCCD(item.CoreMask, targetFreq);
                         break;
                     default:
                         break;
@@ -757,8 +740,6 @@ namespace ZenStates
                         "Default SMU addresses are not responding to commands.");
                 }
 
-                dramBaseAddress = (uint)(cpu.GetDramBaseAddress() & 0xFFFFFFFF);
-
                 PopulatePstates();
                 InitPowerTab();
                 InitManualOc();
@@ -813,7 +794,7 @@ namespace ZenStates
                 cpu.SetPBOScalar(Convert.ToUInt32(numericUpDownScalar.Value));
             }
 
-            RefreshState();
+            //RefreshState();
         }
 
         private void MainForm_Resize(object sender, EventArgs e)
@@ -931,7 +912,7 @@ namespace ZenStates
 
                     for (var i = 0; i < cpu.systemInfo.CCXCount; ++i)
                     {
-                        int targetFreq = (int)(Storage.Get<double[]>($"ccx_frequencies")[i] * 100.00);
+                        uint targetFreq = Convert.ToUInt32(Storage.Get<double[]>($"ccx_frequencies")[i] * 100.00);
                         SetFrequencyCCX((uint)masks[i], targetFreq);
                     }
                     //RestoreManualOcSettings();
