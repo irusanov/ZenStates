@@ -5,7 +5,7 @@ VisualStudioVersion = 16.0.31321.278
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ZenStates", "ZenStates.csproj", "{EC38A2D3-C3F8-44E4-9B94-457D160F06D9}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ZenStates-Core", "..\..\ZenStates.Core\ZenStates-Core.csproj", "{D2D449E1-8701-442F-B440-37188F8D2380}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ZenStates-Core", "..\ZenStates.Core\ZenStates-Core.csproj", "{D2D449E1-8701-442F-B440-37188F8D2380}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

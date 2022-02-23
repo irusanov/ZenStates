@@ -214,8 +214,8 @@
     <Service Include="{508349B6-6B84-4DF5-91F0-309BEEBAD82D}" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\ZenStates.Core\ZenStates-Core.csproj">
-      <Project>{D2D449E1-8701-442F-B440-37188F8D2380}</Project>
+    <ProjectReference Include="..\ZenStates.Core\ZenStates-Core.csproj">
+      <Project>{d2d449e1-8701-442f-b440-37188f8d2380}</Project>
       <Name>ZenStates-Core</Name>
     </ProjectReference>
   </ItemGroup>
