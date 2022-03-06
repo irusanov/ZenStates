@@ -189,7 +189,7 @@ namespace ZenStates
                 return false;
             }
 
-            return cpu.utils.GetBits(eax, 25, 1) == 0;
+            return Core.Utils.GetBits(eax, 25, 1) == 0;
         }
 
         private void SetCPB(bool en)
@@ -199,7 +199,7 @@ namespace ZenStates
 
             if (res)
             {
-                eax = cpu.utils.SetBits(eax, 25, 1, en ? 0 : 1U);
+                eax = Core.Utils.SetBits(eax, 25, 1, en ? 0 : 1U);
                 res = cpu.WriteMsr(MSR_HWCR, eax, edx);
             }
 
@@ -217,7 +217,7 @@ namespace ZenStates
                 return false;
             }
 
-            return cpu.utils.GetBits(edx, 0, 1) == 1;
+            return Core.Utils.GetBits(edx, 0, 1) == 1;
         }
 
         private void SetC6Package(bool en)
@@ -229,7 +229,7 @@ namespace ZenStates
             {
                 uint val = en ? 1U : 0;
 
-                edx = cpu.utils.SetBits(edx, 0, 1, val);
+                edx = Core.Utils.SetBits(edx, 0, 1, val);
                 res = cpu.WriteMsr(MSR_PMGT_MISC, eax, edx);
             }
 
@@ -250,9 +250,9 @@ namespace ZenStates
                 return false;
             }
 
-            bool CCR0_CC6EN = Convert.ToBoolean(cpu.utils.GetBits(eax, 6, 1));
-            bool CCR1_CC6EN = Convert.ToBoolean(cpu.utils.GetBits(eax, 14, 1));
-            bool CCR2_CC6EN = Convert.ToBoolean(cpu.utils.GetBits(eax, 22, 1));
+            bool CCR0_CC6EN = Convert.ToBoolean(Core.Utils.GetBits(eax, 6, 1));
+            bool CCR1_CC6EN = Convert.ToBoolean(Core.Utils.GetBits(eax, 14, 1));
+            bool CCR2_CC6EN = Convert.ToBoolean(Core.Utils.GetBits(eax, 22, 1));
 
             return CCR0_CC6EN && CCR1_CC6EN && CCR2_CC6EN;
         }
@@ -266,9 +266,9 @@ namespace ZenStates
             {
                 uint val = en ? 1U : 0;
 
-                eax = cpu.utils.SetBits(eax, 6, 1, val);
-                eax = cpu.utils.SetBits(eax, 14, 1, val);
-                eax = cpu.utils.SetBits(eax, 22, 1, val);
+                eax = Core.Utils.SetBits(eax, 6, 1, val);
+                eax = Core.Utils.SetBits(eax, 14, 1, val);
+                eax = Core.Utils.SetBits(eax, 22, 1, val);
 
                 res = cpu.WriteMsr(MSR_CSTATE_CONFIG, eax, edx);
             }
@@ -341,7 +341,7 @@ namespace ZenStates
             // Refresh until driver is opened
             do
             {
-                temp = cpu.utils.IsInpOutDriverOpen();
+                temp = cpu.io.IsInpOutDriverOpen();
             } while (!temp && timer.Elapsed.TotalMilliseconds < 10000);
 
             timer.Stop();
@@ -357,7 +357,7 @@ namespace ZenStates
                 //return false;
             }
 
-            if (WaitForDriverLoad() && cpu.utils.WinIoStatus == Core.Utils.LibStatus.OK)
+            if (WaitForDriverLoad())
             {
                 var timer = new Stopwatch();
                 var timeout = 10000;
@@ -476,9 +476,7 @@ namespace ZenStates
 
         private bool SetFrequencyAllCore(uint frequency)
         {
-            uint[] args = {Convert.ToUInt32(frequency), 0 };
-            // TODO: Add Manual OC mode
-            if (cpu.SendSmuCommand(cpu.smu.Rsmu, cpu.smu.Rsmu.SMU_MSG_SetOverclockFrequencyAllCores, ref args) != SMU.Status.OK)
+            if (!cpu.SetFrequencyAllCore(frequency))
             {
                 HandleError("Error setting frequency!");
                 return false;
@@ -488,8 +486,7 @@ namespace ZenStates
 
         private bool SetFrequencySingleCore(uint mask, uint frequency)
         {
-            uint[] args = { mask | (frequency & 0xFFFFF) };
-            if (cpu.SendSmuCommand(cpu.smu.Rsmu, cpu.smu.Rsmu.SMU_MSG_SetOverclockFrequencyPerCore, ref args) != SMU.Status.OK)
+            if (!cpu.SetFrequencySingleCore(mask, frequency))
             {
                 HandleError("Error setting core frequency!");
                 return false;
@@ -497,21 +494,9 @@ namespace ZenStates
             return true;
         }
 
-        private bool SetFrequencyMultipleCores(uint mask, uint frequency, int count)
-        {
-            // ((i.CCD << 4 | i.CCX % 2 & 0xF) << 4 | i.CORE % 4 & 0xF) << 20;
-            for (uint i = 0; i < count; i++)
-            {
-                mask = cpu.utils.SetBits(mask, 20, 2, i);
-                if (!SetFrequencySingleCore(mask, frequency))
-                    return false;
-            }
-            return true;
-        }
-
         private bool SetFrequencyCCX(uint mask, uint frequency)
         {
-            bool ret = SetFrequencyMultipleCores(mask, frequency, 8/*SI.NumCoresInCCX*/);
+            bool ret = cpu.SetFrequencyCCX(mask, frequency);
             if (!ret)
                 HandleError("Error setting CCX frequency!");
             return ret;
@@ -519,13 +504,8 @@ namespace ZenStates
 
         private bool SetFrequencyCCD(uint mask, uint frequency)
         {
-            bool ret = true;
-            for (uint i = 0; i < cpu.systemInfo.CCXCount / cpu.systemInfo.CCDCount; i++)
-            {
-                mask = cpu.utils.SetBits(mask, 24, 1, i);
-                ret = SetFrequencyCCX(mask, frequency);
-            }
-            if (!ret)
+            bool ret = cpu.SetFrequencyCCD(mask, frequency);
+            if (cpu.SetFrequencyCCD(mask, frequency))
                 HandleError("Error setting CCD frequency!");
             return ret;
         }
@@ -533,7 +513,7 @@ namespace ZenStates
         private bool SetOCVid(byte vid)
         {
             uint[] args = { Convert.ToUInt32(vid), 0 };
-            if (cpu.SendSmuCommand(cpu.smu.Rsmu, cpu.smu.Rsmu.SMU_MSG_SetOverclockCpuVid, ref args) != SMU.Status.OK)
+            if (cpu.smu.SendRsmuCommand(cpu.smu.Rsmu.SMU_MSG_SetOverclockCpuVid, ref args) != SMU.Status.OK)
             {
                 HandleError("Error setting CPU Overclock VID!");
                 return false;
@@ -545,11 +525,13 @@ namespace ZenStates
         {
             uint cmd = enabled ? cpu.smu.Rsmu.SMU_MSG_EnableOcMode : cpu.smu.Rsmu.SMU_MSG_DisableOcMode;
             uint[] args = { arg };
-            if (cpu.SendSmuCommand(cpu.smu.Rsmu, cmd, ref args) != SMU.Status.OK)
+            if (cpu.smu.SendRsmuCommand(cmd, ref args) != SMU.Status.OK)
             {
                 HandleError("Error setting OC mode!");
                 return false;
             }
+
+            if (!enabled) cpu.SetPBOScalar(1);
             return true;
         }
 
