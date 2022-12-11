@@ -1,20 +1,20 @@
 ﻿namespace ZenStates
 {
-  public class FrequencyListItem
-  {
-    public double Multi { get; }
-
-    public string Display { get; }
-
-    public FrequencyListItem(double multi, string display)
+    public class FrequencyListItem
     {
-      Multi = multi;
-      Display = display;
-    }
+        public double Multi { get; }
 
-    public override string ToString()
-    {
-      return Display;
+        public string Display { get; }
+
+        public FrequencyListItem(double multi, string display)
+        {
+            Multi = multi;
+            Display = display;
+        }
+
+        public override string ToString()
+        {
+            return Display;
+        }
     }
-  }
 }

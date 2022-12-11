@@ -79,5 +79,11 @@
       <SubType>Designer</SubType>
     </EmbeddedResource>
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\ZenStates.Core\ZenStates-Core.csproj">
+      <Project>{D2D449E1-8701-442F-B440-37188F8D2380}</Project>
+      <Name>ZenStates-Core</Name>
+    </ProjectReference>
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

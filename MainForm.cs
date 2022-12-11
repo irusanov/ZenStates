@@ -323,13 +323,14 @@ namespace ZenStates
         private void InitManualOc()
         {
             bool ocmode = cpu.GetOcMode();
+            manualOverclockItem.SVIVersion = cpu.smu.SMU_TYPE == SMU.SmuType.TYPE_CPU4 ? 3 : 2;
             manualOverclockItem.OCmode = ocmode;
             manualOverclockItem.Vid = GetCurrentVid(ocmode);
             manualOverclockItem.Multi = GetCurrentMulti(ocmode);
             manualOverclockItem.ProchotEnabled = cpu.IsProchotEnabled();
-            manualOverclockItem.coreDisableMap = cpu.info.coreDisableMap;
+            manualOverclockItem.coreDisableMap = cpu.info.topology.coreDisableMap;
             manualOverclockItem.CcxInCcd = cpu.info.family == Cpu.Family.FAMILY_19H ? 1 : 2;
-            manualOverclockItem.Cores = (int)cpu.info.physicalCores;
+            manualOverclockItem.Cores = (int)cpu.info.topology.physicalCores;
         }
 
         private bool WaitForDriverLoad()
@@ -404,9 +405,9 @@ namespace ZenStates
             {
                 try
                 {
-                    numericUpDownPPT.Value = Convert.ToDecimal(cpu.powerTable.Table[0]);
-                    numericUpDownTDC.Value = Convert.ToDecimal(cpu.powerTable.Table[0x2]);
-                    numericUpDownEDC.Value = Convert.ToDecimal(cpu.powerTable.Table[0x4]);
+                    numericUpDownPPT.Value = Convert.ToDecimal(cpu.powerTable.Table[2]);
+                    numericUpDownTDC.Value = Convert.ToDecimal(cpu.powerTable.Table[8]);
+                    numericUpDownEDC.Value = Convert.ToDecimal(cpu.powerTable.Table[61]);
 
                     /*
                     GetPhysLong(dramPtr + 0x010, out data);
@@ -513,7 +514,12 @@ namespace ZenStates
         private bool SetOCVid(byte vid)
         {
             uint[] args = { Convert.ToUInt32(vid), 0 };
-            if (cpu.smu.SendRsmuCommand(cpu.smu.Rsmu.SMU_MSG_SetOverclockCpuVid, ref args) != SMU.Status.OK)
+            uint cmd = cpu.smu.Rsmu.SMU_MSG_SetOverclockCpuVid;
+            SMU.Status status = cmd != 0
+                ? cpu.smu.SendRsmuCommand(cmd, ref args)
+                : cpu.smu.SendMp1Command(cpu.smu.Mp1Smu.SMU_MSG_SetOverclockCpuVid, ref args);
+
+            if (status != SMU.Status.OK)
             {
                 HandleError("Error setting CPU Overclock VID!");
                 return false;
@@ -881,11 +887,11 @@ namespace ZenStates
                 else
                 {
                     int[] masks = new int[cpu.systemInfo.CCXCount];
-
-                    for (var i = 0; i < cpu.systemInfo.PhysicalCoreCount; i += 4)
+                    int coresInCcd = cpu.info.family == Cpu.Family.FAMILY_19H ? 8 : 4;
+                    for (var i = 0; i < cpu.systemInfo.PhysicalCoreCount; i += coresInCcd)
                     {
                         int ccd = i / 8;
-                        int ccx = i / 4 - 2 * ccd;
+                        int ccx = cpu.info.family == Cpu.Family.FAMILY_19H ? ccd : i / 4 - 2 * ccd;
                         masks[index] = (ccd << 4 | ccx) << 24;
                         ++index;
                     }
