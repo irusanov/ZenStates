@@ -242,6 +242,7 @@ namespace ZenStates
             this.manualOverclockItem.OCmode = false;
             this.manualOverclockItem.ProchotEnabled = false;
             this.manualOverclockItem.Size = new System.Drawing.Size(263, 55);
+            this.manualOverclockItem.SVIVersion = 2;
             this.manualOverclockItem.TabIndex = 0;
             this.manualOverclockItem.Vid = ((byte)(232));
             this.manualOverclockItem.SlowModeClicked += new System.EventHandler(this.ManualOverclockItem_SlowModeClicked);

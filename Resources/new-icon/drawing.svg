@@ -24,9 +24,9 @@
      inkscape:pagecheckerboard="0"
      inkscape:document-units="mm"
      showgrid="false"
-     inkscape:zoom="12.443434"
-     inkscape:cx="626.47496"
-     inkscape:cy="644.67733"
+     inkscape:zoom="1.5554293"
+     inkscape:cx="198.98044"
+     inkscape:cy="615.26424"
      inkscape:window-width="2560"
      inkscape:window-height="1387"
      inkscape:window-x="-8"
@@ -318,8 +318,8 @@
            id="polyline5856"
            style="stroke:#ffffff;stroke-opacity:1" /></g></g><g
        id="16"
-       transform="matrix(0.03125,0,0,0.03125,170.73407,169.13319)"
-       style="stroke-width:11.00666667;stroke-dasharray:none"
+       transform="matrix(0.03237745,0,0,0.03237745,170.684,169.12739)"
+       style="stroke-width:11.0067;stroke-dasharray:none"
        inkscape:export-filename="16.png"
        inkscape:export-xdpi="99.463371"
        inkscape:export-ydpi="99.463371"
@@ -343,7 +343,7 @@
          inkscape:export-filename="16.png"
          inkscape:export-xdpi="99.459999"
          inkscape:export-ydpi="99.459999" /><g
-         style="fill:none;stroke:#ffffff;stroke-width:3.11188933;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:none;stroke-opacity:1"
+         style="fill:none;stroke:#ffffff;stroke-width:3.11189;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:none;stroke-opacity:1"
          id="g5865-66"
          transform="matrix(3.5369724,0,0,3.5369724,58.634709,25.010743)"
          inkscape:export-filename="C:\GIT\ZenTimings\WPF\Resources\new-icon\96.png"
@@ -351,10 +351,10 @@
          inkscape:export-ydpi="18"><polyline
            points="22 12 18 12 15 21 9 3 6 12 2 12"
            id="polyline5856-8"
-           style="stroke:#ffffff;stroke-width:3.11188933;stroke-dasharray:none;stroke-opacity:1"
+           style="stroke:#ffffff;stroke-width:3.11189;stroke-dasharray:none;stroke-opacity:1"
            transform="translate(0.94787228,0.86732442)" /></g></g><g
        id="24"
-       transform="matrix(0.046875,0,0,0.046875,162.82329,168.12736)"
+       transform="matrix(0.04798905,0,0,0.04798905,162.77381,168.1225)"
        inkscape:label="24"
        inkscape:export-filename="24.png"
        inkscape:export-xdpi="96"
@@ -372,13 +372,13 @@
          sodipodi:arg2="2.0943951"
          inkscape:rounded="0"
          inkscape:randomized="0"
-         d="M 245.82253,515.26612 21.036036,385.48558 a 45.827177,45.827177 59.999998 0 1 -22.91359,-39.6875 l -6.9e-6,-259.561084 A 45.827177,45.827177 120 0 1 21.036027,46.549496 L 245.82252,-83.231053 a 45.827177,45.827177 180 0 1 45.82718,-10e-7 L 516.43619,46.549483 a 45.827177,45.827177 59.999998 0 1 22.91359,39.687499 l 10e-6,259.561088 a 45.827177,45.827177 120 0 1 -22.91359,39.6875 L 291.64971,515.26612 a 45.827177,45.827177 180 0 1 -45.82718,0 z"
+         d="M 222.90894,502.03695 43.949625,398.71475 a 91.654356,91.654356 59.999998 0 1 -45.8271797,-79.375 l -5.5e-6,-206.64442 A 91.654356,91.654356 120 0 1 43.949616,33.320329 L 222.90893,-70.001886 a 91.654356,91.654356 180 0 1 91.65435,-2e-6 L 493.5226,33.320316 a 91.654356,91.654356 59.999998 0 1 45.82718,79.375004 l 10e-6,206.64441 a 91.654356,91.654356 120 0 1 -45.82718,79.37501 L 314.5633,502.03695 a 91.654356,91.654356 180 0 1 -91.65436,0 z"
          transform="matrix(0.22179416,0,0,0.22179416,44.826875,22.610687)"
          inkscape:path-effect="#path-effect2288-6"
          inkscape:export-filename="C:\GIT\ZenTimings\WPF\Resources\new-icon\96.png"
          inkscape:export-xdpi="18"
          inkscape:export-ydpi="18" /><g
-         style="fill:none;stroke:#ffffff;stroke-width:2.65846151;stroke-linecap:round;stroke-linejoin:round;stroke-opacity:1;stroke-dasharray:none"
+         style="fill:none;stroke:#ffffff;stroke-width:2.65846;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:none;stroke-opacity:1"
          id="g5865-59"
          transform="matrix(3.8217593,0,0,3.8217593,58.569865,24.661003)"
          inkscape:export-filename="C:\GIT\ZenTimings\WPF\Resources\new-icon\96.png"
@@ -386,9 +386,9 @@
          inkscape:export-ydpi="18"><polyline
            points="22 12 18 12 15 21 9 3 6 12 2 12"
            id="polyline5856-76"
-           style="stroke:#ffffff;stroke-opacity:1;stroke-width:2.65846151;stroke-dasharray:none" /></g></g><g
+           style="stroke:#ffffff;stroke-width:2.65846;stroke-dasharray:none;stroke-opacity:1" /></g></g><g
        id="32"
-       transform="matrix(0.0625,0,0,0.0625,152.74746,167.12154)"
+       transform="matrix(0.0639854,0,0,0.0639854,152.68149,167.11506)"
        inkscape:label="32"><path
          sodipodi:type="star"
          style="display:inline;mix-blend-mode:normal;fill:url(#linearGradient2811-63);fill-opacity:1;stroke:none;stroke-width:15.9811;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1;paint-order:markers fill stroke"
@@ -403,7 +403,7 @@
          sodipodi:arg2="2.0943951"
          inkscape:rounded="0"
          inkscape:randomized="0"
-         d="M 245.82253,515.26612 21.036036,385.48558 a 45.827177,45.827177 59.999998 0 1 -22.91359,-39.6875 l -6.9e-6,-259.561084 A 45.827177,45.827177 120 0 1 21.036027,46.549496 L 245.82252,-83.231053 a 45.827177,45.827177 180 0 1 45.82718,-10e-7 L 516.43619,46.549483 a 45.827177,45.827177 59.999998 0 1 22.91359,39.687499 l 10e-6,259.561088 a 45.827177,45.827177 120 0 1 -22.91359,39.6875 L 291.64971,515.26612 a 45.827177,45.827177 180 0 1 -45.82718,0 z"
+         d="M 222.90894,502.03695 43.949625,398.71475 a 91.654356,91.654356 59.999998 0 1 -45.8271797,-79.375 l -5.5e-6,-206.64442 A 91.654356,91.654356 120 0 1 43.949616,33.320329 L 222.90893,-70.001886 a 91.654356,91.654356 180 0 1 91.65435,-2e-6 L 493.5226,33.320316 a 91.654356,91.654356 59.999998 0 1 45.82718,79.375004 l 10e-6,206.64441 a 91.654356,91.654356 120 0 1 -45.82718,79.37501 L 314.5633,502.03695 a 91.654356,91.654356 180 0 1 -91.65436,0 z"
          transform="matrix(0.22179416,0,0,0.22179416,44.826875,22.610687)"
          inkscape:path-effect="#path-effect2288-34"
          inkscape:export-filename="C:\GIT\ZenTimings\WPF\Resources\new-icon\96.png"
@@ -419,7 +419,7 @@
            id="polyline5856-9"
            style="stroke:#ffffff;stroke-opacity:1" /></g></g><g
        id="48"
-       transform="matrix(0.09375,0,0,0.09375,137.64759,164.62877)"
+       transform="matrix(0.0959781,0,0,0.0959781,137.54864,164.61905)"
        inkscape:label="48"><path
          sodipodi:type="star"
          style="display:inline;mix-blend-mode:normal;fill:url(#linearGradient2811-67);fill-opacity:1;stroke:none;stroke-width:15.9811;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1;paint-order:markers fill stroke"
@@ -434,7 +434,7 @@
          sodipodi:arg2="2.0943951"
          inkscape:rounded="0"
          inkscape:randomized="0"
-         d="M 245.82253,515.26612 21.036036,385.48558 a 45.827177,45.827177 59.999998 0 1 -22.91359,-39.6875 l -6.9e-6,-259.561084 A 45.827177,45.827177 120 0 1 21.036027,46.549496 L 245.82252,-83.231053 a 45.827177,45.827177 180 0 1 45.82718,-10e-7 L 516.43619,46.549483 a 45.827177,45.827177 59.999998 0 1 22.91359,39.687499 l 10e-6,259.561088 a 45.827177,45.827177 120 0 1 -22.91359,39.6875 L 291.64971,515.26612 a 45.827177,45.827177 180 0 1 -45.82718,0 z"
+         d="M 222.90894,502.03695 43.949625,398.71475 a 91.654356,91.654356 59.999998 0 1 -45.8271797,-79.375 l -5.5e-6,-206.64442 A 91.654356,91.654356 120 0 1 43.949616,33.320329 L 222.90893,-70.001886 a 91.654356,91.654356 180 0 1 91.65435,-2e-6 L 493.5226,33.320316 a 91.654356,91.654356 59.999998 0 1 45.82718,79.375004 l 10e-6,206.64441 a 91.654356,91.654356 120 0 1 -45.82718,79.37501 L 314.5633,502.03695 a 91.654356,91.654356 180 0 1 -91.65436,0 z"
          transform="matrix(0.22179416,0,0,0.22179416,44.826875,22.610687)"
          inkscape:path-effect="#path-effect2288-0"
          inkscape:export-filename="C:\GIT\ZenTimings\WPF\Resources\new-icon\96.png"
@@ -450,7 +450,7 @@
            id="polyline5856-79"
            style="stroke:#ffffff;stroke-opacity:1" /></g></g><g
        id="64"
-       transform="matrix(0.125,0,0,0.125,118.45817,162.37656)"
+       transform="matrix(0.1279708,0,0,0.1279708,118.32624,162.3636)"
        inkscape:label="64"><path
          sodipodi:type="star"
          style="display:inline;mix-blend-mode:normal;fill:url(#linearGradient2811-8);fill-opacity:1;stroke:none;stroke-width:15.9811;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1;paint-order:markers fill stroke"
@@ -465,7 +465,7 @@
          sodipodi:arg2="2.0943951"
          inkscape:rounded="0"
          inkscape:randomized="0"
-         d="M 245.82253,515.26612 21.036036,385.48558 a 45.827177,45.827177 59.999998 0 1 -22.91359,-39.6875 l -6.9e-6,-259.561084 A 45.827177,45.827177 120 0 1 21.036027,46.549496 L 245.82252,-83.231053 a 45.827177,45.827177 180 0 1 45.82718,-10e-7 L 516.43619,46.549483 a 45.827177,45.827177 59.999998 0 1 22.91359,39.687499 l 10e-6,259.561088 a 45.827177,45.827177 120 0 1 -22.91359,39.6875 L 291.64971,515.26612 a 45.827177,45.827177 180 0 1 -45.82718,0 z"
+         d="M 222.90894,502.03695 43.949625,398.71475 a 91.654356,91.654356 59.999998 0 1 -45.8271797,-79.375 l -5.5e-6,-206.64442 A 91.654356,91.654356 120 0 1 43.949616,33.320329 L 222.90893,-70.001886 a 91.654356,91.654356 180 0 1 91.65435,-2e-6 L 493.5226,33.320316 a 91.654356,91.654356 59.999998 0 1 45.82718,79.375004 l 10e-6,206.64441 a 91.654356,91.654356 120 0 1 -45.82718,79.37501 L 314.5633,502.03695 a 91.654356,91.654356 180 0 1 -91.65436,0 z"
          transform="matrix(0.22179416,0,0,0.22179416,44.826875,22.610687)"
          inkscape:path-effect="#path-effect2288-1"
          inkscape:export-filename="C:\GIT\ZenTimings\WPF\Resources\new-icon\96.png"
@@ -481,7 +481,7 @@
            id="polyline5856-49"
            style="stroke:#ffffff;stroke-opacity:1" /></g></g><g
        id="96"
-       transform="matrix(0.1875,0,0,0.1875,90.664058,157.87215)"
+       transform="matrix(0.1919562,0,0,0.1919562,90.466156,157.85272)"
        inkscape:label="96"><path
          sodipodi:type="star"
          style="display:inline;mix-blend-mode:normal;fill:url(#linearGradient2811-1);fill-opacity:1;stroke:none;stroke-width:15.9811;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1;paint-order:markers fill stroke"
@@ -496,7 +496,7 @@
          sodipodi:arg2="2.0943951"
          inkscape:rounded="0"
          inkscape:randomized="0"
-         d="M 245.82253,515.26612 21.036036,385.48558 a 45.827177,45.827177 59.999998 0 1 -22.91359,-39.6875 l -6.9e-6,-259.561084 A 45.827177,45.827177 120 0 1 21.036027,46.549496 L 245.82252,-83.231053 a 45.827177,45.827177 180 0 1 45.82718,-10e-7 L 516.43619,46.549483 a 45.827177,45.827177 59.999998 0 1 22.91359,39.687499 l 10e-6,259.561088 a 45.827177,45.827177 120 0 1 -22.91359,39.6875 L 291.64971,515.26612 a 45.827177,45.827177 180 0 1 -45.82718,0 z"
+         d="M 222.90894,502.03695 43.949625,398.71475 a 91.654356,91.654356 59.999998 0 1 -45.8271797,-79.375 l -5.5e-6,-206.64442 A 91.654356,91.654356 120 0 1 43.949616,33.320329 L 222.90893,-70.001886 a 91.654356,91.654356 180 0 1 91.65435,-2e-6 L 493.5226,33.320316 a 91.654356,91.654356 59.999998 0 1 45.82718,79.375004 l 10e-6,206.64441 a 91.654356,91.654356 120 0 1 -45.82718,79.37501 L 314.5633,502.03695 a 91.654356,91.654356 180 0 1 -91.65436,0 z"
          transform="matrix(0.22179416,0,0,0.22179416,44.826875,22.610687)"
          inkscape:path-effect="#path-effect2288-3"
          inkscape:export-filename="C:\GIT\ZenTimings\WPF\Resources\new-icon\96.png"
@@ -512,7 +512,7 @@
            id="polyline5856-7"
            style="stroke:#ffffff;stroke-opacity:1" /></g></g><g
        id="128"
-       transform="matrix(0.25,0,0,0.25,53.969151,153.6083)"
+       transform="matrix(0.2559416,0,0,0.2559416,53.705282,153.58239)"
        inkscape:label="128"><path
          sodipodi:type="star"
          style="display:inline;mix-blend-mode:normal;fill:url(#linearGradient2811-6);fill-opacity:1;stroke:none;stroke-width:15.9811;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1;paint-order:markers fill stroke"
@@ -527,7 +527,7 @@
          sodipodi:arg2="2.0943951"
          inkscape:rounded="0"
          inkscape:randomized="0"
-         d="M 245.82253,515.26612 21.036036,385.48558 a 45.827177,45.827177 59.999998 0 1 -22.91359,-39.6875 l -6.9e-6,-259.561084 A 45.827177,45.827177 120 0 1 21.036027,46.549496 L 245.82252,-83.231053 a 45.827177,45.827177 180 0 1 45.82718,-10e-7 L 516.43619,46.549483 a 45.827177,45.827177 59.999998 0 1 22.91359,39.687499 l 10e-6,259.561088 a 45.827177,45.827177 120 0 1 -22.91359,39.6875 L 291.64971,515.26612 a 45.827177,45.827177 180 0 1 -45.82718,0 z"
+         d="M 222.90894,502.03695 43.949625,398.71475 a 91.654356,91.654356 59.999998 0 1 -45.8271797,-79.375 l -5.5e-6,-206.64442 A 91.654356,91.654356 120 0 1 43.949616,33.320329 L 222.90893,-70.001886 a 91.654356,91.654356 180 0 1 91.65435,-2e-6 L 493.5226,33.320316 a 91.654356,91.654356 59.999998 0 1 45.82718,79.375004 l 10e-6,206.64441 a 91.654356,91.654356 120 0 1 -45.82718,79.37501 L 314.5633,502.03695 a 91.654356,91.654356 180 0 1 -91.65436,0 z"
          transform="matrix(0.22179416,0,0,0.22179416,44.826875,22.610687)"
          inkscape:path-effect="#path-effect2288-5"
          inkscape:export-filename="C:\GIT\ZenTimings\WPF\Resources\new-icon\96.png"
