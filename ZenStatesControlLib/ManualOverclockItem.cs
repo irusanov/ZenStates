@@ -13,6 +13,7 @@ namespace ZenStates.Components
         private int selectedCoreIndex = -1;
         private bool ocmode = false;
         private bool prochot = false;
+        private int sviVersion = 2;
 
         #region Private Methods
         private void PopulateFrequencyList(ComboBox.ObjectCollection l)
@@ -79,6 +80,7 @@ namespace ZenStates.Components
 
         private void PopulateVidItems()
         {
+            comboBoxVid.Items.Clear();
             for (uint i = Constants.VID_MIN; i <= Constants.VID_MAX; i++)
             {
                 double voltage = SVIVersion == 3 ? Utils.VidToVoltageSVI3(i) : Utils.VidToVoltage(i);
@@ -165,6 +167,8 @@ namespace ZenStates.Components
             get
             {
                 CoreListItem i = comboBoxCore.SelectedItem as CoreListItem;
+                if (i == null)
+                    return 0;
                 // Console.WriteLine($"SET - ccd: {i.CCD}, ccx: {i.CCX }, core: {i.CORE % 4 }");
                 return Convert.ToUInt32(((i.CCD << 4 | i.CCX % CcxInCcd & 0xF) << 4 | i.CORE % coresInCcx & 0xF) << 20);
             }
@@ -198,7 +202,16 @@ namespace ZenStates.Components
             }
         }
 
-        public int SVIVersion { get; set; } = 2;
+        public int SVIVersion
+        {
+            get => sviVersion;
+            set
+            {
+                sviVersion = value;
+                PopulateVidItems();
+            }
+        }
+
         public void Reset()
         {
             PopulateFrequencyList(comboBoxMulti.Items);

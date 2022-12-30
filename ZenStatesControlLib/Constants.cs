@@ -5,7 +5,7 @@
         public const int CCD_SIZE = 8;
 
         public const double MULTI_MIN = 4.0;
-        public const double MULTI_MAX = 74.0;
+        public const double MULTI_MAX = 90.0;
         public const double MULTI_STEP = 0.25;
 
         public const byte FID_MAX = 0xFF;
