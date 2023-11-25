@@ -397,8 +397,11 @@ namespace ZenStates
             checkBoxCPB.Checked = GetCPB();
             checkBoxC6Core.Checked = GetC6Core();
             checkBoxC6Package.Checked = GetC6Package();
-
-            numericUpDownScalar.Value = Convert.ToDecimal(cpu.GetPBOScalar());
+            try
+            {
+                numericUpDownScalar.Value = Convert.ToDecimal(cpu.GetPBOScalar());
+            }
+            catch { }
 
 
             if (WaitForPowerTable())
@@ -571,7 +574,7 @@ namespace ZenStates
                 switch (item.ControlMode)
                 {
                     case 0:
-                        if (SetFrequencyAllCore(550))
+                        if (SetFrequencyAllCore(800))
                             ret = SetFrequencySingleCore(item.CoreMask, targetFreq);
                         break;
                     case 1:
