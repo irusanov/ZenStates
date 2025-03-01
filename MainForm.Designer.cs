@@ -1060,6 +1060,8 @@ namespace ZenStates
             this.manualOverclockItem.Size = new System.Drawing.Size(263, 55);
             this.manualOverclockItem.TabIndex = 0;
             this.manualOverclockItem.VoltageLimit = 1.55D;
+            this.manualOverclockItem.SlowModeClicked += new System.EventHandler(this.ManualOverclockItem_SlowModeClicked);
+            this.manualOverclockItem.ProchotClicked += new System.EventHandler(this.ManualOverclockItem_ProchotClicked);
             // 
             // AppWindow
             // 

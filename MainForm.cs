@@ -372,6 +372,9 @@ namespace ZenStates
             if (ln2Mode) {
                 labelLN2BiosMode.Text = labelLN2BiosMode.Text.Replace("Disabled", "Enabled");
             }
+
+            var strap = cpu.GetStrapStatus();
+            var bclk = cpu.GetBclk();
         }
 
         private bool WaitForDriverLoad()
@@ -999,41 +1002,43 @@ namespace ZenStates
                     Console.WriteLine($"ccx{i}: " + Storage.Get<double[]>($"ccx_frequencies")[i].ToString());
                 }
 
-                SetFrequencyAllCore(550);
+                SetFrequencyAllCore(800);
                 if (cpu.info.family <= Cpu.Family.FAMILY_17H)
                     SetOCVid(0x98);
                 else
-                    SetOCVid(0);
+                    SetOCVid(Core.Utils.VoltageToVidSVI3(0.980));
             }
-            else
-            {
-                // Single core mode
-                if (manualOverclockItem.ControlMode == 0 && !manualOverclockItem.AllCores)
-                {
-                    ApplyManualOcSettings();
-                }
-                else
-                {
-                    int[] masks = new int[cpu.info.topology.ccxs];
-                    int coresInCcd = cpu.info.family >= Cpu.Family.FAMILY_19H ? 8 : 4;
-                    for (var i = 0; i < cpu.systemInfo.PhysicalCoreCount; i += coresInCcd)
-                    {
-                        int ccd = i / 8;
-                        int ccx = cpu.info.family >= Cpu.Family.FAMILY_19H ? ccd : i / 4 - 2 * ccd;
-                        masks[index] = (ccd << 4 | ccx) << 24;
-                        ++index;
-                    }
+            //else
+            //{
+            //    // Single core mode
+            //    if (manualOverclockItem.ControlMode == 0 && !manualOverclockItem.AllCores)
+            //    {
+            //        ApplyManualOcSettings();
+            //    }
+            //    else
+            //    {
+            //        int[] masks = new int[cpu.info.topology.ccxs];
+            //        int coresInCcd = cpu.info.family >= Cpu.Family.FAMILY_19H ? 8 : 4;
+            //        for (var i = 0; i < cpu.systemInfo.PhysicalCoreCount; i += coresInCcd)
+            //        {
+            //            int ccd = i / 8;
+            //            int ccx = cpu.info.family >= Cpu.Family.FAMILY_19H ? ccd : i / 4 - 2 * ccd;
+            //            masks[index] = (ccd << 4 | ccx) << 24;
+            //            ++index;
+            //        }
 
-                    SetOCVid(Storage.Get<byte>($"oc_vid"));
-
-                    for (var i = 0; i < cpu.info.topology.ccxs; ++i)
-                    {
-                        uint targetFreq = Convert.ToUInt32(Storage.Get<double[]>($"ccx_frequencies")[i] * 100.00);
-                        SetFrequencyCCX((uint)masks[i], targetFreq);
-                    }
-                    //RestoreManualOcSettings();
-                }
-            }
+            //        uint vid = Storage.Get<uint>($"oc_vid");
+            //        if (SetOCVid(vid))
+            //        {
+            //            for (var i = 0; i < cpu.info.topology.ccxs; ++i)
+            //            {
+            //                uint targetFreq = Convert.ToUInt32(Storage.Get<double[]>($"ccx_frequencies")[i] * 100.00);
+            //                SetFrequencyCCX((uint)masks[i], targetFreq);
+            //            }
+            //        }
+            //        //RestoreManualOcSettings();
+            //    }
+            //}
         }
 
         private void ManualOverclockItem_ProchotClicked(object sender, EventArgs e)

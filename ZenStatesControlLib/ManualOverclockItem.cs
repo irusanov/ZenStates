@@ -298,7 +298,7 @@ namespace ZenStates.Components
             comboBoxControlMode.Enabled = OCmode;
             comboBoxControlMode.SelectedIndex = 0;
             checkBoxProchot.Enabled = OCmode;
-            checkBoxSlowMode.Enabled = OCmode && Family < Cpu.Family.FAMILY_19H;
+            checkBoxSlowMode.Enabled = OCmode;
 
             bool vidInput = Family >= Cpu.Family.FAMILY_1AH;
             comboBoxMulti.Visible = !vidInput;
@@ -314,6 +314,7 @@ namespace ZenStates.Components
             multi = Multi;
             ocmode = OCmode;
             selectedCoreIndex = comboBoxCore.SelectedIndex;
+            checkBoxSlowMode.Checked = false;
         }
         #endregion
 
@@ -326,7 +327,7 @@ namespace ZenStates.Components
 
             comboBoxControlMode.Enabled = OCmode;
             checkBoxProchot.Enabled = OCmode;
-            checkBoxSlowMode.Enabled = OCmode && Family <= Cpu.Family.FAMILY_17H;
+            checkBoxSlowMode.Enabled = OCmode;
         }
 
         private void CheckBoxSlowMode_Click(object sender, EventArgs e)
