@@ -203,7 +203,7 @@ namespace ZenStates
             if (ocmode)
             {
                 int vid = cpu.GetCurrentHwVid();
-                return vid > -1 ? (uint)vid : 0;
+                return vid > -1 ? (uint)vid & 0xFF : 0;
             }
 
             uint eax = default, edx = default;
@@ -401,9 +401,6 @@ namespace ZenStates
                 }
                 labelVidLimit.Text = $"VID limit: {settings.Zen5VoltageLimit:0.000}V";
             }
-
-            var strap = cpu.GetStrapStatus();
-            var bclk = cpu.GetBclk();
         }
 
         private bool WaitForDriverLoad()
@@ -893,7 +890,7 @@ namespace ZenStates
                 CheckBootState();
                 PopulatePstates();
                 InitPowerTab();
-                try { InitManualOc(); } catch (Exception dbg) { System.IO.File.WriteAllText(@"C:\GIT\dbg.txt", dbg.ToString()); throw; }
+                InitManualOc();
                 InitSettingsTab();
                 RunBackgroundTask(InitSystemInfo, InitSystemInfo_Complete);
 
@@ -1070,26 +1067,23 @@ namespace ZenStates
         private void ManualOverclockItem_SlowModeClicked(object sender, EventArgs e)
         {
             CheckBox cb = sender as CheckBox;
-            int cores = cpu.systemInfo.Threads;
-            uint step = cpu.systemInfo.SMT ? cpu.info.topology.coresPerCcx * 2 : cpu.info.topology.coresPerCcx;
-            int index = 0;
-
-            double[] ccx_frequencies = new double[cpu.info.topology.ccxs];
+            int ccxCount = (int)Math.Max(1, cpu.info.topology.ccxs);
+            uint ccxPerCcd = cpu.info.family > Cpu.Family.FAMILY_17H ? 1u : 2u;
+            uint threadsPerCore = cpu.systemInfo.SMT ? 2u : 1u;
+            int totalThreads = cpu.systemInfo.Threads;
+            // Logical processor index of the first core in each CCX
+            int step = (int)Math.Max(1, cpu.info.topology.coresPerCcx * threadsPerCore);
 
             if (cb.Checked)
             {
-                for (uint i = 0; i < cores; i += step)
+                double[] ccx_frequencies = new double[ccxCount];
+                for (int i = 0; i < ccxCount; ++i)
                 {
-                    ccx_frequencies[index] = cpu.GetCoreMulti((int)i);
-                    ++index;
+                    int logicalCore = Math.Min(i * step, Math.Max(0, totalThreads - 1));
+                    ccx_frequencies[i] = cpu.GetCoreMulti(logicalCore);
                 }
-                Storage.Add($"ccx_frequencies", ccx_frequencies);
+                Storage.Add("ccx_frequencies", ccx_frequencies);
                 Storage.Add("oc_vid", manualOverclockItem.Vid);
-
-                for (var i = 0; i < cpu.info.topology.ccxs; ++i)
-                {
-                    Console.WriteLine($"ccx{i}: " + Storage.Get<double[]>($"ccx_frequencies")[i].ToString());
-                }
 
                 SetFrequencyAllCore(800);
                 if (cpu.info.family <= Cpu.Family.FAMILY_17H)
@@ -1097,37 +1091,31 @@ namespace ZenStates
                 else
                     SetOCVid(Core.Utils.VoltageToVidSVI3(0.980));
             }
-            //else
-            //{
-            //    // Single core mode
-            //    if (manualOverclockItem.ControlMode == 0 && !manualOverclockItem.AllCores)
-            //    {
-            //        ApplyManualOcSettings();
-            //    }
-            //    else
-            //    {
-            //        int[] masks = new int[cpu.info.topology.ccxs];
-            //        int coresInCcd = cpu.info.family >= Cpu.Family.FAMILY_19H ? 8 : 4;
-            //        for (var i = 0; i < cpu.systemInfo.PhysicalCoreCount; i += coresInCcd)
-            //        {
-            //            int ccd = i / 8;
-            //            int ccx = cpu.info.family >= Cpu.Family.FAMILY_19H ? ccd : i / 4 - 2 * ccd;
-            //            masks[index] = (ccd << 4 | ccx) << 24;
-            //            ++index;
-            //        }
+            else
+            {
+                // Single core mode
+                if (manualOverclockItem.ControlMode == 0 && !manualOverclockItem.AllCores)
+                {
+                    ApplyManualOcSettings();
+                }
+                else
+                {
+                    double[] ccx_frequencies = Storage.Get<double[]>("ccx_frequencies");
+                    if (ccx_frequencies == null)
+                        return;
 
-            //        uint vid = Storage.Get<uint>($"oc_vid");
-            //        if (SetOCVid(vid))
-            //        {
-            //            for (var i = 0; i < cpu.info.topology.ccxs; ++i)
-            //            {
-            //                uint targetFreq = Convert.ToUInt32(Storage.Get<double[]>($"ccx_frequencies")[i] * 100.00);
-            //                SetFrequencyCCX((uint)masks[i], targetFreq);
-            //            }
-            //        }
-            //        //RestoreManualOcSettings();
-            //    }
-            //}
+                    uint vid = Storage.Get<uint>("oc_vid");
+                    if (SetOCVid(vid))
+                    {
+                        for (uint i = 0; i < ccx_frequencies.Length; ++i)
+                        {
+                            uint mask = cpu.MakeCoreMask(0, i / ccxPerCcd, i % ccxPerCcd);
+                            uint targetFreq = Convert.ToUInt32(ccx_frequencies[i] * 100.00);
+                            SetFrequencyCCX(mask, targetFreq);
+                        }
+                    }
+                }
+            }
         }
 
         private void ManualOverclockItem_ProchotClicked(object sender, EventArgs e)
