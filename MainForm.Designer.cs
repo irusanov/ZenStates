@@ -89,6 +89,7 @@ namespace ZenStates
             this.checkBoxStartOnBoot = new System.Windows.Forms.CheckBox();
             this.label9 = new System.Windows.Forms.Label();
             this.comboBoxVoltageLimitSettings = new System.Windows.Forms.ComboBox();
+            this.checkBoxZen5VoltageWarning = new System.Windows.Forms.CheckBox();
             this.tableLayoutPanel4 = new System.Windows.Forms.TableLayoutPanel();
             this.buttonRefresh = new System.Windows.Forms.Button();
             this.statusText = new System.Windows.Forms.Label();
@@ -99,7 +100,6 @@ namespace ZenStates
             this.trayMenuItemExit = new System.Windows.Forms.ToolStripMenuItem();
             this.buttonUndo = new System.Windows.Forms.Button();
             this.label1 = new System.Windows.Forms.Label();
-            this.checkBoxZen5VoltageWarning = new System.Windows.Forms.CheckBox();
             this.manualOverclockItem = new ZenStates.Components.ManualOverclockItem();
             this.toolTip = new System.Windows.Forms.ToolTip(this.components);
             this.tabControl1.SuspendLayout();
@@ -107,7 +107,6 @@ namespace ZenStates
             this.tableLayoutPanel2.SuspendLayout();
             this.groupBoxPstates.SuspendLayout();
             this.groupBoxCpuFreq.SuspendLayout();
-            this.tableLayoutPanel1.SuspendLayout();
             this.tabPower.SuspendLayout();
             this.tableLayoutPanel9.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.numericUpDownScalar)).BeginInit();
@@ -179,7 +178,7 @@ namespace ZenStates
             this.groupBoxPstates.Controls.Add(this.tableLayoutPanel3);
             this.groupBoxPstates.Dock = System.Windows.Forms.DockStyle.Top;
             this.groupBoxPstates.FlatStyle = System.Windows.Forms.FlatStyle.Popup;
-            this.groupBoxPstates.Location = new System.Drawing.Point(3, 93);
+            this.groupBoxPstates.Location = new System.Drawing.Point(3, 32);
             this.groupBoxPstates.Margin = new System.Windows.Forms.Padding(3, 5, 3, 3);
             this.groupBoxPstates.Name = "groupBoxPstates";
             this.groupBoxPstates.Padding = new System.Windows.Forms.Padding(4);
@@ -214,7 +213,7 @@ namespace ZenStates
             this.groupBoxCpuFreq.Location = new System.Drawing.Point(3, 3);
             this.groupBoxCpuFreq.Name = "groupBoxCpuFreq";
             this.groupBoxCpuFreq.Padding = new System.Windows.Forms.Padding(4);
-            this.groupBoxCpuFreq.Size = new System.Drawing.Size(277, 82);
+            this.groupBoxCpuFreq.Size = new System.Drawing.Size(277, 21);
             this.groupBoxCpuFreq.TabIndex = 1;
             this.groupBoxCpuFreq.TabStop = false;
             this.groupBoxCpuFreq.Text = "Manual Overclock";
@@ -234,8 +233,8 @@ namespace ZenStates
             this.tableLayoutPanel1.Name = "tableLayoutPanel1";
             this.tableLayoutPanel1.RowCount = 1;
             this.tableLayoutPanel1.RowStyles.Add(new System.Windows.Forms.RowStyle());
-            this.tableLayoutPanel1.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 61F));
-            this.tableLayoutPanel1.Size = new System.Drawing.Size(269, 61);
+            this.tableLayoutPanel1.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 1F));
+            this.tableLayoutPanel1.Size = new System.Drawing.Size(269, 0);
             this.tableLayoutPanel1.TabIndex = 0;
             // 
             // labelLN2BiosMode
@@ -249,8 +248,6 @@ namespace ZenStates
             this.labelLN2BiosMode.Size = new System.Drawing.Size(277, 18);
             this.labelLN2BiosMode.TabIndex = 3;
             this.labelLN2BiosMode.Text = "BIOS LN2 Mode: Disabled";
-            this.toolTip.SetToolTip(this.labelLN2BiosMode, "Set LN2 mode in BIOS to unlock high VID mode. The CPU temperature needs to be low" +
-        "er than -40C for this to work.");
             // 
             // tabGPU
             // 
@@ -939,6 +936,16 @@ namespace ZenStates
             this.comboBoxVoltageLimitSettings.Size = new System.Drawing.Size(109, 21);
             this.comboBoxVoltageLimitSettings.TabIndex = 5;
             // 
+            // checkBoxZen5VoltageWarning
+            // 
+            this.tableLayoutPanel6.SetColumnSpan(this.checkBoxZen5VoltageWarning, 2);
+            this.checkBoxZen5VoltageWarning.Location = new System.Drawing.Point(7, 107);
+            this.checkBoxZen5VoltageWarning.Name = "checkBoxZen5VoltageWarning";
+            this.checkBoxZen5VoltageWarning.Size = new System.Drawing.Size(202, 17);
+            this.checkBoxZen5VoltageWarning.TabIndex = 0;
+            this.checkBoxZen5VoltageWarning.Text = "High VID warning";
+            this.checkBoxZen5VoltageWarning.UseVisualStyleBackColor = true;
+            // 
             // tableLayoutPanel4
             // 
             this.tableLayoutPanel4.AutoSize = true;
@@ -1035,16 +1042,6 @@ namespace ZenStates
             this.label1.TabIndex = 3;
             this.label1.Text = "label1";
             // 
-            // checkBoxZen5VoltageWarning
-            // 
-            this.tableLayoutPanel6.SetColumnSpan(this.checkBoxZen5VoltageWarning, 2);
-            this.checkBoxZen5VoltageWarning.Location = new System.Drawing.Point(7, 107);
-            this.checkBoxZen5VoltageWarning.Name = "checkBoxZen5VoltageWarning";
-            this.checkBoxZen5VoltageWarning.Size = new System.Drawing.Size(202, 17);
-            this.checkBoxZen5VoltageWarning.TabIndex = 0;
-            this.checkBoxZen5VoltageWarning.Text = "High VID warning";
-            this.checkBoxZen5VoltageWarning.UseVisualStyleBackColor = true;
-            // 
             // manualOverclockItem
             // 
             this.manualOverclockItem.CcxInCcd = 0;
@@ -1091,7 +1088,6 @@ namespace ZenStates
             this.groupBoxPstates.PerformLayout();
             this.groupBoxCpuFreq.ResumeLayout(false);
             this.groupBoxCpuFreq.PerformLayout();
-            this.tableLayoutPanel1.ResumeLayout(false);
             this.tabPower.ResumeLayout(false);
             this.tableLayoutPanel9.ResumeLayout(false);
             this.tableLayoutPanel9.PerformLayout();

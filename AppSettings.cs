@@ -88,7 +88,7 @@ namespace ZenStates
         public int WindowLeft { get; set; } = -1;
         public int WindowTop { get; set; } = -1;
 
-        public double Zen5VoltageLimit { get; set; } = 1.65;
+        public double Zen5VoltageLimit { get; set; } = 1.35;
 
         public bool Zen5VoltageLimitWarning { get; set; } = true;
     }

@@ -99,7 +99,8 @@ namespace ZenStates.Components
             {
                 for (double i = 0.245; i <= voltageLimit; i+= 0.005)
                 {
-                    CustomListItem item = new CustomListItem(Utils.VoltageToVidSVI3(i), string.Format("{0:0.000}V", i));
+                    uint vid = (uint)Math.Round((i - 0.245) / 0.005);
+                    CustomListItem item = new CustomListItem(vid, string.Format("{0:0.000}V", i));
                     comboBoxVid.Items.Add(item);
                 }
             }
@@ -170,15 +171,26 @@ namespace ZenStates.Components
 
         public uint Vid
         {
-            get => (comboBoxVid.SelectedItem as CustomListItem).Value;
+            get => (comboBoxVid.SelectedItem as CustomListItem)?.Value ?? vid;
             set
             {
                 vid = value;
+                CustomListItem match = null;
                 foreach (CustomListItem item in comboBoxVid.Items)
                 {
                     if (item.Value == value)
-                        comboBoxVid.SelectedItem = item;
+                        match = item;
                 }
+
+                if (match == null)
+                {
+                    // Current hardware VID is outside the configured limit; show it anyway
+                    double voltage = Math.Round(0.245 + value * 0.005, 3);
+                    match = new CustomListItem(value, string.Format("{0:0.000}V", voltage));
+                    comboBoxVid.Items.Add(match);
+                }
+
+                comboBoxVid.SelectedItem = match;
             }
         }
 

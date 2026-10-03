@@ -9,6 +9,7 @@ using System.Windows.Forms;
 using System.Windows.Forms.VisualStyles;
 using ZenStates.Components;
 using ZenStates.Core;
+using ZenStates.Core.OHWM;
 using ZenStates.Utils;
 
 namespace ZenStates
@@ -63,6 +64,7 @@ namespace ZenStates
         private BackgroundWorker backgroundWorker;
         //private BindingSource siBindingSource;
         private PstateItem[] PstateItems;
+        private Label labelVidLimit;
         private int NUM_PSTATES = 3; // default set to 3, real active states are checked on a later stage
 
         private void HandleError(string message, string title = "Error")
@@ -122,8 +124,8 @@ namespace ZenStates
             mbVendorInfoLabel.Text = cpu.systemInfo.MbVendor;
             mbModelInfoLabel.Text = cpu.systemInfo.MbName;
             biosInfoLabel.Text = cpu.systemInfo.BiosVersion;
-            smuInfoLabel.Text = cpu.systemInfo.GetSmuVersionString();
-            cpuIdLabel.Text = $"{cpu.systemInfo.GetCpuIdString()} ({cpu.info.codeName})";
+            smuInfoLabel.Text = cpu.systemInfo.SmuVersion.ToString();
+            cpuIdLabel.Text = $"{cpu.systemInfo.CpuId} ({cpu.info.codeName})";
             microcodeInfoLabel.Text = $"{cpu.systemInfo.PatchLevel:X8}";
         }
 
@@ -168,7 +170,9 @@ namespace ZenStates
             cpu.ReadMsr(0x000000E7, ref eax7, ref edx7);
             cpu.ReadMsr(0x000000E8, ref eax8, ref edx8);
             double FreqP0 = GetCurrentMulti(false);
-            return ((edx8 << 32 | eax8) / (edx7 << 32 | eax7)) * FreqP0;
+            ulong mperf = (ulong)edx7 << 32 | eax7;
+            if (mperf == 0) return FreqP0;
+            return (double)((ulong)edx8 << 32 | eax8) / mperf * FreqP0;
         }
 
         private double GetCurrentMulti(bool ocmode = false)
@@ -319,6 +323,15 @@ namespace ZenStates
         {
             uint eax = default, edx = default;
 
+            if (cpu.info.family >= Cpu.Family.FAMILY_1AH)
+            {
+                // Zen5/AM5 P-state MSR layout differs; legacy FID/DID/VID editing would write invalid values
+                NUM_PSTATES = 0;
+                PstateItems = new PstateItem[0];
+                groupBoxPstates.Visible = false;
+                return;
+            }
+
             cpu.ReadMsr(MSR_PStateCurLim, ref eax, ref edx);
             NUM_PSTATES = Convert.ToInt32((eax >> 4) & 0x7) + 1;
             PstateItems = new PstateItem[NUM_PSTATES];
@@ -363,14 +376,30 @@ namespace ZenStates
             manualOverclockItem.VoltageLimit = settings.Zen5VoltageLimit;
             manualOverclockItem.Vid = GetCurrentVid(ocmode);
             manualOverclockItem.Multi = GetCurrentMulti(ocmode);
-            //manualOverclockItem.Frequency = (int)GetEffectiveFrequency();
-            manualOverclockItem.ProchotEnabled = cpu.IsProchotEnabled();
+            manualOverclockItem.Frequency = (int)GetEffectiveFrequency();
+            manualOverclockItem.ProchotEnabled = cpu.IsProchotEnabled() ?? false;
             manualOverclockItem.coreDisableMap = cpu.info.topology.coreDisableMap;
             manualOverclockItem.CcxInCcd = (int)(cpu.info.topology.ccds / cpu.info.topology.ccxs);
             manualOverclockItem.Cores = (int)cpu.info.topology.physicalCores;
 
-            if (ln2Mode) {
-                labelLN2BiosMode.Text = labelLN2BiosMode.Text.Replace("Disabled", "Enabled");
+            labelLN2BiosMode.TextAlign = System.Drawing.ContentAlignment.TopLeft;
+            labelLN2BiosMode.Text = $"BIOS LN2 Mode: {(ln2Mode ? "Enabled" : "Disabled")}";
+            if (cpu.info.family >= Cpu.Family.FAMILY_1AH)
+            {
+                if (labelVidLimit == null)
+                {
+                    labelVidLimit = new Label
+                    {
+                        AutoSize = true,
+                        Dock = DockStyle.Right,
+                        ForeColor = labelLN2BiosMode.ForeColor,
+                        Font = labelLN2BiosMode.Font,
+                        Padding = labelLN2BiosMode.Padding,
+                        TextAlign = System.Drawing.ContentAlignment.TopRight
+                    };
+                    labelLN2BiosMode.Controls.Add(labelVidLimit);
+                }
+                labelVidLimit.Text = $"VID limit: {settings.Zen5VoltageLimit:0.000}V";
             }
 
             var strap = cpu.GetStrapStatus();
@@ -438,18 +467,23 @@ namespace ZenStates
 
         private void InitSettingsTab()
         {
-            uint currentSetting = Core.Utils.VoltageToVidSVI3(settings.Zen5VoltageLimit);
+            comboBoxVoltageLimitSettings.Items.Clear();
+            int selectedIndex = -1;
 
-            for (double i = 0.245; i <= 2.800; i += 0.005)
+            for (int step = 0; step <= 511; step++)
             {
-                uint vid = Core.Utils.VoltageToVidSVI3(i);
-                CustomListItem item = new CustomListItem(vid, string.Format("{0:0.000}V", i));
+                double i = 0.245 + step * 0.005;
+                if (i > 2.8005) break;
+
+                CustomListItem item = new CustomListItem((uint)step, string.Format("{0:0.000}V", i));
                 comboBoxVoltageLimitSettings.Items.Add(item);
-                if (vid == currentSetting)
+                if (Math.Abs(i - settings.Zen5VoltageLimit) < 0.0025)
                 {
-                    comboBoxVoltageLimitSettings.SelectedIndex = comboBoxVoltageLimitSettings.Items.Count - 1;
+                    selectedIndex = comboBoxVoltageLimitSettings.Items.Count - 1;
                 }
             }
+
+            comboBoxVoltageLimitSettings.SelectedIndex = selectedIndex;
 
             checkBoxZen5VoltageWarning.Checked = settings.Zen5VoltageLimitWarning;
         }
@@ -466,7 +500,7 @@ namespace ZenStates
             catch { }
 
 
-            if (WaitForPowerTable())
+            //if (WaitForPowerTable())
             {
                 try
                 {
@@ -548,15 +582,26 @@ namespace ZenStates
                 return false;
             }
 
-            /*
-            uint eax = 0, edx = 0;
-            cpu.ReadMsr(MSR_PStateDef0, ref eax, ref edx);
-            eax = Core.Utils.SetBits(eax, 0, 12, frequency / 5);
-            uint targetVid = manualOverclockItem.Vid;
-            eax = Core.Utils.SetBits(eax, 14, 8, Core.Utils.BitSlice(targetVid, 7, 0));
-            edx = Core.Utils.SetBits(edx, 0, 1, Core.Utils.BitSlice(targetVid, 8, 8));
-            cpu.WriteMsr(MSR_PStateDef0, eax, edx);
-            */
+            if (cpu.smu.SMU_TYPE == SMU.SmuType.TYPE_CPU0)
+            {
+                uint eax = 0, edx = 0;
+                cpu.ReadMsr(MSR_PStateDef0, ref eax, ref edx);
+
+
+                var IddDiv = eax >> 30;
+                var IddVal = eax >> 22 & 0xFF;
+                var CpuVid = eax >> 14 & 0xFF;
+                var CpuDfId = eax >> 8 & 0x3F;
+                var CpuFid = eax & 0xFF;
+
+                var targetFid = (uint)Math.Round(frequency * CpuDfId / 200.0, MidpointRounding.AwayFromZero);
+                uint targetVid = manualOverclockItem.Vid;
+
+                eax = eax = (IddDiv & 0xFF) << 30 | (IddVal & 0xFF) << 22 | (targetVid & 0xFF) << 14 | (CpuDfId & 0xFF) << 8 | targetFid & 0xFF;
+                cpu.WriteMsr(MSR_PStateDef0, eax, edx);
+
+                ApplyTscWorkaround();
+            }
 
             return true;
         }
@@ -599,15 +644,43 @@ namespace ZenStates
 
         private bool SetOcMode(bool enabled, uint arg = 0U)
         {
-            uint cmd = enabled ? cpu.smu.Rsmu.SMU_MSG_EnableOcMode : cpu.smu.Rsmu.SMU_MSG_DisableOcMode;
-            uint[] args = { arg };
-            if (cpu.smu.SendRsmuCommand(cmd, ref args) != SMU.Status.OK)
+
+            if (CpuSingleton.Instance.info.family >= Cpu.Family.FAMILY_19H)
             {
-                HandleError("Error setting OC mode!");
-                return false;
+                uint cmd = enabled ? cpu.smu.Rsmu.SMU_MSG_EnableOcMode : cpu.smu.Rsmu.SMU_MSG_DisableOcMode;
+                uint[] args = { arg };
+                if (cpu.smu.SendRsmuCommand(cmd, ref args) != SMU.Status.OK)
+                {
+                    HandleError("Error setting OC mode!");
+                    return false;
+                }
+            }
+            else
+            {
+                if (enabled)
+                {
+                    SetCPB(false);
+                    SetC6Core(false);
+                    SetC6Package(false);
+
+                    if (cpu.EnableOcMode() != SMU.Status.OK)
+                    {
+                        HandleError("Error setting OC mode!");
+                        return false;
+                    }
+                }
+                else
+                {
+                    if (cpu.DisableOcMode() != SMU.Status.OK)
+                    {
+                        HandleError("Error disabling OC mode!");
+                        return false;
+                    }
+
+                    cpu.SetPBOScalar(1);
+                }
             }
 
-            if (!enabled) cpu.SetPBOScalar(1);
             return true;
         }
 
@@ -820,7 +893,7 @@ namespace ZenStates
                 CheckBootState();
                 PopulatePstates();
                 InitPowerTab();
-                InitManualOc();
+                try { InitManualOc(); } catch (Exception dbg) { System.IO.File.WriteAllText(@"C:\GIT\dbg.txt", dbg.ToString()); throw; }
                 InitSettingsTab();
                 RunBackgroundTask(InitSystemInfo, InitSystemInfo_Complete);
 
@@ -842,6 +915,13 @@ namespace ZenStates
             {
                 if (manualOverclockItem.OCmode)
                 {
+                    uint limitVid = (uint)Math.Round((settings.Zen5VoltageLimit - 0.245) / 0.005);
+                    if (cpu.info.family >= Cpu.Family.FAMILY_1AH && manualOverclockItem.VidChanged && manualOverclockItem.Vid > limitVid)
+                    {
+                        HandleError($"Selected VID exceeds the voltage limit ({settings.Zen5VoltageLimit:0.000}V) set in Settings.");
+                        manualOverclockItem.Reset();
+                        return;
+                    }
                     if (cpu.info.family >= Cpu.Family.FAMILY_19H && manualOverclockItem.Vid > Core.Utils.VoltageToVidSVI3(1.520))
                     {
                         if (!cpu.GetLN2Mode())
@@ -904,10 +984,19 @@ namespace ZenStates
 
             if (selectedTab == tabSettings)
             {
-                double vidLimit = Core.Utils.VidToVoltageSVI3((comboBoxVoltageLimitSettings.SelectedItem as CustomListItem).Value);
+                var vidLimit = Math.Round(0.245 + (comboBoxVoltageLimitSettings.SelectedItem as CustomListItem).Value * 0.005, 3);
                 settings.Zen5VoltageLimit = vidLimit;
                 settings.Zen5VoltageLimitWarning = checkBoxZen5VoltageWarning.Checked;
                 settings.Save();
+
+                if (vidLimit > 1.520)
+                {
+                    MessageBox.Show(
+                        "Voltage limit is set above 1.520V.\nThe core limits VID to 1.520V, so values above it are only applied with LN2 mode enabled in BIOS and temperature below -40C.\nRestart the application to apply the new limit.",
+                        "Warning",
+                        MessageBoxButtons.OK,
+                        MessageBoxIcon.Warning);
+                }
             }
 
             //RefreshState();
